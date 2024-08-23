@@ -3,6 +3,9 @@
 	import Node from '$lib/components/node.svelte';
 	import type { Node as NodeType } from '$lib/types';
 	import { getNodes } from '$lib/components/nodes-state.svelte';
+	import { getDrawerStore } from '@skeletonlabs/skeleton';
+
+	const drawerStore = getDrawerStore();
 
 	const zoomSpeed = 0.001;
 	const maxZoom = 6;
@@ -19,6 +22,10 @@
 
 	let nodesState = getNodes();
 	$: nodes = nodesState.nodes;
+
+	function openToolbox() {
+		drawerStore.open({ id: 'toolbox' });
+	}
 
 	function handleMouseWheel(event: WheelEvent) {
 		event.preventDefault();
@@ -153,18 +160,27 @@
 	});
 </script>
 
-<div class="canvas-container border border-white h-4/5 w-full">
-	<canvas bind:this={canvasRef} style="width: 100%; height: 100%;" on:wheel={handleMouseWheel}
-	></canvas>
-	<div class="nodes" bind:this={nodeContainer} style="position: absolute; top: 50%; left: 50%">
-		{#each $nodes as node (node.id)}
-			<Node
-				nodeName={node.nodeName}
-				nodeDescription={node.nodeDescription}
-				position={node.position}
-				{zoomLevel}
-			/>
-		{/each}
+<div class="flex columns-2">
+	<div class="canvas-container flex-1 border border-white h-4/5 w-full">
+		<canvas bind:this={canvasRef} style="width: 100%; height: 100%;" on:wheel={handleMouseWheel}
+		></canvas>
+		<div class="nodes" bind:this={nodeContainer} style="position: absolute; top: 50%; left: 50%">
+			{#each $nodes as node (node.id)}
+				<Node
+					nodeName={node.nodeName}
+					nodeDescription={node.nodeDescription}
+					position={node.position}
+					{zoomLevel}
+				/>
+			{/each}
+		</div>
+	</div>
+	<div class="toolbox-button-container flex-none">
+		<button class="toolbox-button border border-gray-500 bg-gray-300" on:click={openToolbox}>
+			<svg class="toolbox-icon" style="transform: rotate(-90deg);" viewBox="0 0 24 24">
+				<path d="M12 2L2 22h20L12 2zm-2 16h4v-2h-4v2zm0-4h4v-2h-4v2zm0-4h4V8h-4v2z" fill="currentColor"/>
+			</svg>
+		</button>
 	</div>
 </div>
 
@@ -172,5 +188,17 @@
 	.canvas-container {
 		position: relative;
 		overflow: hidden;
+	}
+	.toolbox-button-container {
+		display: flex;
+		align-items: stretch;
+	}
+	.toolbox-button {
+		right: 0;
+		width: 10px;
+		height: 100%;
+		padding: 0;
+		box-sizing: border-box;
+		max-width: 10px;
 	}
 </style>

@@ -3,16 +3,13 @@
 	import { MenuIcon } from 'svelte-feather-icons';
 	import { AppBar, Avatar } from '@skeletonlabs/skeleton';
 	import { LightSwitch } from '@skeletonlabs/skeleton';
-	import { initializeStores, Drawer, getDrawerStore } from '@skeletonlabs/skeleton';
-	import Navigation from '$lib/components/navigation.svelte';
+	import { initializeStores, Drawer, getDrawerStore, Modal } from '@skeletonlabs/skeleton';
 	import Toaster from '$lib/components/toaster.svelte';
 	import { setToastState } from '$lib/components/toast-state.svelte';
 	import { setNodes } from '$lib/components/nodes-state.svelte';
-
-	// Floating UI for Popups
-	import { computePosition, autoUpdate, flip, shift, offset, arrow } from '@floating-ui/dom';
-	import { storePopup } from '@skeletonlabs/skeleton';
-	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
+	import Navigation from '$lib/components/navigation.svelte';
+	import Toolbox from '$lib/components/toolbox.svelte';
+	import type { ModalComponent } from '@skeletonlabs/skeleton';
 
 	// Initialize Stores
 	initializeStores();
@@ -27,24 +24,34 @@
 	const drawerStore = getDrawerStore();
 
 	// Open Drawer
-	function openDrawer() {
-		console.log('openDrawer');
-		drawerStore.open();
+	function openNavDrawer() {
+		console.log('openNavDrawer');
+		drawerStore.open({id: 'navigation'});
 	}
-	// Close Drawer
-	function closeDrawer() {
-		console.log('closeDrawer');
-		drawerStore.close();
-	}
+
+	// Modals
+	import CreateNew from '$lib/modals/create-new.svelte';
+
+	const modalRegistry: Record<string, ModalComponent> = {
+		createNew: { ref: CreateNew },
+	};
+
 </script>
 
 <!-- Toaster for messages-->
 <Toaster />
 
-<!-- Drawer for navbar -->
+<!-- Drawers -->
 <Drawer>
-	<Navigation />
+	{#if $drawerStore.id === "navigation"}
+		<Navigation />
+	{:else if $drawerStore.id === "toolbox"}
+		<Toolbox />
+	{/if}
 </Drawer>
+
+<!-- Modals -->
+<Modal components={modalRegistry}/>
 
 <!-- For best results, preview this in either the full-width or full-screen preview modes. -->
 
@@ -59,7 +66,7 @@
 			<svelte:fragment slot="lead">
 				<div class="flex items-center">
 					<div class="flex-shrink-0">
-						<button class="btn" on:click={openDrawer}>
+						<button class="btn" on:click={openNavDrawer}>
 							<MenuIcon class="w-6 h-6" />
 						</button>
 					</div>
@@ -77,14 +84,10 @@
 		</AppBar>
 	</header>
 	<!-- Page -->
-	<div class="flex flex-col mx-10 h-screen">
+	<div class="flex mx-10 h-screen">
 		<!-- Main Content -->
 		<main class="flex-1 p-4 overflow-y-auto">
 			<slot />
 		</main>
-		<!-- Sidebar (Right) -->
-		<!-- <aside class="sticky top-0 col-span-1 h-full w-20 bg-yellow-500">(sidebar)</aside> -->
 	</div>
-	<!-- Footer -->
-	<!-- <footer class="sticky bottom-0 variant-filled-tertiary p-4">(footer)</footer> -->
 </div>
