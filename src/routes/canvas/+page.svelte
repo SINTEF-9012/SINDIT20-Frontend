@@ -4,6 +4,7 @@
 	import type { Node as NodeType } from '$lib/types';
 	import { getNodes } from '$lib/components/nodes-state.svelte';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
+	import Link from '$lib/components/nodes-link.svelte';
 
 	const drawerStore = getDrawerStore();
 
@@ -174,6 +175,13 @@
 				/>
 			{/each}
 		</div>
+        <div class="links" style="position: absolute; top: 50%; left: 50%">
+                <Link
+                    source={$nodes[1]}
+                    target={$nodes[2]}
+					{zoomLevel}
+                />
+        </div>
 	</div>
 	<div class="toolbox-button-container flex-none">
 		<button class="toolbox-button border border-gray-500 bg-gray-300" on:click={openToolbox}>
