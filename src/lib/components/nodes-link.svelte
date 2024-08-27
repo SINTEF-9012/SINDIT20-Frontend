@@ -52,67 +52,17 @@
 		transform: rotate({rotationDeg}deg);
 	"
 >
-	<div
-		class="line border border-primary-500 bg-surface-500"
-		style="
-			width: 100%;
-			height: {linkWeight}px;
-		"
-	></div>
-	{#if linkDirection === 'left'}
-		<!-- Arrow at the start of the line -->
-		<div
-			class="arrow-start"
-			style="
-				position: absolute;
-				left: 5%;
-				top: 50%;
-				transform: translateY(-100%) rotate(90deg);
-				transform-origin: 0% 50%;
-				border-left: {linkWeight * 2}px solid transparent;
-				border-right: {linkWeight * 2}px solid transparent;
-				border-top: {linkWeight * 3}px solid white;
-			"
-		></div>
-	{:else if linkDirection === 'right'}
-		<!-- Arrow at the end of the line pointing towards the target -->
-		<div
-			class="arrow-end"
-			style="
-				position: absolute;
-				right: +2%;
-				top: 50%;
-				transform: translateY(+30%) rotate(90deg);
-				transform-origin: 100% 50%;
-				border-left: {linkWeight * 2}px solid transparent;
-				border-right: {linkWeight * 2}px solid transparent;
-				border-bottom: {linkWeight * 3}px solid white;
-			"
-		></div>
-	{/if}
-	<div class="arrow-svg">
-		<Arrow
-			linkDistance={(linkDistance)*zoomLevel}
-			linkDirection={linkDirection}
-			linkText="{source.id} -> {target.id}"
-			zoomLevel={zoomLevel}
-			angleRadians={rotationRadians}
-		/>
-	</div>
+	<Arrow
+		linkDistance={(linkDistance)*zoomLevel}
+		linkDirection={linkDirection}
+		linkText="{source.id} -> {target.id}"
+		zoomLevel={zoomLevel}
+		angleRadians={rotationRadians}
+	/>
 </div>
 
 <style>
 	.link {
 		z-index: -1;
-	}
-	.line {
-		z-index: -1;
-		position: absolute;
-	}
-    .arrow-start {
-        z-index: 1;
-    }
-	.arrow-end {
-		z-index: 1;
 	}
 </style>
