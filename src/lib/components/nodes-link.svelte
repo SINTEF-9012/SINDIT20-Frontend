@@ -1,5 +1,4 @@
 <script lang="ts">
-	import CreateNew from '$lib/modals/create-new.svelte';
 	import type { Node, LinkDirection } from '$lib/types';
 	import Arrow from '$lib/components/svg/arrow.svelte';
 
@@ -7,7 +6,7 @@
 	export let target: Node;  // target node
 	export let zoomLevel = 1;
 	export let linkDirection: LinkDirection = 'none';  // default direction from source to target
-	export let linkWeight = 10;
+	export let linkWeight = 2;
 
 	function distance(source: Node, target: Node) {
 		const dx = target.position.x - source.position.x;
@@ -56,6 +55,7 @@
 		linkDistance={(linkDistance)*zoomLevel}
 		linkDirection={linkDirection}
 		linkText="{source.id} -> {target.id}"
+		linkWeight={linkWeight}
 		zoomLevel={zoomLevel}
 		angleRadians={rotationRadians}
 	/>

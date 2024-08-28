@@ -56,6 +56,11 @@
             </button>
         {/each}
     </main>
+    <footer class="flex justify-center">
+        <div class="search-bar">
+            <input type="text" placeholder="Search..." class="input" />
+        </div>
+    </footer>
 </div>
 
 

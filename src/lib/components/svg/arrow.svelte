@@ -6,22 +6,32 @@
     export let linkText: string;
     export let zoomLevel: number;
     export let angleRadians: number;
+    export let linkWeight: number;
 
-    let linkWeight = 2;
     let height = 10;
     $: length = Math.max(linkDistance, 0);
     $: angle = angleRadians
+    $: centerX = length / 2;
+    $: centerY = height / 2;
+    $: boxSize = 0.2 * length;
 
-    let centerTextElement: HTMLDivElement;
+    let linkTextElement: HTMLDivElement;
+    let linkWeightElement: HTMLDivElement;
 
     // Reactive statement to check if the text is upside down whenever relevant properties change
     $: flipText = angle > Math.PI / 2 || angle < -Math.PI / 2;
     // $: console.log(angle, flipText, linkDistance);
     $: {
-        if (centerTextElement) {
-            centerTextElement.style.transform = flipText === true
-                ? "translate(-50%, 10%) rotate(180deg)"
-                : "translate(-50%, 10%)";
+
+        if (linkTextElement) {
+            linkTextElement.style.transform = flipText === true
+                ? 'rotate(180deg)'
+                : '';
+        }
+        if (linkWeightElement) {
+            linkWeightElement.style.transform = flipText === true
+                ? 'rotate(180deg)'
+                : '';
         }
     }
 
@@ -57,11 +67,30 @@
         marker-start={linkDirection === "left" ? "url(#arrow)" : ""}
         marker-end={linkDirection === "right" ? "url(#arrow)" : ""}
     />
+
+    <!-- Add the div box at the center of the line
+    <foreignObject x={centerX - 25} y={centerY - 25} width="20" height="100">
+        <div class="center-box"></div>
+    </foreignObject> -->
 </svg>
 
-<!-- Add linkText in a div at the center of the line -->
-<div class="center-text" bind:this={centerTextElement}>{linkText}</div>
-
+{#if zoomLevel > 0.2}
+<button class="btn" on:click={() => console.log('click')}>
+    <div class="center-box"
+        style="
+            left: calc(50% - {boxSize / 2})px;
+            top: calc(50% - {boxSize / 2})px;
+            width: {boxSize}px;
+            height: {boxSize}px;
+        "
+    >
+        <!-- Link text above the link line -->
+        <div class="center-link-text" bind:this={linkTextElement}>{linkText}</div>
+        <!-- Line Weight below the link line -->
+        <div class="center-link-weight" bind:this={linkWeightElement}>{linkWeight}</div>
+    </div>
+</button>
+{/if}
 </div>
 
 <style>
@@ -69,14 +98,23 @@
         position: relative;
         width: fit-content;
     }
-    .center-text {
-        position: absolute;
-        top: 0%;
-        left: 50%;
-        transform: translate(-50%, 10%); /* Adjust the vertical position as needed */
-        color: white;
-        font-size: calc(10px * var(--zoom-level)); /* Adjust font size based on zoomLevel */
+    .center-link-text {
         white-space: nowrap; /* Prevent text from wrapping */
         overflow: visible; /* Allow text to overflow its box */
+        text-align: center;
+    }
+    .center-link-weight {
+        white-space: nowrap; /* Prevent text from wrapping */
+        overflow: visible; /* Allow text to overflow its box */
+        text-align: center;
+    }
+    .center-box {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 2px solid white;
+        font-size: calc(var(--zoom-level) * 30px);
+        transform: translate(200%, -50%);
     }
 </style>
