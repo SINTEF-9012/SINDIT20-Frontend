@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import Node from '$lib/components/node.svelte';
 	import type { Node as NodeType } from '$lib/types';
+	import type { Link as LinkType } from '$lib/types';
 	import { getNodes } from '$lib/components/nodes-state.svelte';
 	import { getLinks } from '$lib/components/links-state.svelte';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
@@ -11,9 +12,10 @@
 
 	const zoomSpeed = 0.001;
 	const maxZoom = 6;
-	const minZoom = 0.1;
+	const minZoom = 0.01;
+	const springConstant = 0.00001; // Attraction force
 	const repulsionForce = 50000; // Adjust this value to control the strength of repulsion
-	const thresholdDistance = 200; // Minimum distance before repulsion kicks in
+	const thresholdDistance = 500; // Minimum distance before repulsion kicks in
 	const updateNodePositionsInterval = 1000 / 60; // 60 FPS
 
 	let canvasRef: HTMLCanvasElement;
@@ -74,8 +76,7 @@
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 
-	function applyRepulsion() {
-		const nodes = $nodes.map((node) => ({ ...node }));
+	function applyRepulsion(nodes: NodeType[]) {
 		for (let i = 0; i < nodes.length; i++) {
 			for (let j = i + 1; j < nodes.length; j++) {
 				const distance = calculateDistance(nodes[i], $nodes[j]);
@@ -92,17 +93,37 @@
 				}
 			}
 		}
-		$nodes = [...nodes]; // trigger reactivity
-		const links = $links.map((link) => ({ ...link }));
-		$links = [...links]; // trigger reactivity of links
+		return nodes;
 	}
 
-	function applySping() {
-		// TODO: apply spring forces to nodes
+	function applySping(nodes: NodeType[], links: LinkType[]) {
+		for (let i = 0; i < links.length; i++) {
+			const source = nodes.find((node) => node.id === links[i].sourceNodeId);
+			const target = nodes.find((node) => node.id === links[i].targetNodeId);
+			if (source && target) {
+				const distance = calculateDistance(source, target);
+				const dx = target.position.x - source.position.x;
+				const dy = target.position.y - source.position.y;
+				const angle = Math.atan2(dy, dx);
+				const force = (distance - links[i].linkWeight) * springConstant;
+				source.position.x += force * Math.cos(angle);
+				source.position.y += force * Math.sin(angle);
+				target.position.x -= force * Math.cos(angle);
+				target.position.y -= force * Math.sin(angle);
+			}
+		}
+		return nodes;
 	}
 
 	function updateNodePositions() {
-		applyRepulsion();
+
+		let nodes = $nodes.map((node) => ({ ...node }));
+		const links = $links.map((link) => ({ ...link }));
+		nodes = applyRepulsion(nodes);
+		nodes = applySping(nodes, links);
+
+		$nodes = [...nodes]; // trigger reactivity of nodes
+		$links = [...links]; // trigger reactivity of links
 	}
 
 	function handleMouseDown(event: MouseEvent) {
