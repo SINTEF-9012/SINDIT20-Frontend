@@ -3,6 +3,7 @@
 	import Node from '$lib/components/node.svelte';
 	import type { Node as NodeType } from '$lib/types';
 	import { getNodes } from '$lib/components/nodes-state.svelte';
+	import { getLinks } from '$lib/components/links-state.svelte';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import Link from '$lib/components/nodes-link.svelte';
 
@@ -16,13 +17,16 @@
 	const updateNodePositionsInterval = 1000 / 60; // 60 FPS
 
 	let canvasRef: HTMLCanvasElement;
-	let nodeContainer: HTMLDivElement;
+	let canvasContent: HTMLDivElement;
 	let initialMousePosition = { x: 0, y: 0 };
 	let isMouseDragging = false;
 	let zoomLevel = 1;
 
 	let nodesState = getNodes();
 	$: nodes = nodesState.nodes;
+
+	let linksState = getLinks();
+	$: links = linksState.links;
 
 	function openToolbox() {
 		drawerStore.open({ id: 'toolbox' });
@@ -61,7 +65,7 @@
 
 		// Apply the zoom transformation to the nodes
 		// nodeContainer.style.transformOrigin = `${originX}px ${originY}px`;
-		nodeContainer.style.transform = `scale(${zoomLevel})`;
+		canvasContent.style.transform = `scale(${zoomLevel})`;
 	}
 
 	function calculateDistance(nodeA: NodeType, nodeB: NodeType) {
@@ -89,6 +93,12 @@
 			}
 		}
 		$nodes = [...nodes]; // trigger reactivity
+		const links = $links.map((link) => ({ ...link }));
+		$links = [...links]; // trigger reactivity of links
+	}
+
+	function applySping() {
+		// TODO: apply spring forces to nodes
 	}
 
 	function updateNodePositions() {
@@ -110,7 +120,7 @@
 		const deltaX = event.clientX - initialMousePosition.x;
 		const deltaY = event.clientY - initialMousePosition.y;
 
-		nodeContainer.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${zoomLevel})`;
+		canvasContent.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${zoomLevel})`;
 		initialMousePosition = { x: event.clientX, y: event.clientY };
 
 		const canvas = canvasRef;
@@ -123,6 +133,18 @@
 	}
 
 	onMount(() => {
+
+		async function createLinks() {
+			try {
+				await linksState.createLink('link 1', 1, 'left', $nodes[0].id, $nodes[1].id);
+				await linksState.createLink('link 2', 2, 'none', $nodes[0].id, $nodes[2].id);
+			} catch (error) {
+				console.error('Error creating links:', error);
+			}
+    	}
+
+	    createLinks();
+
 		const canvas = canvasRef;
 		const context = canvas.getContext('2d');
 
@@ -137,11 +159,11 @@
 		const centerY = canvas.height / 2;
 
 		// Nodes component
-		const nodesElement = nodeContainer.querySelector('.nodes');
-		if (nodesElement) {
-			const nodeRect = nodesElement.getBoundingClientRect();
+		const canvasContent = canvasRef.querySelector('.canvas-content');
+		if (canvasContent) {
+			const nodeRect = canvasContent.getBoundingClientRect();
 			context?.drawImage(
-				nodesElement,
+				canvasContent,
 				centerX - nodeRect.width / 2,
 				centerY - nodeRect.height / 2
 			);
@@ -161,27 +183,24 @@
 	});
 </script>
 
-<div class="flex columns-2">
-	<div class="canvas-container flex-1 border border-white h-4/5 w-full">
+<div class="flex columns-2 h-5/6">
+	<div class="canvas-container flex-1 border border-white h-full w-full">
 		<canvas bind:this={canvasRef} style="width: 100%; height: 100%;" on:wheel={handleMouseWheel}
 		></canvas>
-		<div class="nodes" bind:this={nodeContainer} style="position: absolute; top: 50%; left: 50%">
-			{#each $nodes as node (node.id)}
-				<Node
-					nodeName={node.nodeName}
-					nodeDescription={node.nodeDescription}
-					position={node.position}
-					{zoomLevel}
-				/>
-			{/each}
+		<div class="canvas-content" bind:this={canvasContent} style="position: absolute; top: 50%; left: 50%">
+				{#each $nodes as node (node.id)}
+					<Node
+						{node}
+						{zoomLevel}
+					/>
+				{/each}
+				{#each $links as link (link.id)}
+					<Link
+						{link}
+						{zoomLevel}
+					/>
+				{/each}
 		</div>
-        <div class="links" style="position: absolute; top: 50%; left: 50%">
-                <Link
-                    source={$nodes[1]}
-                    target={$nodes[2]}
-					{zoomLevel}
-                />
-        </div>
 	</div>
 	<div class="toolbox-button-container flex-none">
 		<button class="toolbox-button border border-gray-500 bg-gray-300" on:click={openToolbox}>
@@ -196,6 +215,7 @@
 	.canvas-container {
 		position: relative;
 		overflow: hidden;
+		z-index: 0;
 	}
 	.toolbox-button-container {
 		display: flex;

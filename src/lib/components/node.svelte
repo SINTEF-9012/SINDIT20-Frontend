@@ -1,22 +1,20 @@
 <script lang="ts">
-	export let nodeName;
-	export let nodeDescription;
-	export let size = 200;
-	export let position = { x: 0, y: 0 };
+	import type { Node as NodeType } from '$lib/types';
+	export let node: NodeType;
 	export let zoomLevel = 1;
 
 	let offset = { x: 0, y: 0 };
 	let moving = false;
 	let threshold = 20;
 
-	$: fontSize = size * 0.15;
+	$: fontSize = node.size * 0.15;
 	$: fontSizeTitle = fontSize * 1.1 + 'px';
 	$: fontSizeDescription = fontSize * 0.8 + 'px';
 
 	function startMoving(event: MouseEvent) {
 		moving = true;
-		offset.x = event.clientX - position.x * zoomLevel;
-		offset.y = event.clientY - position.y * zoomLevel;
+		offset.x = event.clientX - node.position.x * zoomLevel;
+		offset.y = event.clientY - node.position.y * zoomLevel;
 	}
 
 	function onKeyDown(event: KeyboardEvent) {
@@ -31,8 +29,9 @@
 
 	function move(event: MouseEvent) {
 		if (moving) {
-			position.x = (event.clientX - offset.x) / zoomLevel;
-			position.y = (event.clientY - offset.y) / zoomLevel;
+			node.position.x = (event.clientX - offset.x) / zoomLevel;
+			node.position.y = (event.clientY - offset.y) / zoomLevel;
+			node = {...node};
 		}
 	}
 </script>
@@ -43,19 +42,20 @@
 	on:mousedown={startMoving}
 	on:keydown={onKeyDown}
 	on:mousemove={move}
+	on:dblclick={() => console.log('dblclick')}
 	tabindex="0"
 	role="button"
 	class="node border border-primary-500 bg-surface-500 bg-transparent"
-	style="transform: translate({position.x - size / 2}px, {position.y - size / 2}px); width: {size}px; height: {size}px;"
+	style="transform: translate({node.position.x - node.size / 2}px, {node.position.y - node.size / 2}px); width: {node.size}px; height: {node.size}px;"
 >
-	{#if size >= threshold}
+	{#if node.size >= threshold}
 		<div class="grid-cols-1 gap-1">
 			<div class="text-center">
-				<span class="text-white" style="font-size: {fontSizeTitle}">{nodeName}</span>
+				<span class="text-white" style="font-size: {fontSizeTitle}">{node.nodeName}</span>
 			</div>
 			<div class="text-center">
 				<span class="text-gray-400" style="font-size: {fontSizeDescription}"
-					>{nodeDescription}</span
+					>{node.nodeDescription}</span
 				>
 			</div>
 		</div>

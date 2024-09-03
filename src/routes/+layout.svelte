@@ -7,6 +7,7 @@
 	import Toaster from '$lib/components/toaster.svelte';
 	import { setToastState } from '$lib/components/toast-state.svelte';
 	import { setNodes } from '$lib/components/nodes-state.svelte';
+	import { setLinks } from '$lib/components/links-state.svelte';
 	import Navigation from '$lib/components/navigation.svelte';
 	import Toolbox from '$lib/components/toolbox.svelte';
 	import type { ModalComponent } from '@skeletonlabs/skeleton';
@@ -19,6 +20,9 @@
 
 	// Initialize Nodes
 	setNodes();
+
+	// Initialize Links
+	setLinks();
 
 	// Get Drawer Store
 	const drawerStore = getDrawerStore();

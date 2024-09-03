@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { LinkDirection } from "$lib/types";
+    import { onMount } from "svelte";
 
     export let linkDistance: number;
     export let linkDirection: LinkDirection = "left";
@@ -8,12 +9,13 @@
     export let angleRadians: number;
     export let linkWeight: number;
 
+    let linkButtonHeight: number = 60;
     let height = 10;
     $: length = Math.max(linkDistance, 0);
     $: angle = angleRadians
     $: centerX = length / 2;
     $: centerY = height / 2;
-    $: boxSize = 0.2 * length;
+    $: boxSize = 0.8 * length;
 
     let linkTextElement: HTMLDivElement;
     let linkWeightElement: HTMLDivElement;
@@ -22,7 +24,6 @@
     $: flipText = angle > Math.PI / 2 || angle < -Math.PI / 2;
     // $: console.log(angle, flipText, linkDistance);
     $: {
-
         if (linkTextElement) {
             linkTextElement.style.transform = flipText === true
                 ? 'rotate(180deg)'
@@ -35,14 +36,20 @@
         }
     }
 
+    onMount(() => {
+    });
+
 </script>
 
-<div class="container" style="--zoom-level: {zoomLevel}">
+<div class="container" style="pointer-events: auto">
 <svg
     xmlns="http://www.w3.org/2000/svg"
     width={length}
     height={height}
-    viewBox={`0 0 ${length} ${height}`}>
+    viewBox={`0 0 ${length} ${height}`}
+    pointer-events="none"
+    style="pointer-events: none; z-index: 0"
+    >
     <!-- Define the arrow marker -->
     <defs>
         <marker
@@ -74,22 +81,23 @@
     </foreignObject> -->
 </svg>
 
-{#if zoomLevel > 0.2}
-<button class="btn" on:click={() => console.log('click')}>
-    <div class="center-box"
+{#if zoomLevel > 0.2 && zoomLevel < 2}
+    <button class="center-box"
         style="
-            left: calc(50% - {boxSize / 2})px;
-            top: calc(50% - {boxSize / 2})px;
+            left: {centerX}px;
+            top: {centerY}px;
             width: {boxSize}px;
-            height: {boxSize}px;
+            height: {linkButtonHeight}px;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
         "
+        on:dblclick={() => console.log('dblclick')}
     >
         <!-- Link text above the link line -->
         <div class="center-link-text" bind:this={linkTextElement}>{linkText}</div>
         <!-- Line Weight below the link line -->
         <div class="center-link-weight" bind:this={linkWeightElement}>{linkWeight}</div>
-    </div>
-</button>
+    </button>
 {/if}
 </div>
 
@@ -97,24 +105,32 @@
     .container {
         position: relative;
         width: fit-content;
+        z-index: 1;
     }
     .center-link-text {
         white-space: nowrap; /* Prevent text from wrapping */
         overflow: visible; /* Allow text to overflow its box */
         text-align: center;
+        z-index: 1;
     }
     .center-link-weight {
         white-space: nowrap; /* Prevent text from wrapping */
         overflow: visible; /* Allow text to overflow its box */
         text-align: center;
+        z-index: 1;
     }
     .center-box {
         position: absolute;
         display: flex;
         flex-direction: column;
         align-items: center;
-        border: 2px solid white;
-        font-size: calc(var(--zoom-level) * 30px);
-        transform: translate(200%, -50%);
+        border: none;
+        background: transparent;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+		cursor: pointer;
+        z-index: 2;
     }
 </style>
