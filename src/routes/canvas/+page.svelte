@@ -7,7 +7,7 @@
 	import { getLinks } from '$lib/components/links-state.svelte';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import Link from '$lib/components/nodes-link.svelte';
-	import { createNodeMode, modalMetadata } from '$lib/stores';
+	import { createNodeMode, createLinkMode, modalMetadata } from '$lib/stores';
 	import type { ModalSettings } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 
@@ -35,9 +35,11 @@
 	$: links = linksState.links;
 
 	let isCreateNodeMode: boolean;
+	let isCreateLinkMode: boolean;
 	let createNodeModeMetadata: {toolName: string, operationMode: string};
 	let selectedCanvasPosition = { x: 0, y: 0 };
 	createNodeMode.subscribe((value) => isCreateNodeMode = value);
+	createLinkMode.subscribe((value) => isCreateLinkMode = value);
 	modalMetadata.subscribe((value) => createNodeModeMetadata = value);
 
     const modal: ModalSettings = {
@@ -63,24 +65,31 @@
 	}
 
     function handleCanvasClick(event: MouseEvent) {
-        if (!isCreateNodeMode) return;
+		// Handle canvas click event
 
-		const canvas = canvasRef;
-        const rect = canvas.getBoundingClientRect();
-        const x = (event.clientX - rect.left) / zoomLevel;
-        const y = (event.clientY - rect.top) / zoomLevel;
+		const canvas = canvasContent;
+		const rect = canvas.getBoundingClientRect();
+		const x = (event.clientX - rect.left) / zoomLevel;
+		const y = (event.clientY - rect.top) / zoomLevel;
+		console.log('clicked position:', { x, y });
 
-        // Set the clicked canvas position in the store
-		selectedCanvasPosition = ({ x, y });
+        if (isCreateNodeMode) {
 
-        // Exit node creation mode
-        createNodeMode.set(false);
+			// Set the clicked canvas position in the store
+			selectedCanvasPosition = ({ x, y });
 
-		// Open the modal to create a new node
-		openModal();
+			// Exit node creation mode
+			createNodeMode.set(false);
+
+			// Open the modal to create a new node
+			openModal();
+		} else if (isCreateLinkMode) {
+
+		} else {return;}
     }
 
 	function handleMouseWheel(event: WheelEvent) {
+		// Handle zoom in or out
 		event.preventDefault();
 		const canvas = canvasRef;
 		const rect = canvas.getBoundingClientRect();
@@ -173,15 +182,18 @@
 	}
 
 	function handleMouseDown(event: MouseEvent) {
+		// Save the initial mouse position - start dragging state
 		initialMousePosition = { x: event.clientX, y: event.clientY };
 		isMouseDragging = true;
 	}
 
 	function handleMouseUp() {
+		// end dragging state
 		isMouseDragging = false;
 	}
 
 	function handleMouseMove(event: MouseEvent) {
+		// Handle dragging the canvas
 		if (!isMouseDragging) return;
 
 		const deltaX = event.clientX - initialMousePosition.x;
