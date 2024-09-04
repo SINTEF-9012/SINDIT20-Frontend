@@ -1,11 +1,12 @@
 <script lang="ts">
     import { getDrawerStore } from "@skeletonlabs/skeleton";
     import { PlusCircleIcon } from 'svelte-feather-icons';
-    import { getModalStore } from '@skeletonlabs/skeleton';
-    import type { ModalSettings, DrawerSettings } from '@skeletonlabs/skeleton';
+    import type { DrawerSettings } from '@skeletonlabs/skeleton';
+    import { createNodeMode, modalMetadata } from "$lib/stores";
 
-    const modalStore = getModalStore();
     const drawerStore = getDrawerStore();
+
+    const tools = ["node", "link"];
 
     const settingsToolbox: DrawerSettings = {
         id: "toolbox",
@@ -18,43 +19,40 @@
 
     drawerStore.open(settingsToolbox);
 
-    const cards = ["card 1", "card 2", "card 3", "card 4", "card 5"];
-
-    const modal: ModalSettings = {
-        type: 'component',
-        component: 'createNew',
-        title: "<mode> new <name>",
-        body: "<mode> a new <name> in the knowledge graph.",
-        meta: {name: 'card', mode: 'create'},
-        response: (data: {name: string, description: string}) => console.log('response:', data)
-    };
-
-    let selectedCard: string = '';
-    function openModal() {
-        modal.meta = {name: selectedCard, mode: 'update'};
-        modalStore.trigger(modal);
+    function enterNodeCreationMode() {
+        modalMetadata.set({toolName: tools[0], operationMode: 'create'});
+        createNodeMode.set(true);
+        drawerStore.close();
     }
 
 </script>
 
 
-<div class="toolbox-content flex-col columns-1 text-black">
+<div class="toolbox-content flex flex-col text-black">
     <header class="flex justify-center">
         <h2>Toolbox</h2>
     </header>
-    <main class="grid grid-cols-2 gap-4">
-        {#each cards as card}
-            <button class="btn border border-tertiary-500 bg-tertiary-50" on:click={() => {selectedCard = card; openModal()}}>
-                <div class="card-content columns-1 gap-1">
-                    <div>
-                        {card}
-                    </div>
-                    <div>
-                        <PlusCircleIcon />
-                    </div>
+    <main class="grid grid-cols-1 gap-4">
+        <button class="btn btn-create border border-tertiary-500 bg-tertiary-50" on:click={enterNodeCreationMode}>
+            <div class="card-content columns-1 gap-1">
+                <div>
+                    Create new node
                 </div>
-            </button>
-        {/each}
+                <div>
+                    <PlusCircleIcon />
+                </div>
+            </div>
+        </button>
+        <button class="btn btn-create border border-tertiary-500 bg-tertiary-50" on:click={() => {selectedTool = tools[1]; console.log("create new link")}}>
+            <div class="card-content columns-1 gap-1">
+                <div>
+                    Create new link
+                </div>
+                <div>
+                    <PlusCircleIcon />
+                </div>
+            </div>
+        </button>
     </main>
     <footer class="flex justify-center">
         <div class="search-bar">
@@ -69,6 +67,21 @@
         padding-left : 20px;
         padding-right: 5px;
         width: 100%;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    main {
+        flex-grow: 1;
+        display: grid;
+        grid-auto-rows: min-content;
+        align-items: start;
+    }
+    footer {
+        height: 100px;
+    }
+    .btn-create {
+        height: 100px;
     }
     .card-content {
         display: flex;
@@ -76,4 +89,5 @@
         align-items: center;
         justify-content: center;
     }
+
 </style>

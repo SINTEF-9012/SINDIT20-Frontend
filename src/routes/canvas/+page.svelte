@@ -7,8 +7,12 @@
 	import { getLinks } from '$lib/components/links-state.svelte';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import Link from '$lib/components/nodes-link.svelte';
+	import { createNodeMode, modalMetadata } from '$lib/stores';
+	import type { ModalSettings } from '@skeletonlabs/skeleton';
+	import { getModalStore } from '@skeletonlabs/skeleton';
 
 	const drawerStore = getDrawerStore();
+	const modalStore = getModalStore();
 
 	const zoomSpeed = 0.001;
 	const maxZoom = 6;
@@ -30,9 +34,52 @@
 	let linksState = getLinks();
 	$: links = linksState.links;
 
+	let isCreateNodeMode: boolean;
+	let createNodeModeMetadata: {toolName: string, operationMode: string};
+	let selectedCanvasPosition = { x: 0, y: 0 };
+	createNodeMode.subscribe((value) => isCreateNodeMode = value);
+	modalMetadata.subscribe((value) => createNodeModeMetadata = value);
+
+    const modal: ModalSettings = {
+        type: 'component',
+        component: 'createNew',
+        title: "<mode> new <name>",
+        body: "<mode> a new <name> in the knowledge graph.",
+        meta: {name: 'card', mode: 'create'},
+        response: (data: {name: string, description: string}) => console.log('response:', data)
+    };
+
+    export function openModal() {
+        modal.meta = {
+			name: createNodeModeMetadata.toolName,
+			mode: createNodeModeMetadata.operationMode,
+			position: selectedCanvasPosition
+		};
+        modalStore.trigger(modal);
+    }
+
 	function openToolbox() {
 		drawerStore.open({ id: 'toolbox' });
 	}
+
+    function handleCanvasClick(event: MouseEvent) {
+        if (!isCreateNodeMode) return;
+
+		// TODO: popup to explain the user to click on the canvas to create a node?
+
+        const rect = canvasRef.getBoundingClientRect();
+        const x = (event.clientX - rect.left) / zoomLevel;
+        const y = (event.clientY - rect.top) / zoomLevel;
+
+        // Set the clicked canvas position in the store
+		selectedCanvasPosition = ({ x, y });
+
+        // Exit node creation mode
+        createNodeMode.set(false);
+
+		// Open the modal to create a new node
+		openModal();
+    }
 
 	function handleMouseWheel(event: WheelEvent) {
 		event.preventDefault();
@@ -193,6 +240,7 @@
 		canvas.addEventListener('mousedown', handleMouseDown);
 		window.addEventListener('mouseup', handleMouseUp);
 		window.addEventListener('mousemove', handleMouseMove);
+		canvasRef.addEventListener('click', handleCanvasClick);
 
 		const interval = setInterval(updateNodePositions, updateNodePositionsInterval);
 		return () => {
@@ -200,6 +248,7 @@
 			canvas.removeEventListener('mousedown', handleMouseDown);
 			window.removeEventListener('mousemove', handleMouseMove);
 			window.removeEventListener('mouseup', handleMouseUp);
+			canvasRef.addEventListener('click', handleCanvasClick);
 		};
 	});
 </script>

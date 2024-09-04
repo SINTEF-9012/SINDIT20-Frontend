@@ -3,6 +3,8 @@
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/toast-state.svelte';
 	import type { LogLevel } from '$lib/types';
+	import { getNodes } from '$lib/components/nodes-state.svelte';
+
 
 	// Props
 	/** Exposes parent props to this component. */
@@ -10,6 +12,7 @@
 
 	const modalStore = getModalStore();
 	const toastState = getToastState();
+	const nodes = getNodes();
 
     // Modal metadata - data input
     const metadata = $modalStore[0].meta;
@@ -27,10 +30,21 @@
         description: '',
 	};
 
+	// Create a new node in the knowledge graph
+	function createNewNode(): void {
+		let position = {x: 100, y: 100};
+		if (metadata.position) {
+			position = metadata.position;
+		}
+		console.log('position:', position);
+		nodes.createNode(formData.name, formData.description, position);
+	}
+
 	// We've created a custom submit function to pass the response and close the modal.
 	function onFormSubmit(): void {
 		// if ($modalStore[0].response) $modalStore[0].response(formData);
 		// TODO: Create new item in the knowledge graph // this should be handled in separate func
+		if (metadata.mode === 'create' && metadata.name === 'node') createNewNode();
 		const title = `Successfully ${metadata.mode}ed`;
 		const message = `Successfully ${metadata.mode}ed '${formData.name}'`;
 		const logLevel: LogLevel = 'info';
