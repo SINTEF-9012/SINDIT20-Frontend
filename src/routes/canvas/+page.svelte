@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import Node from '$lib/components/node.svelte';
 	import type { Node as NodeType } from '$lib/types';
 	import type { Link as LinkType } from '$lib/types';
@@ -7,7 +7,7 @@
 	import { getLinks } from '$lib/components/links-state.svelte';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import Link from '$lib/components/nodes-link.svelte';
-	import { createNodeMode, createLinkMode, modalMetadata } from '$lib/stores';
+	import { createNodeMode, createLinkMode, selectedNodes, modalMetadata } from '$lib/stores';
 	import type { ModalSettings } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 
@@ -38,9 +38,11 @@
 	let isCreateLinkMode: boolean;
 	let createNodeModeMetadata: {toolName: string, operationMode: string};
 	let selectedCanvasPosition = { x: 0, y: 0 };
+	let selectedNodesIds: string[] = [];
 	createNodeMode.subscribe((value) => isCreateNodeMode = value);
 	createLinkMode.subscribe((value) => isCreateLinkMode = value);
 	modalMetadata.subscribe((value) => createNodeModeMetadata = value);
+	selectedNodes.subscribe((value) => selectedNodesIds = value);
 
     const modal: ModalSettings = {
         type: 'component',
@@ -51,7 +53,7 @@
         response: (data: {name: string, description: string}) => console.log('response:', data)
     };
 
-    export function openModal() {
+    export function openModal(): void {
         modal.meta = {
 			name: createNodeModeMetadata.toolName,
 			mode: createNodeModeMetadata.operationMode,
@@ -60,11 +62,24 @@
         modalStore.trigger(modal);
     }
 
-	function openToolbox() {
+	function openToolbox(): void {
 		drawerStore.open({ id: 'toolbox' });
 	}
 
-    function handleCanvasClick(event: MouseEvent) {
+	function waitForTwoSelectedNodes(): Promise<string[]> {
+		return new Promise((resolve) => {
+		const checkCondition = () => {
+			if (selectedNodesIds.length === 2) {
+				resolve(selectedNodesIds);
+			} else {
+				requestAnimationFrame(checkCondition);
+			}
+		};
+		checkCondition();
+		});
+	}
+
+    function handleCanvasClick(event: MouseEvent): void {
 		// Handle canvas click event
 
 		const canvas = canvasContent;
@@ -74,6 +89,7 @@
 		console.log('clicked position:', { x, y });
 
         if (isCreateNodeMode) {
+			// Create a new node
 
 			// Set the clicked canvas position in the store
 			selectedCanvasPosition = ({ x, y });
@@ -83,12 +99,22 @@
 
 			// Open the modal to create a new node
 			openModal();
-		} else if (isCreateLinkMode) {
-
 		} else {return;}
     }
 
-	function handleMouseWheel(event: WheelEvent) {
+	async function handleCanvasDoubleClick(event: MouseEvent): Promise<void>{
+		console.log('canvas double clicked');
+		console.log('isCreateLinkMode:', isCreateLinkMode);
+		console.log('selectedNodes', selectedNodesIds);
+		if (isCreateLinkMode) {
+			const nodes = await waitForTwoSelectedNodes();
+			console.log('sourceNodeId:', nodes);
+			createLinkMode.set(false);
+			openModal();
+		} else {return;}
+	}
+
+	function handleMouseWheel(event: WheelEvent): void {
 		// Handle zoom in or out
 		event.preventDefault();
 		const canvas = canvasRef;
@@ -109,7 +135,7 @@
 		applyZoom(mouseOriginX, mouseOriginY, scaleFactor);
 	}
 
-	function applyZoom(originX: number, originY: number, scaleFactor: number) {
+	function applyZoom(originX: number, originY: number, scaleFactor: number): void {
 		const canvas = canvasRef;
 		const context = canvas.getContext('2d');
 
@@ -125,13 +151,13 @@
 		canvasContent.style.transform = `scale(${zoomLevel})`;
 	}
 
-	function calculateDistance(nodeA: NodeType, nodeB: NodeType) {
+	function calculateDistance(nodeA: NodeType, nodeB: NodeType): number {
 		const dx = nodeA.position.x - nodeB.position.x;
 		const dy = nodeA.position.y - nodeB.position.y;
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 
-	function applyRepulsion(nodes: NodeType[]) {
+	function applyRepulsion(nodes: NodeType[]): NodeType[] {
 		for (let i = 0; i < nodes.length; i++) {
 			for (let j = i + 1; j < nodes.length; j++) {
 				const distance = calculateDistance(nodes[i], $nodes[j]);
@@ -151,7 +177,7 @@
 		return nodes;
 	}
 
-	function applySping(nodes: NodeType[], links: LinkType[]) {
+	function applySping(nodes: NodeType[], links: LinkType[]): NodeType[] {
 		for (let i = 0; i < links.length; i++) {
 			const source = nodes.find((node) => node.id === links[i].sourceNodeId);
 			const target = nodes.find((node) => node.id === links[i].targetNodeId);
@@ -170,7 +196,7 @@
 		return nodes;
 	}
 
-	function updateNodePositions() {
+	function updateNodePositions(): void {
 
 		let nodes = $nodes.map((node) => ({ ...node }));
 		const links = $links.map((link) => ({ ...link }));
@@ -181,18 +207,18 @@
 		$links = [...links]; // trigger reactivity of links
 	}
 
-	function handleMouseDown(event: MouseEvent) {
+	function handleMouseDown(event: MouseEvent): void {
 		// Save the initial mouse position - start dragging state
 		initialMousePosition = { x: event.clientX, y: event.clientY };
 		isMouseDragging = true;
 	}
 
-	function handleMouseUp() {
+	function handleMouseUp(): void {
 		// end dragging state
 		isMouseDragging = false;
 	}
 
-	function handleMouseMove(event: MouseEvent) {
+	function handleMouseMove(event: MouseEvent): void {
 		// Handle dragging the canvas
 		if (!isMouseDragging) return;
 
@@ -251,16 +277,18 @@
 		canvas.addEventListener('mousedown', handleMouseDown);
 		window.addEventListener('mouseup', handleMouseUp);
 		window.addEventListener('mousemove', handleMouseMove);
-		canvasRef.addEventListener('click', handleCanvasClick);
+		canvas.addEventListener('click', handleCanvasClick);
+		canvas.addEventListener('dblclick', handleCanvasDoubleClick);
 
 		const interval = setInterval(updateNodePositions, updateNodePositionsInterval);
-		return () => {
+		onDestroy(() => {
 			clearInterval(interval);
 			canvas.removeEventListener('mousedown', handleMouseDown);
 			window.removeEventListener('mousemove', handleMouseMove);
 			window.removeEventListener('mouseup', handleMouseUp);
-			canvasRef.addEventListener('click', handleCanvasClick);
-		};
+			canvas.addEventListener('click', handleCanvasClick);
+			canvas.addEventListener('dblclick', handleCanvasDoubleClick);
+		});
 	});
 </script>
 

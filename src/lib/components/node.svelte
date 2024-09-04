@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { getNodes } from './nodes-state.svelte';
 	import type { Node as NodeType } from '$lib/types';
+	import { selectedNodes } from '$lib/stores';
+
 	export let node: NodeType;
 	export let zoomLevel = 1;
 
@@ -9,10 +11,17 @@
 	let offset = { x: 0, y: 0 };
 	let moving = false;
 	let threshold = 20;
+	let nodeSelected = false;
+	let selectedNodesIds: string[] = []; // selectedNodesIds;
+
+	selectedNodes.subscribe((value) => {
+		selectedNodesIds = value;
+	});
 
 	$: fontSize = node.size * 0.15;
 	$: fontSizeTitle = fontSize * 1.1 + 'px';
 	$: fontSizeDescription = fontSize * 0.8 + 'px';
+	$: borderThickness = nodeSelected ? 'border-4' : 'border-1';
 
 	function startMoving(event: MouseEvent) {
 		moving = true;
@@ -38,10 +47,19 @@
 		}
 	}
 
+
 	function dblclick() {
-		// TODO: display information about the node
 		const thisNode = nodesState.getNode(node.id);
-		console.log('thisNode:', thisNode);
+		console.log('node dblclick:', thisNode);
+		selectedNodes.update((value) => {
+			if (value.includes(node.id)) {
+				return value.filter((id) => id !== node.id);
+			} else {
+				return [...value, node.id];
+			}
+		});
+		nodeSelected = !nodeSelected;
+		console.log('selectedNodesIds:', selectedNodesIds);
 	}
 
 </script>
@@ -55,7 +73,7 @@
 	on:dblclick={() => dblclick()}
 	tabindex="0"
 	role="button"
-	class="node border border-primary-500 bg-surface-500 bg-transparent"
+	class="node border border-primary-500 {borderThickness} bg-surface-500 bg-transparent"
 	style="transform: translate({node.position.x - node.size / 2}px, {node.position.y - node.size / 2}px); width: {node.size}px; height: {node.size}px;"
 >
 	{#if node.size >= threshold}
