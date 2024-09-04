@@ -2,7 +2,7 @@
     import { getDrawerStore } from "@skeletonlabs/skeleton";
     import { PlusCircleIcon } from 'svelte-feather-icons';
     import type { DrawerSettings } from '@skeletonlabs/skeleton';
-    import { createNodeMode, modalMetadata } from "$lib/stores";
+    import { createNodeMode, createLinkMode, modalMetadata } from "$lib/stores";
     import { getToastState } from "$lib/components/toast-state.svelte";
 
     const drawerStore = getDrawerStore();
@@ -28,6 +28,13 @@
         drawerStore.close();
     }
 
+    function enterLinkCreationMode() {
+        modalMetadata.set({toolName: tools[1], operationMode: 'create'});
+        createLinkMode.set(true);
+        toastState.add('Create new link', 'Select two nodes to create a new link', 'info');
+        drawerStore.close();
+    }
+
 </script>
 
 
@@ -46,7 +53,7 @@
                 </div>
             </div>
         </button>
-        <button class="btn btn-create border border-tertiary-500 bg-tertiary-50" on:click={() => {selectedTool = tools[1]; console.log("create new link")}}>
+        <button class="btn btn-create border border-tertiary-500 bg-tertiary-50" on:click={enterLinkCreationMode}>
             <div class="card-content columns-1 gap-1">
                 <div>
                     Create new link
