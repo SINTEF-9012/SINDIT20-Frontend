@@ -3,8 +3,10 @@
     import { PlusCircleIcon } from 'svelte-feather-icons';
     import type { DrawerSettings } from '@skeletonlabs/skeleton';
     import { createNodeMode, modalMetadata } from "$lib/stores";
+    import { getToastState } from "$lib/components/toast-state.svelte";
 
     const drawerStore = getDrawerStore();
+    const toastState = getToastState();
 
     const tools = ["node", "link"];
 
@@ -22,6 +24,7 @@
     function enterNodeCreationMode() {
         modalMetadata.set({toolName: tools[0], operationMode: 'create'});
         createNodeMode.set(true);
+        toastState.add('Create new node', 'Click on the canvas to create a new node.', 'info');
         drawerStore.close();
     }
 

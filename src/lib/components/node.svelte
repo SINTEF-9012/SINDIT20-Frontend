@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { getNodes } from './nodes-state.svelte';
 	import type { Node as NodeType } from '$lib/types';
 	export let node: NodeType;
 	export let zoomLevel = 1;
+
+	const nodesState = getNodes();
 
 	let offset = { x: 0, y: 0 };
 	let moving = false;
@@ -34,6 +37,13 @@
 			node = {...node};
 		}
 	}
+
+	function dblclick() {
+		// TODO: display information about the node
+		const thisNode = nodesState.getNode(node.id);
+		console.log('thisNode:', thisNode);
+	}
+
 </script>
 
 <svelte:window on:mouseup={stopMoving} />
@@ -42,7 +52,7 @@
 	on:mousedown={startMoving}
 	on:keydown={onKeyDown}
 	on:mousemove={move}
-	on:dblclick={() => console.log('dblclick')}
+	on:dblclick={() => dblclick()}
 	tabindex="0"
 	role="button"
 	class="node border border-primary-500 bg-surface-500 bg-transparent"
@@ -77,5 +87,6 @@
 		overflow-x: visible;
 		text-wrap: nowrap;
 		border-radius: 50%; /* make it a circle */
+		z-index: 2;
 	}
 </style>

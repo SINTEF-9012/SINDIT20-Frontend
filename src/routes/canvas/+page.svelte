@@ -19,7 +19,7 @@
 	const minZoom = 0.01;
 	const springConstant = 0.00001; // Attraction force
 	const repulsionForce = 50000; // Adjust this value to control the strength of repulsion
-	const thresholdDistance = 500; // Minimum distance before repulsion kicks in
+	const thresholdDistance = 300; // Minimum distance before repulsion kicks in
 	const updateNodePositionsInterval = 1000 / 60; // 60 FPS
 
 	let canvasRef: HTMLCanvasElement;
@@ -65,9 +65,8 @@
     function handleCanvasClick(event: MouseEvent) {
         if (!isCreateNodeMode) return;
 
-		// TODO: popup to explain the user to click on the canvas to create a node?
-
-        const rect = canvasRef.getBoundingClientRect();
+		const canvas = canvasRef;
+        const rect = canvas.getBoundingClientRect();
         const x = (event.clientX - rect.left) / zoomLevel;
         const y = (event.clientY - rect.top) / zoomLevel;
 
@@ -167,7 +166,7 @@
 		let nodes = $nodes.map((node) => ({ ...node }));
 		const links = $links.map((link) => ({ ...link }));
 		nodes = applyRepulsion(nodes);
-		nodes = applySping(nodes, links);
+		// nodes = applySping(nodes, links); // Uncomment this line to enable spring force
 
 		$nodes = [...nodes]; // trigger reactivity of nodes
 		$links = [...links]; // trigger reactivity of links

@@ -33,7 +33,7 @@ export class Links {
         const sourceNode = this.nodesState.getNode(sourceNodeId);
         const targetNode = this.nodesState.getNode(targetNodeId);
 		this.links.update((links) => [...links, newLink]);
-		this.toastState.add('Link created', `Link ${newLink.linkDescription} created from ${sourceNode?.nodeName} to ${targetNode?.nodeName}`, 'info');
+		this.toastState.add('Link created', `Link "${newLink.linkDescription}" created from "${sourceNode?.nodeName}" to "${targetNode?.nodeName}"`, 'info');
 
 		return Promise.resolve();
 	}
@@ -54,18 +54,18 @@ export class Links {
 			updatedLink,
 			...links.slice(linkId + 1)
 		]);
-		this.toastState.add('Link updated', `Link ${id} updated`, 'info');
+		this.toastState.add('Link updated', `Link "${id}" updated`, 'info');
 	}
 
 	// Delete a link by index
 	deleteLink(id: string) {
 		const links = get(this.links);
 		if (!links.find((link) => link.id === id)) {
-			this.toastState.add('Link not found', `Link ${id} not found`, 'error');
+			this.toastState.add('Link not found', `Link "${id}" not found`, 'error');
 			return;
 		} else {
 			this.links.update((links) => [...links.filter((link) => link.id !== id)]);
-			this.toastState.add('Link deleted', `Link ${id} has been deleted`, 'info');
+			this.toastState.add('Link deleted', `Link "${id}" has been deleted`, 'info');
 		}
 	}
 

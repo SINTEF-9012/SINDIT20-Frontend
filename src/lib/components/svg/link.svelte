@@ -94,9 +94,13 @@
         on:dblclick={() => console.log('dblclick')}
     >
         <!-- Link text above the link line -->
-        <div class="center-link-text" bind:this={linkTextElement}>{linkText}</div>
-        <!-- Line Weight below the link line -->
-        <div class="center-link-weight" bind:this={linkWeightElement}>{linkWeight}</div>
+         {#if flipText}
+            <div class="center-link-weight" bind:this={linkWeightElement}>{linkWeight}</div>
+            <div class="center-link-text" bind:this={linkTextElement}>{linkText}</div>
+        {:else}
+            <div class="center-link-text" bind:this={linkTextElement}>{linkText}</div>
+            <div class="center-link-weight" bind:this={linkWeightElement}>{linkWeight}</div>
+        {/if}
     </button>
 {/if}
 </div>

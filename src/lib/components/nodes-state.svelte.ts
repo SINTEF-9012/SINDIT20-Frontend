@@ -24,7 +24,7 @@ export class Nodes {
 				nodeDescription: 'Node 2 description',
 				size: 100,
 				zoomLevel: 1,
-				position: { x: 20, y: 10 }
+				position: { x: 20, y: 20 }
 			},
 			{
 				id: '3',
@@ -54,7 +54,7 @@ export class Nodes {
 			position
 		};
 		this.nodes.update((nodes) => [...nodes, newNode]);
-		this.toastState.add('Node created', `Node ${newNode.nodeName} created`, 'info');
+		this.toastState.add('Node created', `Node "${newNode.nodeName}" created`, 'info');
 	}
 
 	// Get a node by id
@@ -73,18 +73,18 @@ export class Nodes {
 			updatedNode,
 			...nodes.slice(nodeId + 1)
 		]);
-		this.toastState.add('Node updated', `Node ${id} updated`, 'info');
+		this.toastState.add('Node updated', `Node "${id}" updated`, 'info');
 	}
 
 	// Delete a node by index
 	deleteNode(id: string) {
 		const nodes = get(this.nodes);
 		if (!nodes.find((node) => node.id === id)) {
-			this.toastState.add('Node not found', `Node ${id} not found`, 'error');
+			this.toastState.add('Node not found', `Node "${id}" not found`, 'error');
 			return;
 		} else {
 			this.nodes.update((nodes) => [...nodes.filter((node) => node.id !== id)]);
-			this.toastState.add('Node deleted', `Node ${id} has been deleted`, 'info');
+			this.toastState.add('Node deleted', `Node "${id}" has been deleted`, 'info');
 		}
 	}
 

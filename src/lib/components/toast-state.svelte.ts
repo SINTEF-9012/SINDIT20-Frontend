@@ -4,6 +4,8 @@ import { onDestroy, setContext, getContext } from 'svelte';
 
 type Timeout = ReturnType<typeof setTimeout>;
 
+// TODO: Remove zoomLevel from Node type if it is not used!
+
 // Toast state class to manage event messages in the application
 export class ToastState {
 	toasts = writable<Toast[]>([]);
