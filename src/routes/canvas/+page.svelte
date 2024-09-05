@@ -299,6 +299,13 @@
 </script>
 
 <div class="flex columns-2 h-5/6">
+	<div class="toolbox-button-container flex-none">
+		<button class="toolbox-button border border-black variant-glass-primary" on:click={openToolbox}>
+			<svg class="toolbox-icon" style="transform: rotate(90deg);" viewBox="0 0 24 24">
+				<path d="M12 2L2 22h20L12 2zm-2 16h4v-2h-4v2zm0-4h4v-2h-4v2zm0-4h4V8h-4v2z" fill="currentColor"/>
+			</svg>
+		</button>
+	</div>
 	<div class="canvas-container flex-1 border border-white h-full w-full">
 		<canvas bind:this={canvasRef} style="width: 100%; height: 100%;" on:wheel={handleMouseWheel}
 		></canvas>
@@ -316,13 +323,6 @@
 					/>
 				{/each}
 		</div>
-	</div>
-	<div class="toolbox-button-container flex-none">
-		<button class="toolbox-button border border-gray-500 bg-gray-300" on:click={openToolbox}>
-			<svg class="toolbox-icon" style="transform: rotate(-90deg);" viewBox="0 0 24 24">
-				<path d="M12 2L2 22h20L12 2zm-2 16h4v-2h-4v2zm0-4h4v-2h-4v2zm0-4h4V8h-4v2z" fill="currentColor"/>
-			</svg>
-		</button>
 	</div>
 </div>
 

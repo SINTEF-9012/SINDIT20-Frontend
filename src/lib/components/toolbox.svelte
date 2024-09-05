@@ -13,7 +13,7 @@
     const settingsToolbox: DrawerSettings = {
         id: "toolbox",
         width: "w-60",
-        position: 'right',
+        position: 'left',
         border: "border-gray-50",
         bgDrawer: "bg-gray-300",
         shadow: "shadow-lg",
