@@ -79,7 +79,7 @@
 		});
 	}
 
-    function handleCanvasClick(event: MouseEvent): void {
+    async function handleCanvasClick(event: MouseEvent): void {
 		// Handle canvas click event
 
 		const canvas = canvasContent;
@@ -99,19 +99,20 @@
 
 			// Open the modal to create a new node
 			openModal();
-		} else {return;}
-    }
-
-	async function handleCanvasDoubleClick(event: MouseEvent): Promise<void>{
-		console.log('canvas double clicked');
-		console.log('isCreateLinkMode:', isCreateLinkMode);
-		console.log('selectedNodes', selectedNodesIds);
-		if (isCreateLinkMode) {
+		} else if (isCreateLinkMode) {
 			const nodes = await waitForTwoSelectedNodes();
 			console.log('sourceNodeId:', nodes);
 			createLinkMode.set(false);
 			openModal();
-		} else {return;}
+		}
+		else {return;}
+    }
+
+	async function handleCanvasDoubleClick(event: MouseEvent): Promise<void>{
+		console.log('canvas double clicked');
+		// Clear the selected nodes
+		selectedNodes.set([]);
+
 	}
 
 	function handleMouseWheel(event: WheelEvent): void {

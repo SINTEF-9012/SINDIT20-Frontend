@@ -12,16 +12,25 @@
 	let moving = false;
 	let threshold = 20;
 	let nodeSelected = false;
-	let selectedNodesIds: string[] = []; // selectedNodesIds;
+	let selectedNodesIds: string[] = [];
+
+	$: fontSize = node.size * 0.15;
+	$: fontSizeTitle = fontSize * 1.1 + 'px';
+	$: fontSizeDescription = fontSize * 0.8 + 'px';
+	$: nodeSelectedBackground = nodeSelected ? 'variant-ghost-secondary' : 'variant-ghost-primary';
+	$: selectedNodesIds = [];
 
 	selectedNodes.subscribe((value) => {
 		selectedNodesIds = value;
 	});
 
-	$: fontSize = node.size * 0.15;
-	$: fontSizeTitle = fontSize * 1.1 + 'px';
-	$: fontSizeDescription = fontSize * 0.8 + 'px';
-	$: borderThickness = nodeSelected ? 'border-4' : 'border-1';
+	$: {
+		if (selectedNodesIds.includes(node.id)) {
+			nodeSelected = true;
+		} else {
+			nodeSelected = false;
+		}
+	}
 
 	function startMoving(event: MouseEvent) {
 		moving = true;
@@ -73,7 +82,7 @@
 	on:dblclick={() => dblclick()}
 	tabindex="0"
 	role="button"
-	class="node border border-primary-500 {borderThickness} bg-surface-500 bg-transparent"
+	class="node border border-primary-500 border-1 {nodeSelectedBackground}"
 	style="transform: translate({node.position.x - node.size / 2}px, {node.position.y - node.size / 2}px); width: {node.size}px; height: {node.size}px;"
 >
 	{#if node.size >= threshold}
