@@ -45,6 +45,7 @@
 		console.log('Target:', target);
 	}
 
+	// TODO: fix this undefined issue! (source and target are undefined initially)
 	$: rotationRadians = getRotation(source, target);			// angle between source and target
 	$: rotationDeg = getRotationDeg(rotationRadians);			// angle between source and target in degrees
     $: sourceOffset = getOffset(rotationRadians, source.size);  // offset from source center to surface (start point of the link)
@@ -66,7 +67,8 @@
 	"
 >
 	<Link
-		linkDistance={(linkDistance)}
+		link={link}
+		linkDistance={linkDistance}
 		linkDirection={linkDirection}
 		linkText={linkDescription}
 		linkWeight={linkWeight}
