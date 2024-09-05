@@ -2,6 +2,7 @@
 	import { getNodes } from './nodes-state.svelte';
 	import type { Node as NodeType } from '$lib/types';
 	import { selectedNodes } from '$lib/stores';
+	import { InfoIcon } from 'svelte-feather-icons';
 
 	export let node: NodeType;
 	export let zoomLevel = 1;
@@ -71,6 +72,11 @@
 		console.log('selectedNodesIds:', selectedNodesIds);
 	}
 
+	function onClickInfoButton() {
+		console.log(node)
+		// TODO: implement popup? to display information about the node
+	}
+
 </script>
 
 <svelte:window on:mouseup={stopMoving} />
@@ -97,7 +103,12 @@
 			</div>
 		</div>
 	{/if}
+	<button class="node-info top-0 left-0 variant-soft-primary"
+			on:click={onClickInfoButton}>
+		<InfoIcon />
+	</button>
 </div>
+
 
 <style>
 	.node {
@@ -115,5 +126,10 @@
 		text-wrap: nowrap;
 		border-radius: 50%; /* make it a circle */
 		z-index: 2;
+	}
+	.node-info {
+		position: absolute;
+		border-radius: 50%;
+		z-index: 3
 	}
 </style>
