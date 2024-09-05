@@ -45,8 +45,8 @@
 		// if ($modalStore[0].response) $modalStore[0].response(formData);
 		// TODO: Create new item in the knowledge graph // this should be handled in separate func
 		if (metadata.mode === 'create' && metadata.name === 'node') createNewNode();
-		const title = `Successfully ${metadata.mode}ed`;
-		const message = `Successfully ${metadata.mode}ed '${formData.name}'`;
+		const title = `Successfully "${metadata.mode}d"`;
+		const message = `Successfully "${metadata.mode}d" '${formData.name}'`;
 		const logLevel: LogLevel = 'info';
 		toastState.add(title, message, logLevel);
 		modalStore.close();
