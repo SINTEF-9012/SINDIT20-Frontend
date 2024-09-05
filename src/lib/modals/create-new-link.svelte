@@ -19,17 +19,6 @@
 
 	let source: NodeType;
 	let target: NodeType;
-	selectedNodes.subscribe((value) => {
-		const sourceNode = nodes.getNode(value[0]);
-		const targetNode = nodes.getNode(value[1]);
-		if (sourceNode && targetNode) {
-			source = sourceNode;
-			target = targetNode;
-		} else {
-			throw new Error('Selected nodes not found!');
-		}
-	});
-
 
     // Modal metadata - data input
     const metadata = $modalStore[0].meta;
@@ -51,6 +40,20 @@
 	// Create a new link between two selected nodes in the knowledge graph
 	function createNewLink(): void {
 		console.log("link created...");
+		const linkDescription = formData.linkDescription;
+		const linkWeight = formData.linkWeight;
+		const linkDirection = formData.linkDirection;
+		const sourceNodeId = source.id;
+		const targetNodeId = target.id;
+
+		links.createLink(
+			linkDescription,
+			linkWeight,
+			linkDirection,
+			sourceNodeId,
+			targetNodeId
+		);
+		selectedNodes.set([]);
 	}
 
 	// We've created a custom submit function to pass the response and close the modal.
@@ -78,7 +81,21 @@
 	onMount(() => {
 		// console.log('source:', source);
 		// console.log('target:', target);
-		body += ` between ${source.nodeName} and ${target.nodeName} in the knowledge graph.`;
+		const sourceNode = nodes.getNode($selectedNodes[0]);
+		const targetNode = nodes.getNode($selectedNodes[1]);
+		if (!sourceNode || !targetNode) {
+			const title = 'Error';
+			const message = 'Please select two nodes to create a link between.';
+			const logLevel: LogLevel = 'error';
+			toastState.add(title, message, logLevel);
+			modalStore.close();
+		} else {
+			source = sourceNode;
+			target = targetNode;
+			body += ` between ${source.nodeName} and ${target.nodeName} in the knowledge graph.`;
+
+		}
+
 	});
 </script>
 
