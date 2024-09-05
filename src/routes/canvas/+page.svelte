@@ -237,6 +237,7 @@
 		});
 	}
 
+	let interval: NodeJS.Timeout;
 	onMount(() => {
 
 		async function createLinks() {
@@ -255,7 +256,7 @@
 
 		// Set the canvas size to match the parent container
 		const parent = canvas.parentElement;
-		const { width, height } = parent.getBoundingClientRect();
+		const { width, height } = parent ? parent.getBoundingClientRect() : { width: 100, height: 100 };
 		canvas.width = width;
 		canvas.height = height;
 
@@ -280,15 +281,20 @@
 		canvas.addEventListener('click', handleCanvasClick);
 		canvas.addEventListener('dblclick', handleCanvasDoubleClick);
 
-		const interval = setInterval(updateNodePositions, updateNodePositionsInterval);
-		onDestroy(() => {
-			clearInterval(interval);
-			canvas.removeEventListener('mousedown', handleMouseDown);
-			window.removeEventListener('mousemove', handleMouseMove);
-			window.removeEventListener('mouseup', handleMouseUp);
-			canvas.addEventListener('click', handleCanvasClick);
-			canvas.addEventListener('dblclick', handleCanvasDoubleClick);
-		});
+		interval = setInterval(updateNodePositions, updateNodePositionsInterval);
+	});
+
+	onDestroy(() => {
+		if (interval) clearInterval(interval);
+		const canvas = canvasRef;
+		if (!canvas) return;
+
+		clearInterval(interval);
+		canvas.removeEventListener('mousedown', handleMouseDown);
+		window.removeEventListener('mousemove', handleMouseMove);
+		window.removeEventListener('mouseup', handleMouseUp);
+		canvas.removeEventListener('click', handleCanvasClick);
+		canvas.removeEventListener('dblclick', handleCanvasDoubleClick);
 	});
 </script>
 
