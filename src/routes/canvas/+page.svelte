@@ -79,7 +79,7 @@
 		});
 	}
 
-    async function handleCanvasClick(event: MouseEvent): void {
+    async function handleCanvasClick(event: MouseEvent): Promise<void> {
 		// Handle canvas click event
 
 		const canvas = canvasContent;
@@ -108,7 +108,7 @@
 		else {return;}
     }
 
-	async function handleCanvasDoubleClick(event: MouseEvent): Promise<void>{
+	function handleCanvasDoubleClick(event: MouseEvent): void {
 		console.log('canvas double clicked');
 		// Clear the selected nodes
 		selectedNodes.set([]);
