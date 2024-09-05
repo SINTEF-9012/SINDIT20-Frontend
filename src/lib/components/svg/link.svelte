@@ -95,11 +95,11 @@
     >
         <!-- Link text above the link line -->
          {#if flipText}
-            <div class="center-link-weight" bind:this={linkWeightElement}>{linkWeight}</div>
-            <div class="center-link-text" bind:this={linkTextElement}>{linkText}</div>
+            <div class="center-link-weight text-gray-400" bind:this={linkWeightElement}>{linkWeight}</div>
+            <div class="center-link-text text-white" bind:this={linkTextElement}>{linkText}</div>
         {:else}
-            <div class="center-link-text" bind:this={linkTextElement}>{linkText}</div>
-            <div class="center-link-weight" bind:this={linkWeightElement}>{linkWeight}</div>
+            <div class="center-link-text text-white" bind:this={linkTextElement}>{linkText}</div>
+            <div class="center-link-weight text-gray-400" bind:this={linkWeightElement}>{linkWeight}</div>
         {/if}
     </button>
 {/if}
