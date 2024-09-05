@@ -53,6 +53,15 @@
         response: (data: {name: string, description: string}) => console.log('response:', data)
     };
 
+	const modalCreateNewLink: ModalSettings = {
+        type: 'component',
+        component: 'createNewLink',
+        title: "<mode> new <name>",
+        body: "<mode> a new <name> in the knowledge graph.",
+        meta: {name: 'card', mode: 'create'},
+        response: (data: {name: string, description: string}) => console.log('response:', data)
+    };
+
     export function openModal(): void {
         modal.meta = {
 			name: createNodeModeMetadata.toolName,
@@ -61,6 +70,14 @@
 		};
         modalStore.trigger(modal);
     }
+
+	function openModalCreateNewLink(): void {
+		modalCreateNewLink.meta = {
+			name: 'link',
+			mode: 'create'
+		};
+		modalStore.trigger(modalCreateNewLink);
+	}
 
 	function openToolbox(): void {
 		drawerStore.open({ id: 'toolbox' });
@@ -103,7 +120,7 @@
 			const nodes = await waitForTwoSelectedNodes();
 			console.log('sourceNodeId:', nodes);
 			createLinkMode.set(false);
-			openModal();
+			openModalCreateNewLink();
 		}
 		else {return;}
     }

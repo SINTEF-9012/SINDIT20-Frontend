@@ -35,9 +35,11 @@
 
 	// Modals
 	import CreateNew from '$lib/modals/create-new.svelte';
+	import CreateNewLink from '$lib/modals/create-new-link.svelte';
 
 	const modalRegistry: Record<string, ModalComponent> = {
 		createNew: { ref: CreateNew },
+		createNewLink: { ref: CreateNewLink },
 	};
 
 </script>
