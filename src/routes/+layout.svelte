@@ -11,6 +11,7 @@
 	import Navigation from '$lib/components/navigation.svelte';
 	import Toolbox from '$lib/components/toolbox.svelte';
 	import type { ModalComponent } from '@skeletonlabs/skeleton';
+	import { selectedWorkspace } from '$lib/stores';
 
 	// Initialize Stores
 	initializeStores();
@@ -77,7 +78,7 @@
 						</button>
 					</div>
 					<div class="flex-grow">
-						<strong class="text-lg uppercase">App Title</strong>
+						<strong class="text-lg uppercase">{$selectedWorkspace}</strong>
 					</div>
 				</div>
 			</svelte:fragment>

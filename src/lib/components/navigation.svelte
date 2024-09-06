@@ -1,89 +1,69 @@
 <script lang="ts">
-	import { AppRail, AppRailTile, AppRailAnchor } from '@skeletonlabs/skeleton';
+	import { goto } from '$app/navigation';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import type { DrawerSettings } from '@skeletonlabs/skeleton';
-	import { HomeIcon, InfoIcon, CodesandboxIcon } from 'svelte-feather-icons';
-
-	let currentTile = 0;
+	import { HomeIcon, InfoIcon, CodesandboxIcon, CodeIcon } from 'svelte-feather-icons';
 
 	const drawerStore = getDrawerStore();
 
-	const settings: DrawerSettings = { id: 'navigation' };
+	let width = 'w-50';
 
-	// Open Drawer
-	function openDrawer() {
-		console.log('openDrawer');
-		drawerStore.open(settings);
-	}
-	// Close Drawer
-	function closeDrawer() {
-		console.log('closeDrawer');
+	const settingsNavigation: DrawerSettings = {
+		id: 'navigation',
+		width: width,
+		position: 'left',
+	};
+
+	drawerStore.open(settingsNavigation);
+
+	function onclick(destination: string) {
 		drawerStore.close();
+		goto(destination);
 	}
 
 </script>
 
-<AppRail>
-	<svelte:fragment slot="lead">
-		<AppRailAnchor href="/" on:click={closeDrawer} hover="Home">
-			<div class="flex flex-row place-content-center">
-				<HomeIcon />
-			</div>
-		</AppRailAnchor>
-		<AppRailAnchor href="/about" on:click={closeDrawer} hover="About">
-			<div class="flex flex-row place-content-center">
-				<InfoIcon />
-			</div>
-		</AppRailAnchor>
-		<AppRailAnchor href="/canvas" on:click={closeDrawer} hover="Graph canvas">
-			<div class="flex flex-row place-content-center">
-				<CodesandboxIcon />
-			</div>
-		</AppRailAnchor>
-	</svelte:fragment>
-	<!-- --- -->
-	<div class="variant-outline-primary">
-		<AppRailTile
-			bind:group={currentTile}
-			on:click={closeDrawer}
-			name="tile-1"
-			value={1}
-			title="tile-1"
-		>
-			<svelte:fragment slot="lead">
-				<div class="flex flex-row place-content-center">
-					<InfoIcon />
-				</div>
-			</svelte:fragment>
-			<span>Tile 1</span>
-		</AppRailTile>
-		<AppRailTile
-			bind:group={currentTile}
-			on:click={closeDrawer}
-			name="tile-2"
-			value={2}
-			title="tile-2"
-		>
-			<svelte:fragment slot="lead">
-				<div class="flex flex-row place-content-center">
-					<InfoIcon />
-				</div>
-			</svelte:fragment>
-			<span>Tile 2</span>
-		</AppRailTile>
-		<AppRailTile
-			bind:group={currentTile}
-			on:click={closeDrawer}
-			name="tile-3"
-			value={3}
-			title="tile-3"
-		>
-			<svelte:fragment slot="lead">
-				<div class="flex flex-row place-content-center">
-					<InfoIcon />
-				</div>
-			</svelte:fragment>
-			<span>Tile 3</span>
-		</AppRailTile>
-	</div>
-</AppRail>
+<div class="app-rail p-4 {width} flex flex-col columns-1">
+	<button class="btn app-rail-anchor variant-glass-primary"
+			on:click={() => onclick('/')} >
+		<HomeIcon size=24/>
+		<span class="icon-text">Home</span>
+	</button>
+	<button class="btn app-rail-anchor variant-glass-primary"
+		on:click={() => onclick('/about')} >
+		<InfoIcon size=24/>
+		<span class="icon-text">About</span>
+	</button>
+	<button class="btn app-rail-anchor variant-glass-primary"
+		on:click={() => onclick('/canvas')} >
+		<CodesandboxIcon size=24/>
+		<span class="icon-text">Canvas</span>
+	</button>
+	<button class="btn app-rail-anchor variant-glass-primary"
+		on:click={() => onclick('/workspaces')} >
+		<CodeIcon size=24/>
+		<span class="icon-text">Workspaces</span>
+	</button>
+</div>
+
+<style>
+	.app-rail {
+		position: absolute;
+		top: 0;
+		left: 0;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+	}
+	.app-rail-anchor {
+		display: flex;
+		flex-direction: row;
+		justify-content: left;
+		align-items: center;
+		gap: 5px;
+		border-radius: 0%;
+	}
+	.icon-text {
+		font-size: 16px;
+	}
+</style>
