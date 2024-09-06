@@ -33,7 +33,7 @@
 
 <h1 class="mb-4 text-xl font-semibold">This is the about page. Currently toasting.</h1>
 
-<form on:submit={handleSubmit} class="flex w-1/4 flex-col gap-2">
+<form on:submit={handleSubmit} class="flex w-1/3 flex-col gap-2">
 	<div class="flex flex-col gap-1">
 		<label for="title">Title</label>
 		<input
@@ -51,8 +51,14 @@
 	</div>
 
 	<div class="flex flex-col gap-1">
-		<label for="logLevel">Message type (debug, info, warn, error)</label>
-		<input class="input" type="text" placeholder="info" bind:value={logLevel} />
+		<label for="logLevel">Message type</label>
+		<select class="input" bind:value={logLevel}>
+			<option value="info" selected>info</option>
+			<option value="warning">warning</option>
+			<option value="error">error</option>
+			<option value="success">success</option>
+		</select>
+		<br />
 		<button class="btn rounded-md variant-filled-primary"> Add toast! </button>
 	</div>
 </form>
