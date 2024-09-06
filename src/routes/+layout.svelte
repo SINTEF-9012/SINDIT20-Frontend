@@ -78,7 +78,9 @@
 						</button>
 					</div>
 					<div class="flex-grow">
-						<strong class="text-lg uppercase">{$selectedWorkspace}</strong>
+						<strong class="text-lg uppercase bg-gradient-to-br from-blue-500 to-cyan-300 bg-clip-text text-transparent box-decoration-clone"
+						>{$selectedWorkspace}
+						</strong>
 					</div>
 				</div>
 			</svelte:fragment>
