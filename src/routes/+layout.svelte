@@ -95,7 +95,7 @@
 	<!-- Page -->
 	<div class="flex mx-10 h-screen">
 		<!-- Main Content -->
-		<main class="flex-1 p-4 overflow-y-auto">
+		<main class="flex-1">
 			<slot />
 		</main>
 	</div>

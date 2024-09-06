@@ -28,10 +28,10 @@
 	}
 </script>
 
-<div>
+<header class="fixed-header w-full">
     <h1 class="text-4xl">Workspaces</h1>
     <br>
-    <header class="flex grid-flow-row columns-3 gap-2">
+    <div class="flex grid-flow-row columns-3 gap-2">
         <input type="text" bind:value={searchQuery} placeholder="Search workspaces..." />
         <button class="btn variant-ghost-primary"
                 on:click={onCreateNewWorkspace}
@@ -43,7 +43,9 @@
 		>
 			Delete
 		</button>
-    </header>
+    </div>
+</header>
+<main class="main-content">
     <div class="logo-cloud grid-cols-3 gap-2 p-4">
         {#each filteredWorkspaces as workspace}
             {#if workspace === _selectedWorkspace}
@@ -63,9 +65,26 @@
             {/if}
         {/each}
     </div>
-</div>
+</main>
 
 <style>
+    .fixed-header {
+        position: fixed;
+        top: 10%;
+        left: 0%;
+        padding-top: 5px;
+        padding-left: 2rem;
+        padding-right: 2rem;
+        width: 100%;
+        height: 80px;
+        z-index: 1;
+    }
+    .main-content {
+        overflow-y: auto;
+        margin-top: 120px;
+        height: calc(90% - 120px);
+        z-index: 0;
+    }
     .logo-item {
         border-radius: 0.5rem;
         padding: 1rem;
@@ -75,7 +94,7 @@
         border-radius: 0.5rem;
         color: black;
     }
-	.move-right {
-		margin-left: auto;
-	}
+    .move-right {
+        margin-left: auto;
+    }
 </style>

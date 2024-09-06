@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 
-    const dashboards = ["dashboard1", "dashboard2", "dashboard3", "dashboard4", "dashboard5"];
+    const dashboards = ["dashboard1", "dashboard2", "dashboard3", "dashboard4", "dashboard5",
+        "Neo", "Morpheus", "Trinity", "Cypher", "Tank", "Dozer", "Mouse", "Agent Smith", "The Oracle",
+    ];
 
     let selectedDashboard = '';
     let searchQuery = '';
@@ -25,11 +27,10 @@
     }
 </script>
 
-
-<div>
+<header class="fixed-header w-full">
     <h1 class="text-4xl">Dashboards</h1>
     <br>
-    <header class="flex grid-flow-row columns-3 gap-2">
+    <div class="flex grid-flow-row columns-3 gap-2">
         <input type="text" bind:value={searchQuery} placeholder="Search dashboards..." />
         <button class="btn variant-ghost-primary"
                 on:click={onCreateNewDashboard}
@@ -41,7 +42,9 @@
         >
             Delete
         </button>
-    </header>
+    </div>
+</header>
+<main class="main-content">
     <div class="logo-cloud grid-cols-3 gap-2 p-4">
         {#each filteredDashboards as dashboard}
             {#if dashboard === selectedDashboard}
@@ -61,9 +64,26 @@
             {/if}
         {/each}
     </div>
-</div>
+</main>
 
 <style>
+    .fixed-header {
+        position: fixed;
+        top: 10%;
+        left: 0%;
+        padding-top: 5px;
+        padding-left: 2rem;
+        padding-right: 2rem;
+        width: 100%;
+        height: 80px;
+        z-index: 1;
+    }
+    .main-content {
+        overflow-y: auto;
+        margin-top: 120px;
+        height: calc(90% - 120px);
+        z-index: 0;
+    }
     .logo-item {
         border-radius: 0.5rem;
         padding: 1rem;
