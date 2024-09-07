@@ -3,6 +3,8 @@
     import type { Link as LinkType } from '$lib/types';
     import { onMount } from "svelte";
     import { getLinks } from "$lib/components/states/links-state.svelte";
+    import { selectedLinkId } from "$lib/stores";
+    import { getDrawerStore } from "@skeletonlabs/skeleton";
 
     export let link: LinkType;
     export let linkDistance: number;
@@ -13,6 +15,7 @@
     export let linkWeight: number;
 
     let linksState = getLinks();
+    const drawerStore = getDrawerStore();
 
     let height = 10; // Height of the link line element (ink arrow)
     let linkButtonHeight: number = 60;
@@ -38,10 +41,10 @@
         }
     }
 
-    function dblclick() {
-        const thisLink = linksState.getLink(link.id);
-        console.log("link dblclick", thisLink);
-
+    function onLinkClick() {
+        console.log("link dblclick", link);
+        selectedLinkId.set(link.id);
+        drawerStore.open({id: 'info-drawer-link'});
     }
 
     onMount(() => {
@@ -93,7 +96,7 @@
             transform: translate(-50%, -50%);
             pointer-events: auto;
         "
-        on:dblclick={dblclick}
+        on:click={onLinkClick}
     >
         <!-- Link text above the link line -->
          {#if flipText}

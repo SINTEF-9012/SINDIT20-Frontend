@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getNodes } from './states/nodes-state.svelte';
 	import type { Node as NodeType } from '$lib/types';
-	import { selectedNodes } from '$lib/stores';
+	import { selectedNodes, selectedNodeId } from '$lib/stores';
 	import { InfoIcon } from 'svelte-feather-icons';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 
@@ -76,7 +76,8 @@
 
 	function onClickInfoButton() {
 		console.log("node", node)
-		drawerStore.open({id: 'info-drawer', meta: {node}});
+		selectedNodeId.set(node.id);
+		drawerStore.open({id: 'info-drawer-node'});
 	}
 
 </script>

@@ -10,7 +10,8 @@
 	import { setLinks } from '$lib/components/states/links-state.svelte';
 	import Navigation from '$lib/components/navigation.svelte';
 	import Toolbox from '$lib/components/toolbox.svelte';
-	import InfoDrawer from '$lib/components/info-drawer.svelte';
+	import InfoDrawerNode from '$lib/components/info-drawer-node.svelte';
+	import InfoDrawerLink from '$lib/components/info-drawer-link.svelte';
 	import type { ModalComponent } from '@skeletonlabs/skeleton';
 	import { selectedWorkspace } from '$lib/stores';
 
@@ -55,8 +56,10 @@
 		<Navigation />
 	{:else if $drawerStore.id === "toolbox"}
 		<Toolbox />
-	{:else if $drawerStore.id === "info-drawer"}
-		<InfoDrawer />
+	{:else if $drawerStore.id === "info-drawer-node"}
+		<InfoDrawerNode />
+	{:else if $drawerStore.id === "info-drawer-link"}
+		<InfoDrawerLink />
 	{/if}
 </Drawer>
 
