@@ -3,8 +3,8 @@
 	import Node from '$lib/components/node.svelte';
 	import type { Node as NodeType } from '$lib/types';
 	import type { Link as LinkType } from '$lib/types';
-	import { getNodes } from '$lib/components/nodes-state.svelte';
-	import { getLinks } from '$lib/components/links-state.svelte';
+	import { getNodes } from '$lib/components/states/nodes-state.svelte';
+	import { getLinks } from '$lib/components/states/links-state.svelte';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import Link from '$lib/components/nodes-link.svelte';
 	import { createNodeMode, createLinkMode, selectedNodes, modalMetadata } from '$lib/stores';

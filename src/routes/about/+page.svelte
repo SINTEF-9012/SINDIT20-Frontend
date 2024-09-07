@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getToastState } from '$lib/components/toast-state.svelte';
+	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import type { LogLevel } from '$lib/types';
 
 	const toastState = getToastState();

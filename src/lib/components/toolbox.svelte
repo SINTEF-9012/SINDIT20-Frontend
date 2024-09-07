@@ -3,7 +3,7 @@
     import { PlusCircleIcon } from 'svelte-feather-icons';
     import type { DrawerSettings } from '@skeletonlabs/skeleton';
     import { createNodeMode, createLinkMode, modalMetadata } from "$lib/stores";
-    import { getToastState } from "$lib/components/toast-state.svelte";
+    import { getToastState } from "$lib/components/states/toast-state.svelte";
 
     const drawerStore = getDrawerStore();
     const toastState = getToastState();

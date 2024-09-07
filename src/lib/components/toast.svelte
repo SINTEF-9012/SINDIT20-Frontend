@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Toast } from '$lib/types';
 	import { XCircleIcon } from 'svelte-feather-icons';
-	import { getToastState } from './toast-state.svelte';
+	import { getToastState } from './states/toast-state.svelte';
 
 	export let toast: Toast;
 

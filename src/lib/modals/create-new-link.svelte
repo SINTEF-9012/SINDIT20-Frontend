@@ -3,9 +3,9 @@
 	import type { LogLevel, LinkDirection } from '$lib/types';
 	import type { Node as NodeType } from '$lib/types';
 	import { getModalStore, RangeSlider } from '@skeletonlabs/skeleton';
-	import { getToastState } from '$lib/components/toast-state.svelte';
-	import { getNodes } from '$lib/components/nodes-state.svelte';
-	import { getLinks } from '$lib/components/links-state.svelte';
+	import { getToastState } from '$lib/components/states/toast-state.svelte';
+	import { getNodes } from '$lib/components/states/nodes-state.svelte';
+	import { getLinks } from '$lib/components/states/links-state.svelte';
 	import { selectedNodes } from '$lib/stores';
 
 	// Props

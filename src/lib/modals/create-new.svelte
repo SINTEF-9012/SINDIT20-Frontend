@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
-	import { getToastState } from '$lib/components/toast-state.svelte';
+	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import type { LogLevel } from '$lib/types';
-	import { getNodes } from '$lib/components/nodes-state.svelte';
+	import { getNodes } from '$lib/components/states/nodes-state.svelte';
 
 
 	// Props

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getNodes } from './nodes-state.svelte';
+	import { getNodes } from './states/nodes-state.svelte';
 	import type { Node as NodeType } from '$lib/types';
 	import { selectedNodes } from '$lib/stores';
 	import { InfoIcon } from 'svelte-feather-icons';

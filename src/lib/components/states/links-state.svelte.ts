@@ -1,6 +1,6 @@
 import type { Link, LinkDirection } from '$lib/types';
 import { getContext, setContext } from 'svelte';
-import { getToastState } from '$lib/components/toast-state.svelte';
+import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { writable, get } from 'svelte/store';
 import { getNodes } from './nodes-state.svelte';
 

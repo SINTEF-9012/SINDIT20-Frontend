@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Toast from './toast.svelte';
 
-	import { getToastState } from './toast-state.svelte';
+	import { getToastState } from './states/toast-state.svelte';
 
 	const toastState = getToastState();
 	const toasts = toastState.toasts;

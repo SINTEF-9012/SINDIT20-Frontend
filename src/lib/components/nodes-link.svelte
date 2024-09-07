@@ -2,7 +2,7 @@
 	import type { Node as NodeType } from '$lib/types';
 	import type { Link as LinkType } from '$lib/types';
 	import Link from '$lib/components/svg/link.svelte';
-	import { getNodes } from '$lib/components/nodes-state.svelte';
+	import { getNodes } from '$lib/components/states/nodes-state.svelte';
 
 	const nodesState = getNodes();
 

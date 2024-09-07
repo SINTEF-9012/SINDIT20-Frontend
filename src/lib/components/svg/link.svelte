@@ -2,7 +2,7 @@
     import type { LinkDirection } from "$lib/types";
     import type { Link as LinkType } from '$lib/types';
     import { onMount } from "svelte";
-    import { getLinks } from "$lib/components/links-state.svelte";
+    import { getLinks } from "$lib/components/states/links-state.svelte";
 
     export let link: LinkType;
     export let linkDistance: number;
