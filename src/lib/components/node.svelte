@@ -3,11 +3,13 @@
 	import type { Node as NodeType } from '$lib/types';
 	import { selectedNodes } from '$lib/stores';
 	import { InfoIcon } from 'svelte-feather-icons';
+	import { getDrawerStore } from '@skeletonlabs/skeleton';
 
 	export let node: NodeType;
 	export let zoomLevel = 1;
 
 	const nodesState = getNodes();
+	const drawerStore = getDrawerStore();
 
 	let offset = { x: 0, y: 0 };
 	let moving = false;
@@ -73,8 +75,8 @@
 	}
 
 	function onClickInfoButton() {
-		console.log(node)
-		// TODO: implement popup? to display information about the node
+		console.log("node", node)
+		drawerStore.open({id: 'info-drawer', meta: {node}});
 	}
 
 </script>
