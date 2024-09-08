@@ -1,4 +1,11 @@
-import type { Node, NodeType } from '$lib/types';
+import type {
+	Node,
+	AbstractAsset,
+	AbstractAssetProperty,
+	Connection,
+	MQTTConnection,
+	InfluxDBConnection
+} from '$lib/types';
 import { defaultNodeType } from '$lib/stores';
 import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
@@ -36,21 +43,127 @@ export class Nodes {
 	}
 
 	// Create a new node
-	createNode(
+	createNode<T extends Node>(
+		node: T
+	) {
+		this.nodes.update((nodes) => [...nodes, node]);
+		this.toastState.add('Node created', `Node "${node.nodeName}" created`, 'info');
+	}
+
+	// Create a new AbstractAsset node
+	createAbstractAssetNode(
 		nodeName: string,
 		nodeDescription: string,
 		position: { x: number; y: number },
-		nodeType: NodeType
 	) {
-		const newNode: Node = {
+		const newNode: AbstractAsset = {
 			id: crypto.randomUUID(),
 			nodeName,
 			nodeDescription,
 			position,
-			nodeType
+			nodeType: 'AbstractAsset'
 		};
-		this.nodes.update((nodes) => [...nodes, newNode]);
-		this.toastState.add('Node created', `Node "${newNode.nodeName}" created`, 'info');
+		this.createNode(newNode);
+	}
+
+	// Create a new AbstractAssetProperty node
+	createAbstractAssetPropertyNode(
+		nodeName: string,
+		nodeDescription: string,
+		position: { x: number; y: number },
+		propertyName: string,
+		propertyDescription: string,
+		propertyValue: string,
+		propertyDataType: string,
+		propertyUnit: string,
+		propertySemanticId: string
+	) {
+		const newNode: AbstractAssetProperty = {
+			id: crypto.randomUUID(),
+			nodeName,
+			nodeDescription,
+			position,
+			nodeType: 'AbstractAssetProperty',
+			propertyName,
+			propertyDescription,
+			propertyValue,
+			propertyDataType,
+			propertyUnit,
+			propertySemanticId
+		};
+		this.createNode(newNode);
+	}
+
+	// Create a new Connection node
+	createConnectionNode(
+		nodeName: string,
+		nodeDescription: string,
+		position: { x: number; y: number },
+		host: string,
+		port: string,
+		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp'
+	) {
+		const newNode: Connection = {
+			id: crypto.randomUUID(),
+			nodeName,
+			nodeDescription,
+			position,
+			nodeType: 'Connection',
+			host,
+			port,
+			connectionType
+		};
+		this.createNode(newNode);
+	}
+
+	// Create a new MQTTConnection node
+	createMQTTConnectionNode(
+		nodeName: string,
+		nodeDescription: string,
+		position: { x: number; y: number },
+		host: string,
+		port: string,
+		credentialReference: string
+	) {
+		const newNode: MQTTConnection = {
+			id: crypto.randomUUID(),
+			nodeName,
+			nodeDescription,
+			position,
+			nodeType: 'Connection',
+			connectionType: 'MQTT',
+			host,
+			port,
+			credentialReference
+		};
+		this.createNode(newNode);
+	}
+
+	// Create a new InfluxDBConnection node
+	createInfluxDBConnectionNode(
+		nodeName: string,
+		nodeDescription: string,
+		position: { x: number; y: number },
+		host: string,
+		port: string,
+		bucket: string,
+		org: string,
+		credentialReference: string
+	) {
+		const newNode: InfluxDBConnection = {
+			id: crypto.randomUUID(),
+			nodeName,
+			nodeDescription,
+			position,
+			nodeType: 'Connection',
+			connectionType: 'InfluxDB',
+			host,
+			port,
+			bucket,
+			org,
+			credentialReference
+		};
+		this.createNode(newNode);
 	}
 
 	// Get a node by id

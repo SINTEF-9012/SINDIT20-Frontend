@@ -52,12 +52,10 @@ export interface Connection extends Node {
 type ConnectionType = 'MQTT' | 'InfluxDB' | 'SensApp'
 
 export interface MQTTConnection extends Connection {
-	type: 'MQTT';
 	credentialReference: string; // reference to credentials
 }
 
 export interface InfluxDBConnection extends Connection {
-	type: 'InfluxDB';
 	bucket: string;
 	org: string;
 	credentialReference: string; // reference to credentials

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { SvelteComponent } from 'svelte';
+	import type { LogLevel, NodeType } from '$lib/types';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
-	import type { LogLevel } from '$lib/types';
 	import { getNodes } from '$lib/components/states/nodes-state.svelte';
 
 
@@ -23,12 +23,28 @@
 	const mode = metadata.mode.toLowerCase().replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
 	const title = `${mode} new ${metadata.name}`;
 	const body = `${mode} a new ${metadata.name} in the knowledge graph.`;
+	const nodeTypes: NodeType[] = ['AbstractAsset', 'AbstractAssetProperty', 'Connection'];
+
 
 	// Form Data - to be submitted
-	const formData = {
-		name: '',
-        description: '',
+	$: abstractAsset = {
+		nodeName: '',
+        nodeDescription: '',
+		nodeType: '',
 	};
+	$: abstractAssetProperty = {
+		propertyName: '',
+		propertyDescription: '',
+		propertyType: '',
+		propertyValue: '',
+		propertyUnit: '',
+		propertySemanticId: '',
+	};
+	$: connection = {
+		host: '',
+		port: '',
+		connectionType: ''
+	}
 
 	// Create a new node in the knowledge graph
 	function createNewNode(): void {
@@ -37,7 +53,26 @@
 			position = metadata.position;
 		}
 		console.log('position:', position);
-		nodes.createNode(formData.name, formData.description, position);
+		// TODO: handle creation of different node types
+		if (abstractAsset.nodeType === 'AbstractAsset') {
+			nodes.createAbstractAssetNode(
+				abstractAsset.nodeName, abstractAsset.nodeDescription, position);
+		} else if (abstractAsset.nodeType === 'AbstractAssetProperty') {
+			nodes.createAbstractAssetPropertyNode(
+				abstractAsset.nodeName, abstractAsset.nodeDescription, position,
+				abstractAssetProperty.propertyName,
+				abstractAssetProperty.propertyDescription,
+				abstractAssetProperty.propertyType,
+				abstractAssetProperty.propertyUnit,
+				abstractAssetProperty.propertyValue,
+				abstractAssetProperty.propertySemanticId
+			);
+		} else {
+			const title = 'Error';
+			const message = `Node type '${abstractAsset.nodeType}' not supported.`;
+			const logLevel: LogLevel = 'error';
+			toastState.add(title, message, logLevel);
+		}
 	}
 
 	// We've created a custom submit function to pass the response and close the modal.
@@ -46,7 +81,7 @@
 		// TODO: Create new item in the knowledge graph // this should be handled in separate func
 		if (metadata.mode === 'create' && metadata.name === 'node') createNewNode();
 		const title = `Successfully "${metadata.mode}d"`;
-		const message = `Successfully "${metadata.mode}d" '${formData.name}'`;
+		const message = `Successfully "${metadata.mode}d" '${abstractAsset.nodeName}'`;
 		const logLevel: LogLevel = 'info';
 		toastState.add(title, message, logLevel);
 		modalStore.close();
@@ -75,11 +110,41 @@
 		<!-- Enable for debugging: -->
 		<form class="modal-form {cForm}">
 			<label class="label">
-				<input class="input" type="text" bind:value={formData.name} placeholder="Enter {metadata.name} name..." />
+				<input class="input" type="text" bind:value={abstractAsset.nodeName} placeholder="Enter {metadata.name} name..." />
 			</label>
 			<label class="label">
-				<input class="input" type="text" bind:value={formData.description} placeholder="Description..." />
+				<input class="input" type="text" bind:value={abstractAsset.nodeDescription} placeholder="Description..." />
 			</label>
+			<label class="label">
+				<select class="input" bind:value={abstractAsset.nodeType}>
+					<option value="">Select a node type...</option>
+					{#each nodeTypes as nodeType}
+						<option value={nodeType}>{nodeType}</option>
+					{/each}
+				</select>
+			</label>
+			{#if (abstractAsset.nodeType === 'AbstractAssetProperty')}
+				<div class="abstract-asset-properties">
+					<label>
+						<input class="input" type="text" bind:value={abstractAssetProperty.propertyName} placeholder="Property name..." />
+					</label>
+					<label>
+						<input class="input" type="text" bind:value={abstractAssetProperty.propertyDescription} placeholder="Property description..." />
+					</label>
+					<label>
+						<input class="input" type="text" bind:value={abstractAssetProperty.propertyType} placeholder="Property type..." />
+					</label>
+					<label>
+						<input class="input" type="text" bind:value={abstractAssetProperty.propertyValue} placeholder="Property value..." />
+					</label>
+					<label>
+						<input class="input" type="text" bind:value={abstractAssetProperty.propertyUnit} placeholder="Property unit..." />
+					</label>
+					<label>
+						<input class="input" type="text" bind:value={abstractAssetProperty.propertySemanticId} placeholder="Property semantic Id..." />
+					</label>
+				</div>
+			{/if}
 		</form>
 		<!-- prettier-ignore -->
 		<footer class="modal-footer {parent.regionFooter}">
@@ -88,3 +153,10 @@
 		</footer>
 	</div>
 {/if}
+
+
+<style>
+	.abstract-asset-properties {
+		padding-left: 15px;
+	}
+</style>
