@@ -7,3 +7,5 @@ export const modalMetadata = writable({toolName: '', operationMode: ''});
 export const selectedNodes = writable<string[]>([]);
 export const selectedNodeId = writable('');
 export const selectedLinkId = writable('');
+
+export const nodeSize = 100; //

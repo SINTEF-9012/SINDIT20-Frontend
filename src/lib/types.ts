@@ -17,10 +17,7 @@ export interface Node {
 	id: string;
 	nodeName: string;
 	nodeDescription: string;
-	size: number;
-	position: Position;
-	zoomLevel: number;
-}
+	position: Position;}
 
 type Position = {
 	x: number;

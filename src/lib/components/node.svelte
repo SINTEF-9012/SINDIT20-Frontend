@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getNodes } from './states/nodes-state.svelte';
 	import type { Node as NodeType } from '$lib/types';
-	import { selectedNodes, selectedNodeId } from '$lib/stores';
+	import { selectedNodes, selectedNodeId, nodeSize } from '$lib/stores';
 	import { InfoIcon } from 'svelte-feather-icons';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 
@@ -17,9 +17,10 @@
 	let nodeSelected = false;
 	let selectedNodesIds: string[] = [];
 
-	$: fontSize = node.size * 0.15;
-	$: fontSizeTitle = fontSize * 1.1 + 'px';
-	$: fontSizeDescription = fontSize * 0.8 + 'px';
+	const fontSize = nodeSize * 0.15;
+	const fontSizeTitle = fontSize * 1.1 + 'px';
+	const fontSizeDescription = fontSize * 0.8 + 'px';
+
 	$: nodeSelectedBackground = nodeSelected ? 'variant-ghost-secondary' : 'variant-ghost-primary';
 	$: selectedNodesIds = [];
 
@@ -92,9 +93,9 @@
 	tabindex="0"
 	role="button"
 	class="node border border-primary-500 border-1 {nodeSelectedBackground}"
-	style="transform: translate({node.position.x - node.size / 2}px, {node.position.y - node.size / 2}px); width: {node.size}px; height: {node.size}px;"
+	style="transform: translate({node.position.x - nodeSize / 2}px, {node.position.y - nodeSize / 2}px); width: {nodeSize}px; height: {nodeSize}px;"
 >
-	{#if node.size >= threshold}
+	{#if nodeSize >= threshold}
 		<div class="grid-cols-1 gap-1">
 			<div class="text-center">
 				<span class="text-white" style="font-size: {fontSizeTitle}">{node.nodeName}</span>

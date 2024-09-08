@@ -14,24 +14,18 @@ export class Nodes {
 				id: '1',
 				nodeName: 'Node 1',
 				nodeDescription: 'Node 1 description',
-				size: 100,
-				zoomLevel: 1,
 				position: { x: 10, y: 10 }
 			},
 			{
 				id: '2',
 				nodeName: 'Node 2',
 				nodeDescription: 'Node 2 description',
-				size: 100,
-				zoomLevel: 1,
 				position: { x: 20, y: 20 }
 			},
 			{
 				id: '3',
 				nodeName: 'Node 3',
 				nodeDescription: 'Node 3 description',
-				size: 100,
-				zoomLevel: 1,
 				position: { x: 30, y: 10 }
 			}
 		]);
@@ -42,15 +36,11 @@ export class Nodes {
 		nodeName: string,
 		nodeDescription: string,
 		position: { x: number; y: number },
-		size: number = 100,
-		zoomLevel: number = 1
 	) {
 		const newNode: Node = {
 			id: crypto.randomUUID(),
 			nodeName,
 			nodeDescription,
-			size,
-			zoomLevel,
 			position
 		};
 		this.nodes.update((nodes) => [...nodes, newNode]);

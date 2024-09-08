@@ -3,6 +3,7 @@
 	import type { Link as LinkType } from '$lib/types';
 	import Link from '$lib/components/svg/link.svelte';
 	import { getNodes } from '$lib/components/states/nodes-state.svelte';
+	import { nodeSize } from '$lib/stores'
 
 	const nodesState = getNodes();
 
@@ -48,9 +49,9 @@
 	// TODO: fix this undefined issue! (source and target are undefined initially)
 	$: rotationRadians = getRotation(source, target);			// angle between source and target
 	$: rotationDeg = getRotationDeg(rotationRadians);			// angle between source and target in degrees
-    $: sourceOffset = getOffset(rotationRadians, source.size);  // offset from source center to surface (start point of the link)
+    $: sourceOffset = getOffset(rotationRadians, nodeSize);  // offset from source center to surface (start point of the link)
 	$: nodeDistance = distance(source, target);					// distance between source and target (center to center)
-	$: linkDistance = nodeDistance - source.size - target.size;	// distance between source and target surfaces
+	$: linkDistance = nodeDistance - (2 * nodeSize);	// distance between source and target surfaces
 
 </script>
 
