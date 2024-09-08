@@ -30,7 +30,7 @@
     <br />
     <main class="grid grid-cols-1 gap-4">
         {#each Object.keys(node) as key}
-            {#if key !== 'id'}
+            {#if key !== 'id' && key !== 'position'}
                 <PropertyDisplay {key} value={node[key]} />
             {/if}
         {/each}
