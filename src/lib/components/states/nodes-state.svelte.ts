@@ -1,4 +1,5 @@
-import type { Node } from '$lib/types';
+import type { Node, NodeType } from '$lib/types';
+import { defaultNodeType } from '$lib/stores';
 import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { writable, get } from 'svelte/store';
@@ -14,19 +15,22 @@ export class Nodes {
 				id: '1',
 				nodeName: 'Node 1',
 				nodeDescription: 'Node 1 description',
-				position: { x: 10, y: 10 }
+				position: { x: 10, y: 10 },
+				nodeType: defaultNodeType
 			},
 			{
 				id: '2',
 				nodeName: 'Node 2',
 				nodeDescription: 'Node 2 description',
-				position: { x: 20, y: 20 }
+				position: { x: 20, y: 20 },
+				nodeType: defaultNodeType
 			},
 			{
 				id: '3',
 				nodeName: 'Node 3',
 				nodeDescription: 'Node 3 description',
-				position: { x: 30, y: 10 }
+				position: { x: 30, y: 10 },
+				nodeType: defaultNodeType
 			}
 		]);
 	}
@@ -36,12 +40,14 @@ export class Nodes {
 		nodeName: string,
 		nodeDescription: string,
 		position: { x: number; y: number },
+		nodeType: NodeType
 	) {
 		const newNode: Node = {
 			id: crypto.randomUUID(),
 			nodeName,
 			nodeDescription,
-			position
+			position,
+			nodeType
 		};
 		this.nodes.update((nodes) => [...nodes, newNode]);
 		this.toastState.add('Node created', `Node "${newNode.nodeName}" created`, 'info');

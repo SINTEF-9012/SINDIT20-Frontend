@@ -17,12 +17,51 @@ export interface Node {
 	id: string;
 	nodeName: string;
 	nodeDescription: string;
-	position: Position;}
+	position: Position;
+	nodeType: NodeType;
+}
 
 type Position = {
 	x: number;
 	y: number;
 };
+
+export type NodeType = 'AbstractAsset' | 'AbstractAssetProperty' | 'Connection'
+
+export interface AbstractAsset extends Node {
+	nodeType: 'AbstractAsset';
+}
+
+export interface AbstractAssetProperty extends Node {
+	nodeType: 'AbstractAssetProperty';
+	propertyName: string;
+	propertyDescription: string;
+	propertyValue: string;
+	propertyDataType: string;
+	propertyUnit: string;
+	propertySemanticId: string;
+}
+
+export interface Connection extends Node {
+	nodeType: 'Connection'
+	host: string;
+	port: string;
+	connectionType: ConnectionType;
+}
+
+type ConnectionType = 'MQTT' | 'InfluxDB' | 'SensApp'
+
+export interface MQTTConnection extends Connection {
+	type: 'MQTT';
+	credentialReference: string; // reference to credentials
+}
+
+export interface InfluxDBConnection extends Connection {
+	type: 'InfluxDB';
+	bucket: string;
+	org: string;
+	credentialReference: string; // reference to credentials
+}
 
 // Links
 export interface Link {

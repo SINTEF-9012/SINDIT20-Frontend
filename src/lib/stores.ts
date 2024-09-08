@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import type { NodeType } from '$lib/stores';
 
 export const selectedWorkspace = writable('');
 export const createNodeMode = writable(false);
@@ -9,3 +10,4 @@ export const selectedNodeId = writable('');
 export const selectedLinkId = writable('');
 
 export const nodeSize = 100; //
+export const defaultNodeType: NodeType = 'AbstractAsset';
