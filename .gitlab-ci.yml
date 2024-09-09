@@ -1,0 +1,91 @@
+stages:
+  - analysis
+  - install
+  - build
+  - docker-build
+
+variables:
+  # Set PROJECT_NAME to the name of the project folder.
+  # Do not touch the other variables.
+  PROJECT_NAME: sindit-frontend
+  ROOTDIR: $CI_PROJECT_DIR/projects/$PROJECT_NAME
+  RULES_CHANGES_PATH: $ROOTDIR/**/*
+
+before_script:
+  - cd projects/$PROJECT_NAME
+  - echo $SONAR_HOST_URL
+
+.base-rules:
+  rules:
+    # Do not run when creating tags
+    - if: $CI_COMMIT_TAG
+      when: never
+    # Always run on default branch (main)
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+    # Run on merge requests
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+      allow_failure: false
+    # Run when triggered by parent pipeline
+    - if: $CI_PIPELINE_SOURCE == "parent_pipeline"
+    # Avoid duplicate jobs on merge requests
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    # Run if on a branch and not a merge request
+    - if: $CI_COMMIT_BRANCH
+
+
+sonarqube:
+  stage: analysis
+  extends: .base-rules
+  before_script:
+    - cd projects/$PROJECT_NAME
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  variables:
+    SONAR_USER_HOME: $ROOTDIR/.sonar
+    GIT_DEPTH: "0"
+  cache:
+    key: $CI_JOB_NAME
+    paths:
+      - $ROOTDIR/.sonar/cache
+  script:
+    - pwd
+    - ls -la
+    - sonar-scanner
+  allow_failure: true
+
+
+install:
+  stage: install
+  script:
+    - npm install
+  artifacts:
+    paths:
+      - node_modules/
+  only:
+    - sindit
+    - main
+
+build:
+  stage: build
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+  only:
+    - sindit
+    - main
+
+
+docker-build:
+  stage: docker-build
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  only:
+    - sindit
+    - main
