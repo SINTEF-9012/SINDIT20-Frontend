@@ -29,3 +29,16 @@ npm run build
 You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+
+
+## Run docker image from Container registry
+
+1. Create a [Private Access Token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html) with `read_registry` scope.
+    - Docker login username: your gitlab username (email address) `$USERNAME`
+    - Docker login password: your Personal Access Token `$CONTAINER_REGITRY_READ`
+2. Login to gitlab container registry `docker login gitlab.sintef.no:5050 -u $USERNAME -p $CONTAINER_REGISTRY_READ`
+
+
+```BASH
+docker run -p 5173:5173 gitlab.sintef.no:5050/sct/sd/monorepo/sindit-frontend:latest
+```
