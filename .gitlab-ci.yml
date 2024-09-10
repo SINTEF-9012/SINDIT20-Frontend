@@ -1,7 +1,5 @@
 stages:
   - analysis
-  - install
-  - build
   - docker-build
 
 variables:
@@ -10,6 +8,9 @@ variables:
   PROJECT_NAME: sindit-frontend
   ROOTDIR: $CI_PROJECT_DIR/projects/$PROJECT_NAME
   RULES_CHANGES_PATH: $ROOTDIR/**/*
+  CI_REGISTRY: gitlab.sintef.no:5050
+  IMAGE_PATH: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
+  IMAGE_NAME: sindit-frontend
 
 before_script:
   - cd projects/$PROJECT_NAME
@@ -58,34 +59,19 @@ sonarqube:
   allow_failure: true
 
 
-install:
-  stage: install
-  script:
-    - npm install
-  artifacts:
-    paths:
-      - node_modules/
-  only:
-    - sindit
-    - main
-
-build:
-  stage: build
-  script:
-    - npm run build
-  artifacts:
-    paths:
-      - dist/
-  only:
-    - sindit
-    - main
-
-
 docker-build:
   stage: docker-build
+  extends: .base-rules
+  before_script:
+    - cd projects/$PROJECT_NAME
+  image: docker:latest
+  services:
+    - docker:dind
   script:
-    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+    - docker build -t $IMAGE_PATH:$CI_COMMIT_REF_NAME -t $IMAGE_PATH:latest  .
+    - docker push $IMAGE_PATH:$CI_COMMIT_REF_NAME $IMAGE_PATH:latest
+  allow_failure: true
   only:
-    - sindit
     - main
+    - merge_requests
