@@ -1,6 +1,7 @@
 stages:
   - analysis
-  - docker-build
+  - build
+  - push
 
 variables:
   # Set PROJECT_NAME to the name of the project folder.
@@ -11,6 +12,8 @@ variables:
   CI_REGISTRY: gitlab.sintef.no:5050
   IMAGE_PATH: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
   IMAGE_NAME: sindit-frontend
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
 
 before_script:
   - cd projects/$PROJECT_NAME
@@ -60,15 +63,42 @@ sonarqube:
 
 
 docker-build:
-  stage: docker-build
+  stage: build
   extends: .base-rules
   before_script:
     - cd projects/$PROJECT_NAME
+    - |
+      echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
+      -u $CI_REGISTRY_USER --password-stdin
   image: docker:latest
   services:
     - docker:dind
   script:
-    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
-    - docker build -t $IMAGE_PATH:$CI_COMMIT_REF_NAME -t $IMAGE_PATH:latest  .
-    - docker push $IMAGE_PATH:$CI_COMMIT_REF_NAME $IMAGE_PATH:latest
+    - |
+      docker build \
+      -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_REF_NAME
+      -t $IMAGE_PATH/$IMAGE_NAME:latest .
+    - |
+      docker push \
+      $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_REF_NAME \
+      $IMAGE_PATH/$IMAGE_NAME:latest
+  allow_failure: true
+
+
+docker-push:
+  stage: push
+  extends: .base-rules
+  before_script:
+    - cd projects/$PROJECT_NAME
+    - |
+      echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
+      -u $CI_REGISTRY_USER --password-stdin
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - |
+      docker push \
+      $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_REF_NAME \
+      $IMAGE_PATH/$IMAGE_NAME:latest
   allow_failure: true
