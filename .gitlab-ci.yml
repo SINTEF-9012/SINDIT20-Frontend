@@ -12,7 +12,6 @@ variables:
   CI_REGISTRY: gitlab.sintef.no:5050
   IMAGE_PATH: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
   IMAGE_NAME: sindit-frontend
-  DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""
 
 before_script:
@@ -67,6 +66,7 @@ docker-build:
   extends: .base-rules
   before_script:
     - cd projects/$PROJECT_NAME
+    - unset DOCKER_HOST
     - |
       echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
       -u $CI_REGISTRY_USER --password-stdin
@@ -76,7 +76,6 @@ docker-build:
   script:
     - docker build -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_REF_NAME .
   allow_failure: true
-  privileged: true
 
 
 docker-push:
@@ -84,6 +83,7 @@ docker-push:
   extends: .base-rules
   before_script:
     - cd projects/$PROJECT_NAME
+    - unset DOCKER_HOST
     - |
       echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
       -u $CI_REGISTRY_USER --password-stdin
@@ -93,4 +93,3 @@ docker-push:
   script:
     - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_REF_NAME
   allow_failure: true
-  privileged: true
