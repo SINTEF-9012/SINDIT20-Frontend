@@ -80,5 +80,4 @@ docker-build:
       --label "git-commit-title=$CI_COMMIT_TITLE"
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_REF_NAME .
   after_script:
-    - docker push $IMAGE:$CI_COMMIT_SHORT_SHA
-    - docker push $IMAGE:latest
+    - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_REF_NAME
