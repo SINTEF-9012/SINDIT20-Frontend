@@ -1,3 +1,12 @@
+[![Quality Gate Status](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?branch=sindit&project=SINDIT-Frontend&metric=alert_status&token=sqb_da2a79b20ba8379cfa3492a1a8bb59674a2cda0d)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT-Frontend&branch=sindit)
+
+![Static Badge](https://img.shields.io/badge/4.1-blue?style=flat&logo=svelte&label=svelte)
+![Static Badge](https://img.shields.io/badge/2.10-blue?style=flat&label=skeletonlabs)
+![Static Badge](https://img.shields.io/badge/5.4-blue?style=flat&logo=vite&label=vite)
+![Static Badge](https://img.shields.io/badge/5.5-blue?style=flat&logo=typescript&label=typescript)
+![Static Badge](https://img.shields.io/badge/0.5-blue?style=flat&logo=tailwindcss&label=tailwind)
+
+
 # SINDIT Frontend
 This is the frontend of SINDIT (Work in progress!)
 
