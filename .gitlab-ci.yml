@@ -64,6 +64,8 @@ docker-build:
   stage: build
   extends: .base-rules
   image: docker:latest
+  tags:
+    - dind
   services:
     - docker:dind
   allow_failure: false
