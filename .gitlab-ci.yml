@@ -72,6 +72,3 @@ docker-build:
     - docker build -t $IMAGE_PATH:$CI_COMMIT_REF_NAME -t $IMAGE_PATH:latest  .
     - docker push $IMAGE_PATH:$CI_COMMIT_REF_NAME $IMAGE_PATH:latest
   allow_failure: true
-  only:
-    - main
-    - merge_requests
