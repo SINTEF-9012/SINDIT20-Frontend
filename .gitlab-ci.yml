@@ -76,6 +76,8 @@ docker-build:
   script:
     - docker build -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_REF_NAME .
   allow_failure: true
+  options:
+    privileged: true
 
 
 docker-push:
@@ -92,3 +94,5 @@ docker-push:
   script:
     - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_REF_NAME
   allow_failure: true
+  options:
+    privileged: true
