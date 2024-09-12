@@ -1,6 +1,7 @@
 import { purgeCss } from 'vite-plugin-tailwind-purgecss';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import path from 'path';
 
 export default defineConfig({
 	plugins: [sveltekit(), purgeCss()],
@@ -8,5 +9,10 @@ export default defineConfig({
 		host: true,
 		strictPort: true,
 		port: 5173
-	}
+	},
+	resolve: {
+		alias: {
+		  $apis: path.resolve(__dirname, 'src/apis')
+		}
+	  }
 });

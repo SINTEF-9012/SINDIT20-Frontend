@@ -40,6 +40,7 @@
 	"type": "module",
 	"dependencies": {
 		"@floating-ui/dom": "1.6.10",
+		"dotenv": "^16.4.5",
 		"svelte-feather-icons": "^4.1.0"
 	}
 }
