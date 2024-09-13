@@ -17,29 +17,6 @@ export class Nodes {
 
 	constructor() {
 		this.toastState = getToastState();
-		this.nodes.set([
-			{
-				id: '1',
-				nodeName: 'Node 1',
-				nodeDescription: 'Node 1 description',
-				position: { x: 10, y: 10 },
-				nodeType: defaultNodeType
-			},
-			{
-				id: '2',
-				nodeName: 'Node 2',
-				nodeDescription: 'Node 2 description',
-				position: { x: 20, y: 20 },
-				nodeType: defaultNodeType
-			},
-			{
-				id: '3',
-				nodeName: 'Node 3',
-				nodeDescription: 'Node 3 description',
-				position: { x: 30, y: 10 },
-				nodeType: defaultNodeType
-			}
-		]);
 	}
 
 	// Create a new node
@@ -210,6 +187,10 @@ export function setNodes() {
 	const nodeState = new Nodes();
 	setContext(NODES_KEY, nodeState);
 	return nodeState;
+}
+
+export function deleteNodes() {
+	setContext(NODES_KEY, null);
 }
 
 export function getNodes() {

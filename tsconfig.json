@@ -13,7 +13,8 @@
 		"moduleResolution": "bundler",
 		"baseUrl": "./",
 		"paths": {
-			"$apis/*": ["src/apis/*"]
+			"$apis/*": ["src/apis/*"],
+			"$lib/*": ["src/lib/*"]
 		}
 	}
 }

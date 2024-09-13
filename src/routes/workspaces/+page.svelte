@@ -1,11 +1,20 @@
 <script lang="ts">
 	import { selectedWorkspace } from '$lib/stores';
+    import { getNodes as getNodesFromBackend} from '$apis/sindit-backend/api';
+    import { deleteNodes, getNodes } from '$lib/components/states/nodes-state.svelte';
+	import { onMount } from 'svelte';
 
-    	// TODO: Implement workspaces in the form of a list of KGs to select from.
-	const workspaces: string[] = ['workspace-1', 'workspace-2', 'workspace-3', 'yolo', 'Han solo', 'Chewbacca'];
+    const KG_BASE_URI = import.meta.env.VITE_SINDIT_KG_BASE_URI
+
+    // TODO: Implement workspaces in the form of a list of KGs to select from.
+	// const workspaces: string[] = ['kg1', 'w1', 'workspace-3', 'yolo', 'Han solo', 'Chewbacca'];
+    let nodesData;
+    let workspaces: string[] = [];
 	let searchQuery = '';
 	let _selectedWorkspace = '';
+    let _selectedWorkspaceNodes = [];
 	let filteredWorkspaces: string[] = [];
+    const nodesState = getNodes();
 	$: {
 		if (searchQuery === '') {
             filteredWorkspaces = workspaces;
@@ -16,16 +25,51 @@
 	$: {
 		if (_selectedWorkspace) {
 			selectedWorkspace.set(_selectedWorkspace);
+            deleteNodes();
 		}
 	}
 
+    function extractWorkspaceName(uri: string): string {
+        const workspace = uri.replace(KG_BASE_URI, '').split('/')[0];
+        return workspace;
+    }
+
+    function addNodesToNodesState(nodes: any[]) {
+        nodes.forEach(node => {
+            const nodeName = node.label;
+            const nodeDescription = node.assetDescription;
+            const position = {x: Math.random()*100, y: Math.random()*100};
+            nodesState.createAbstractAssetNode(nodeName, nodeDescription, position);
+        });
+    }
+
 	function selectWorkspace(workspace: string) {
 		_selectedWorkspace = workspace;
+        _selectedWorkspaceNodes = nodesData.filter(node => extractWorkspaceName(node.uri) === workspace);
+        addNodesToNodesState(_selectedWorkspaceNodes);
 	}
 
 	function onCreateNewWorkspace() {
 		console.log('create new workspace');
 	}
+
+    onMount(async () => {
+        try {
+            nodesData = await getNodesFromBackend();
+            // console.log(nodesData);
+            const workspaceNames = nodesData.map(node => extractWorkspaceName(node.uri));
+            for (const workspace of workspaceNames) {
+                if (!workspaces.includes(workspace) && workspace !== '') {
+                    workspaces = [...workspaces, workspace];
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
+    $: console.log('workspaces', workspaces);
+
 </script>
 
 <header class="fixed-header w-full">

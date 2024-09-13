@@ -258,17 +258,6 @@
 	let interval: NodeJS.Timeout;
 	onMount(() => {
 
-		async function createLinks() {
-			try {
-				await linksState.createLink('link 1', 1, 'left', $nodes[0].id, $nodes[1].id);
-				await linksState.createLink('link 2', 2, 'none', $nodes[0].id, $nodes[2].id);
-			} catch (error) {
-				console.error('Error creating links:', error);
-			}
-    	}
-
-	    createLinks();
-
 		const canvas = canvasRef;
 		const context = canvas.getContext('2d');
 

@@ -1,21 +1,18 @@
 <!-- src/routes/index.svelte -->
 <script lang="ts">
-    import { fetchData, postData } from '$apis/sindit-backend/api';
+    import { getNodes, createAbstractNode } from '$apis/sindit-backend/api';
     import { onMount } from 'svelte';
 
     let data;
     let error;
 
-	const nodeid = "#1234"
-	const create_asset_data = {
-		uri: `http://sindit.sintef.no/workspace/${nodeid}`,
-		label: "Node#1234",
-		description:  "This is a node",
-	};
+	const nodeId = "#1234"
+    const nodeName = "Node Name"
+    const nodeDescription = "Node Description"
 
     onMount(async () => {
         try {
-            data = await fetchData('kg/nodes');
+            data = await getNodes();
         } catch (err) {
             error = err.message;
         }
@@ -23,7 +20,7 @@
 
     async function handleSubmit() {
         try {
-            const result = await postData('kg/asset', create_asset_data);
+            const result = await createAbstractNode(nodeId, nodeName, nodeDescription);
             console.log(result);
         } catch (err) {
             error = err.message;
@@ -37,4 +34,4 @@
     <p>Data: {JSON.stringify(data)}</p>
 {/if}
 
-<button on:click={handleSubmit}>Submit</button>
+<button class="btn variant-outline-success" on:click={handleSubmit}>Submit</button>
