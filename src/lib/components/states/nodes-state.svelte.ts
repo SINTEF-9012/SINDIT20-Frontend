@@ -6,7 +6,6 @@ import type {
 	MQTTConnection,
 	InfluxDBConnection
 } from '$lib/types';
-import { defaultNodeType } from '$lib/stores';
 import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { writable, get } from 'svelte/store';

@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import type { DrawerSettings } from '@skeletonlabs/skeleton';
-	import { HomeIcon, InfoIcon, CodesandboxIcon, CodeIcon, MonitorIcon } from 'svelte-feather-icons';
+	import { HomeIcon, InfoIcon, BoxIcon, CodesandboxIcon, CodeIcon, MonitorIcon } from 'svelte-feather-icons';
 
 	const drawerStore = getDrawerStore();
 
@@ -33,6 +33,11 @@
 		on:click={() => onclick('/about')} >
 		<InfoIcon size=24/>
 		<span class="icon-text">About</span>
+	</button>
+	<button class="btn app-rail-anchor variant-glass-primary"
+		on:click={() => onclick('/3d')} >
+		<BoxIcon size=24/>
+		<span class="icon-text">3D Model</span>
 	</button>
 	<button class="btn app-rail-anchor variant-glass-primary"
 		on:click={() => onclick('/canvas')} >
