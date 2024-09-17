@@ -49,10 +49,6 @@
         addNodesToNodesState(_selectedWorkspaceNodes);
 	}
 
-	function onCreateNewWorkspace() {
-		console.log('create new workspace');
-	}
-
     onMount(async () => {
         try {
             nodesData = await getNodesFromBackend();
@@ -74,16 +70,15 @@
 
 <header class="fixed-header w-full">
     <h1 class="text-4xl">Workspaces</h1>
-    <br>
-    <div class="flex grid-flow-row columns-3 gap-2">
+    <div class="flex grid-flow-row columns-3 gap-2 pt-2 pb-2">
         <input type="text" bind:value={searchQuery} placeholder="Search workspaces..." />
         <button class="btn variant-ghost-primary"
-                on:click={onCreateNewWorkspace}
+                disabled
         >
             Create new
         </button>
 		<button class="btn variant-ghost-error move-right"
-		on:click={onCreateNewWorkspace}
+                disabled
 		>
 			Delete
 		</button>
@@ -114,19 +109,19 @@
 <style>
     .fixed-header {
         position: fixed;
-        top: 10%;
+        top: 80px;
         left: 0%;
         padding-top: 5px;
         padding-left: 2rem;
         padding-right: 2rem;
         width: 100%;
-        height: 80px;
         z-index: 1;
     }
     .main-content {
+        margin-top: 103px;
         overflow-y: auto;
-        margin-top: 120px;
-        height: calc(90% - 120px);
+        height: calc(100% - 183px);
+        width: 100%;
         z-index: 0;
     }
     .logo-item {
