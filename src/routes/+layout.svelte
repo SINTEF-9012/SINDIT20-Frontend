@@ -37,12 +37,14 @@
 	}
 
 	// Modals
-	import CreateNew from '$lib/modals/create-new.svelte';
+	import CreateNewNode from '$lib/modals/create-new-node.svelte';
 	import CreateNewLink from '$lib/modals/create-new-link.svelte';
+	import CreateNewDashboard from '$lib/modals/create-new-dashboard.svelte';
 
 	const modalRegistry: Record<string, ModalComponent> = {
-		createNew: { ref: CreateNew },
+		createNewNode: { ref: CreateNewNode },
 		createNewLink: { ref: CreateNewLink },
+		createNewDashboard: { ref: CreateNewDashboard },
 	};
 
 </script>
