@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
+    import type { ModalSettings } from "@skeletonlabs/skeleton";
+    import { getModalStore } from '@skeletonlabs/skeleton';
 
-    const dashboards = ["dashboard1", "dashboard2", "dashboard3", "dashboard4", "dashboard5",
+
+    $: dashboards = ["dashboard1", "dashboard2", "dashboard3", "dashboard4", "dashboard5",
         "Neo", "Morpheus", "Trinity", "Cypher", "Tank", "Dozer", "Mouse", "Agent Smith", "The Oracle",
     ];
 
@@ -15,6 +18,20 @@
             filteredDashboards = dashboards.filter(dashboard => dashboard.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5);
         }
 	}
+
+    const modalStore = getModalStore();
+    const modalCreateNewDashboard: ModalSettings = {
+        type: 'component',
+        component: 'createNewDashboard',
+        response: (data: {name: string}) => {
+            addDashboard(data.name);
+        }
+    };
+
+    function addDashboard(name: string): void {
+        dashboards = [...dashboards, name];
+    }
+
     function selectDashboard(dashboard: string) {
         selectedDashboard = dashboard;
         setTimeout(() => {
@@ -24,13 +41,13 @@
     }
     function onCreateNewDashboard() {
         console.log("create new dashboard");
+        modalStore.trigger(modalCreateNewDashboard);
     }
 </script>
 
 <header class="fixed-header w-full">
     <h1 class="text-4xl">Dashboards</h1>
-    <br>
-    <div class="flex grid-flow-row columns-3 gap-2">
+    <div class="flex grid-flow-row columns-3 gap-2 pt-2">
         <input type="text" bind:value={searchQuery} placeholder="Search dashboards..." />
         <button class="btn variant-ghost-primary"
                 on:click={onCreateNewDashboard}
@@ -45,7 +62,7 @@
     </div>
 </header>
 <main class="main-content">
-    <div class="logo-cloud grid-cols-3 gap-2 p-4">
+    <div class="logo-cloud grid-cols-3 gap-2 pt-2 pb-2">
         {#each filteredDashboards as dashboard}
             {#if dashboard === selectedDashboard}
                 <button class="btn logo-item variant-ghost-primary"
@@ -69,19 +86,18 @@
 <style>
     .fixed-header {
         position: fixed;
-        top: 10%;
+        top: 80px;
         left: 0%;
         padding-top: 5px;
         padding-left: 2rem;
         padding-right: 2rem;
         width: 100%;
-        height: 80px;
         z-index: 1;
     }
     .main-content {
         overflow-y: auto;
-        margin-top: 120px;
-        height: calc(90% - 120px);
+        margin-top: 103px;
+        height: calc(100% - 183px);
         z-index: 0;
     }
     .logo-item {
