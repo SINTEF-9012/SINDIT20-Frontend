@@ -46,9 +46,7 @@
 
     const modal: ModalSettings = {
         type: 'component',
-        component: 'createNew',
-        title: "<mode> new <name>",
-        body: "<mode> a new <name> in the knowledge graph.",
+        component: 'createNewNode',
         meta: {name: 'card', mode: 'create'},
         response: (data: {name: string, description: string}) => console.log('response:', data)
     };
@@ -56,8 +54,6 @@
 	const modalCreateNewLink: ModalSettings = {
         type: 'component',
         component: 'createNewLink',
-        title: "<mode> new <name>",
-        body: "<mode> a new <name> in the knowledge graph.",
         meta: {name: 'card', mode: 'create'},
         response: (data: {name: string, description: string}) => console.log('response:', data)
     };
