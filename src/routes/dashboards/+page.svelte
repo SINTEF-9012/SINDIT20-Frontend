@@ -4,9 +4,7 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
 
 
-    $: dashboards = ["dashboard1", "dashboard2", "dashboard3", "dashboard4", "dashboard5",
-        "Neo", "Morpheus", "Trinity", "Cypher", "Tank", "Dozer", "Mouse", "Agent Smith", "The Oracle",
-    ];
+    $: dashboards = [];
 
     let selectedDashboard = '';
     let searchQuery = '';
@@ -22,7 +20,8 @@
     const modalStore = getModalStore();
     const modalCreateNewDashboard: ModalSettings = {
         type: 'component',
-        component: 'createNewDashboard',
+        component: 'createNew',
+        meta: {name: 'dashboard'},
         response: (data: {name: string}) => {
             addDashboard(data.name);
         }
@@ -39,10 +38,13 @@
             goto(`/dashboards/${selectedDashboard}`);
         }, 1000);
     }
+
     function onCreateNewDashboard() {
         console.log("create new dashboard");
+        modalCreateNewDashboard.meta = {name: 'dashboard'};
         modalStore.trigger(modalCreateNewDashboard);
     }
+
 </script>
 
 <header class="fixed-header w-full">
@@ -55,7 +57,7 @@
             Create new
         </button>
         <button class="btn variant-ghost-error move-right"
-                on:click={onCreateNewDashboard}
+                disabled
         >
             Delete
         </button>
