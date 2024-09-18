@@ -1,8 +1,17 @@
 <script lang="ts">
+    import type { ModalSettings } from "@skeletonlabs/skeleton";
+    import { getModalStore } from '@skeletonlabs/skeleton';
 	import { selectedWorkspace } from '$lib/stores';
-    import { getNodes as getNodesFromBackend} from '$apis/sindit-backend/api';
-    import { deleteNodes, getNodes } from '$lib/components/states/nodes-state.svelte';
+    import { getNodes } from '$lib/components/states/nodes-state.svelte';
 	import { onMount } from 'svelte';
+    import { goto } from '$app/navigation';
+    import { getToastState } from '$lib/components/states/toast-state.svelte';
+    import {
+        getNode as getNodeBackend,
+        getNodes as getNodesBackend,
+        createAbstractNodeForWorkspace as createWorkspaceBackend
+    } from '$apis/sindit-backend/api';
+
 
     const KG_BASE_URI = import.meta.env.VITE_SINDIT_KG_BASE_URI
 
@@ -12,8 +21,9 @@
     let workspaces: string[] = [];
 	let searchQuery = '';
 	let _selectedWorkspace = '';
-    let _selectedWorkspaceNodes = [];
+    let _selectedWorkspaceNodes: string[] = [];
 	let filteredWorkspaces: string[] = [];
+    const toastState = getToastState();
     const nodesState = getNodes();
 	$: {
 		if (searchQuery === '') {
@@ -22,16 +32,29 @@
             filteredWorkspaces = workspaces.filter(workspace => workspace.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5);
         }
 	}
-	$: {
-		if (_selectedWorkspace) {
-			selectedWorkspace.set(_selectedWorkspace);
-            deleteNodes();
-		}
-	}
+
+    const modalStore = getModalStore();
+    const modalCreateNewDashboard: ModalSettings = {
+        type: 'component',
+        component: 'createNew',
+        meta: {name: 'workspace'},
+        response: (data: {name: string}) => {
+            createWorkspaceNode(data.name);
+        }
+    };
 
     function extractWorkspaceName(uri: string): string {
         const workspace = uri.replace(KG_BASE_URI, '').split('/')[0];
         return workspace;
+    }
+
+    function getNodesInSelectedWorkspace(workspace: string): string[] {
+        const uri = `${KG_BASE_URI}${workspace}/`;
+        console.log("uri:", uri);
+        console.log("nodesData", nodesData);
+        const selectedWorkspaceNodes = nodesData.filter(node =>
+            node.uri.startsWith(uri));
+        return selectedWorkspaceNodes;
     }
 
     function addNodesToNodesState(nodes: any[]) {
@@ -39,20 +62,39 @@
             const nodeName = node.label;
             const nodeDescription = node.assetDescription;
             const position = {x: Math.random()*100, y: Math.random()*100};
-            nodesState.createAbstractAssetNode(nodeName, nodeDescription, position);
+            nodesState.addAbstractAssetNode(nodeName, nodeDescription, position);
         });
     }
 
 	function selectWorkspace(workspace: string) {
+        // Set the selected workspace
 		_selectedWorkspace = workspace;
-        _selectedWorkspaceNodes = nodesData.filter(node => extractWorkspaceName(node.uri) === workspace);
+        selectedWorkspace.set(_selectedWorkspace);
+        // Delete all nodes in the current workspace
+        nodesState.deleteAllNodes();
+        // Get all nodes in the selected workspace
+        _selectedWorkspaceNodes = getNodesInSelectedWorkspace(workspace);
+        // Add the nodes to the nodes state
         addNodesToNodesState(_selectedWorkspaceNodes);
+        setTimeout(() => {
+            console.log("selected workspace:", _selectedWorkspace);
+            console.log("selected nodes:", _selectedWorkspaceNodes);
+            goto(`/canvas`);
+        }, 500);
 	}
 
-    onMount(async () => {
+    function onCreateWorkspace() {
+        modalStore.trigger(modalCreateNewDashboard);
+    }
+
+    function createWorkspaceNode(workspaceName: string) {
+        createWorkspaceBackend(workspaceName);
+        refreshWorkspaces();
+    }
+
+    async function refreshWorkspaces(): Promise<void> {
         try {
-            nodesData = await getNodesFromBackend();
-            // console.log(nodesData);
+            nodesData = await getNodesBackend();
             const workspaceNames = nodesData.map(node => extractWorkspaceName(node.uri));
             for (const workspace of workspaceNames) {
                 if (!workspaces.includes(workspace) && workspace !== '') {
@@ -62,6 +104,11 @@
         } catch (err) {
             console.error(err);
         }
+    }
+
+    onMount(async () => {
+        nodesState.deleteAllNodes();
+        await refreshWorkspaces();
     });
 
     $: console.log('workspaces', workspaces);
@@ -73,7 +120,7 @@
     <div class="flex grid-flow-row columns-3 gap-2 pt-2 pb-2">
         <input type="text" bind:value={searchQuery} placeholder="Search workspaces..." />
         <button class="btn variant-ghost-primary"
-                disabled
+                on:click={onCreateWorkspace}
         >
             Create new
         </button>

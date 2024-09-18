@@ -9,13 +9,25 @@ import type {
 import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { writable, get } from 'svelte/store';
+import {
+	createAbstractNode as createAbstractNodeQuery
+} from '$apis/sindit-backend/api';
+import { selectedWorkspace } from '$lib/stores';
 
 export class Nodes {
 	nodes = writable<Node[]>([]);
 	private toastState: ReturnType<typeof getToastState>;
+	private selectedWorkspace: string = "default";
 
 	constructor() {
 		this.toastState = getToastState();
+		selectedWorkspace.subscribe((value) => {
+			this.selectedWorkspace = value;
+		});
+	}
+
+	deleteAllNodes() {
+		this.nodes.set([]);
 	}
 
 	// Create a new node
@@ -23,7 +35,23 @@ export class Nodes {
 		node: T
 	) {
 		this.nodes.update((nodes) => [...nodes, node]);
-		this.toastState.add('Node created', `Node "${node.nodeName}" created`, 'info');
+		this.toastState.add('Node added', `Node "${node.nodeName}" added`, 'info');
+	}
+
+	// Add a new AbstractAsset node (imported from the API)
+	addAbstractAssetNode(
+		nodeName: string,
+		nodeDescription: string,
+		position: { x: number; y: number },
+	) {
+		const newNode: AbstractAsset = {
+			id: crypto.randomUUID(),
+			nodeName,
+			nodeDescription,
+			position,
+			nodeType: 'AbstractAsset'
+		};
+		this.createNode(newNode);
 	}
 
 	// Create a new AbstractAsset node
@@ -40,6 +68,8 @@ export class Nodes {
 			nodeType: 'AbstractAsset'
 		};
 		this.createNode(newNode);
+		createAbstractNodeQuery(newNode.id, newNode.nodeName, newNode.nodeDescription, this.selectedWorkspace); // API call to create a new AbstractNode in the backend
+		// TODO: Handle the response from the API call to revert the node creation if it fails
 	}
 
 	// Create a new AbstractAssetProperty node
@@ -186,10 +216,6 @@ export function setNodes() {
 	const nodeState = new Nodes();
 	setContext(NODES_KEY, nodeState);
 	return nodeState;
-}
-
-export function deleteNodes() {
-	setContext(NODES_KEY, null);
 }
 
 export function getNodes() {
