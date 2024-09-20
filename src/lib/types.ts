@@ -45,11 +45,11 @@ export interface AbstractAssetProperty extends Node {
 export interface Connection extends Node {
 	nodeType: 'Connection'
 	host: string;
-	port: string;
+	port: number;
 	connectionType: ConnectionType;
 }
 
-type ConnectionType = 'MQTT' | 'InfluxDB' | 'SensApp'
+export type ConnectionType = 'MQTT' | 'InfluxDB' | 'SensApp'
 
 export interface MQTTConnection extends Connection {
 	credentialReference: string; // reference to credentials
