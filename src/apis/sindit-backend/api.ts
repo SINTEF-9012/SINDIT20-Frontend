@@ -1,3 +1,5 @@
+import type { ConnectionType } from '$lib/types';
+
 const API_BASE_URL = import.meta.env.VITE_SINDIT_BACKEND_API
 const KG_BASE_URI = import.meta.env.VITE_SINDIT_KG_BASE_URI
 
@@ -45,19 +47,46 @@ export async function createAbstractNodeForWorkspace(workspace: string) {
 }
 
 export async function createAbstractNode(
-                        nodeId: string, nodeName: string, nodeDescription: string,
+                        nodeId: string, nodeName: string, description: string,
                         workspace: string = 'default'
                     ) {
     const data = {
         uri: `${KG_BASE_URI}${workspace}/${nodeId}`,
         label: nodeName,
-        assetDescription: nodeDescription
+        assetDescription: description
     }
     const response = await fetch(`${API_BASE_URL}/kg/asset`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+        throw new Error('Error performing POST request');
+    }
+    return response.json();
+}
+
+export async function createConnectionNode(
+    nodeId: string, nodeName: string, description: string,
+    host: string, port: number,
+    connectionType: ConnectionType,
+    workspace: string = 'default'
+) {
+    const data = {
+        uri: `${KG_BASE_URI}${workspace}/${nodeId}`,
+        label: nodeName,
+        connectionDescription: description,
+        host: host,
+        port: port,
+        type: connectionType
+    }
+    const response = await fetch(`${API_BASE_URL}/kg/connection`, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
         body: JSON.stringify(data)
     });
     if (!response.ok) {
