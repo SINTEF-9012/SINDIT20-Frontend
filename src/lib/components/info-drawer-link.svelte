@@ -25,18 +25,16 @@
 
 <div class="toolbox-content flex flex-col text-black">
     <header class="flex justify-center">
-        <h1 class="text-xl">Node properties</h1>
+        <h1 class="text-xl">Link properties</h1>
     </header>
     <br />
     <main class="grid grid-cols-1 gap-4">
         {#each Object.keys(link) as key}
-            {#if key !== 'id'}
-                <PropertyDisplay {key} value={link[key]} />
-            {/if}
+            <PropertyDisplay {key} value={link[key]} />
         {/each}
     </main>
     <footer class="flex justify-center">
-        <button class="btn variant-ghost-error" disabled>Update node</button>
+        <button class="btn variant-ghost-error" disabled>Update link</button>
     </footer>
 </div>
 
