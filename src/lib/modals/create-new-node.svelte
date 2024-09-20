@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SvelteComponent } from 'svelte';
-	import type { LogLevel, NodeType } from '$lib/types';
+	import type { LogLevel, NodeType, ConnectionType } from '$lib/types';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import { getNodes } from '$lib/components/states/nodes-state.svelte';
@@ -24,7 +24,12 @@
 	const title = `${mode} new ${metadata.name}`;
 	const body = `${mode} a new ${metadata.name} in the knowledge graph.`;
 	const nodeTypes: NodeType[] = ['AbstractAsset', 'AbstractAssetProperty', 'Connection'];
+	const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'SensApp'];
 
+	$: isBaseFormValid = false;
+	$: isFormValid = false;
+	$: console.log("isFormValid", isFormValid);
+	$: console.log("isBaseFormValid", isBaseFormValid);
 
 	// Form Data - to be submitted
 	$: abstractAsset = {
@@ -46,13 +51,58 @@
 		connectionType: ''
 	}
 
+	$: {
+		if (abstractAsset.nodeType === 'AbstractAsset') {
+			console.log('AbstractAsset');
+			isFormValid = isBaseFormValid = ((abstractAsset.nodeName != '') && (abstractAsset.nodeDescription != '') && (isValidNodeType(abstractAsset.nodeType)));
+		} else if (abstractAsset.nodeType === 'AbstractAssetProperty') {
+			isFormValid = (isBaseFormValid &&
+				(abstractAssetProperty.propertyName != '') && (abstractAssetProperty.propertyDescription != '') && (abstractAssetProperty.propertyType != '') &&
+				(abstractAssetProperty.propertyValue != '') && (abstractAssetProperty.propertyUnit != '') && (abstractAssetProperty.propertySemanticId != ''));
+		} else if (abstractAsset.nodeType === 'Connection') {
+			isFormValid = (isBaseFormValid &&
+				(isValidHost(connection.host)) && (isValidPort(connection.port)) && (isValidConnectionType(connection.connectionType)));
+		} else {
+			isFormValid = false;
+		}
+	}
+
+	function isValidNodeType(value: any): boolean {
+		return nodeTypes.includes(value);
+	}
+
+	function isValidHost(value: any): boolean {
+		return value.length > 0;
+	}
+
+	function isValidPort(value: any): boolean {
+		const port = parsePort(value);
+		return !isNaN(port) && port >= 999 && port <= 9999;
+	}
+
+	function isValidConnectionType(value: any): boolean {
+		return connectionTypes.includes(value);
+	}
+
+	function getValidConnectionType(value: any): ConnectionType {
+		if (!isValidConnectionType(value)) {
+			throw new Error(`Invalid connection type: ${value}`);
+		}
+		return value as ConnectionType;
+	}
+
+	function parsePort(value: string): number {
+		const port = parseInt(value, 10);
+		return port;
+	}
+
 	// Create a new node in the knowledge graph
 	function createNewNode(): void {
-		let position = {x: 100, y: 100};
+		let position = {x: Math.random()*300, y: Math.random()*300};
 		if (metadata.position) {
 			position = metadata.position;
 		}
-		console.log('position:', position);
+		// console.log('position:', position);
 		// TODO: handle creation of different node types
 		if (abstractAsset.nodeType === 'AbstractAsset') {
 			nodes.createAbstractAssetNode(
@@ -66,6 +116,13 @@
 				abstractAssetProperty.propertyUnit,
 				abstractAssetProperty.propertyValue,
 				abstractAssetProperty.propertySemanticId
+			);
+		} else if (abstractAsset.nodeType === 'Connection') {
+			nodes.createConnectionNode(
+				abstractAsset.nodeName, abstractAsset.nodeDescription, position,
+				connection.host,
+				parsePort(connection.port),
+				getValidConnectionType(connection.connectionType)
 			);
 		} else {
 			const title = 'Error';
@@ -124,7 +181,7 @@
 				</select>
 			</label>
 			{#if (abstractAsset.nodeType === 'AbstractAssetProperty')}
-				<div class="abstract-asset-properties">
+				<div class="abstract-asset-properties {cForm} ml-4">
 					<label>
 						<input class="input" type="text" bind:value={abstractAssetProperty.propertyName} placeholder="Property name..." />
 					</label>
@@ -144,19 +201,29 @@
 						<input class="input" type="text" bind:value={abstractAssetProperty.propertySemanticId} placeholder="Property semantic Id..." />
 					</label>
 				</div>
+			{:else if (abstractAsset.nodeType === 'Connection')}
+				<div class="connection-properties {cForm} ml-4">
+					<label>
+						<input class="input" type="text" bind:value={connection.host} placeholder="Host..." />
+					</label>
+					<label>
+						<input class="input" type="text" bind:value={connection.port} placeholder="Port..." />
+					</label>
+					<label>
+						<select class="input" bind:value={connection.connectionType}>
+							<option value="">Select a connection type...</option>
+							{#each connectionTypes as conn}
+								<option value={conn}>{conn}</option>
+							{/each}
+						</select>
+					</label>
+				</div>
 			{/if}
 		</form>
 		<!-- prettier-ignore -->
 		<footer class="modal-footer {parent.regionFooter}">
 			<button class="btn {parent.buttonNeutral}" on:click={onClose}>{parent.buttonTextCancel}</button>
-			<button class="btn {parent.buttonPositive}" on:click={onFormSubmit}>{parent.buttonTextSubmit}</button>
+			<button class="btn {parent.buttonPositive}" on:click={onFormSubmit} disabled={!isFormValid}>{parent.buttonTextSubmit}</button>
 		</footer>
 	</div>
 {/if}
-
-
-<style>
-	.abstract-asset-properties {
-		padding-left: 15px;
-	}
-</style>
