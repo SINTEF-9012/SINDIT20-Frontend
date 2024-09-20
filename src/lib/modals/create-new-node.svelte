@@ -29,7 +29,6 @@
 	$: isBaseFormValid = false;
 	$: isFormValid = false;
 	$: console.log("isFormValid", isFormValid);
-	$: console.log("isBaseFormValid", isBaseFormValid);
 
 	// Form Data - to be submitted
 	$: abstractAsset = {
@@ -52,16 +51,18 @@
 	}
 
 	$: {
+		isBaseFormValid = ((abstractAsset.nodeName != '') && (isValidNodeType(abstractAsset.nodeType)));
 		if (abstractAsset.nodeType === 'AbstractAsset') {
-			console.log('AbstractAsset');
-			isFormValid = isBaseFormValid = ((abstractAsset.nodeName != '') && (abstractAsset.nodeDescription != '') && (isValidNodeType(abstractAsset.nodeType)));
+			isFormValid = isBaseFormValid;
 		} else if (abstractAsset.nodeType === 'AbstractAssetProperty') {
 			isFormValid = (isBaseFormValid &&
 				(abstractAssetProperty.propertyName != '') && (abstractAssetProperty.propertyDescription != '') && (abstractAssetProperty.propertyType != '') &&
-				(abstractAssetProperty.propertyValue != '') && (abstractAssetProperty.propertyUnit != '') && (abstractAssetProperty.propertySemanticId != ''));
+				(abstractAssetProperty.propertyValue != '') && (abstractAssetProperty.propertyUnit != '') && (abstractAssetProperty.propertySemanticId != '')
+			);
 		} else if (abstractAsset.nodeType === 'Connection') {
 			isFormValid = (isBaseFormValid &&
-				(isValidHost(connection.host)) && (isValidPort(connection.port)) && (isValidConnectionType(connection.connectionType)));
+				(isValidHost(connection.host)) && (isValidPort(connection.port)) && (isValidConnectionType(connection.connectionType))
+			);
 		} else {
 			isFormValid = false;
 		}
@@ -207,6 +208,9 @@
 						<input class="input" type="text" bind:value={connection.host} placeholder="Host..." />
 					</label>
 					<label>
+						{#if !isValidPort(connection.port) && connection.port !== ''}
+							<span class="error-symbol">⚠️</span>
+						{/if}
 						<input class="input" type="text" bind:value={connection.port} placeholder="Port..." />
 					</label>
 					<label>
@@ -227,3 +231,18 @@
 		</footer>
 	</div>
 {/if}
+
+
+<style>
+	.input-container {
+	  display: flex;
+	  align-items: center;
+	}
+	.error-symbol {
+	  margin-left: 8px;
+	  color: red;
+	  position: absolute;
+	  pointer-events: none;
+	  z-index: 1;
+	}
+</style>
