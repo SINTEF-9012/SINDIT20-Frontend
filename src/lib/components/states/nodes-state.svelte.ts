@@ -10,7 +10,8 @@ import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { writable, get } from 'svelte/store';
 import {
-	createAbstractNode as createAbstractNodeQuery
+	createAbstractNode as createAbstractNodeQuery,
+	createConnectionNode as createConnectionNodeQuery
 } from '$apis/sindit-backend/api';
 import { selectedWorkspace } from '$lib/stores';
 
@@ -35,7 +36,6 @@ export class Nodes {
 		node: T
 	) {
 		this.nodes.update((nodes) => [...nodes, node]);
-		this.toastState.add('Node added', `Node "${node.nodeName}" added`, 'info');
 	}
 
 	// Add a new AbstractAsset node (imported from the API)
@@ -106,7 +106,7 @@ export class Nodes {
 		nodeDescription: string,
 		position: { x: number; y: number },
 		host: string,
-		port: string,
+		port: number,
 		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp'
 	) {
 		const newNode: Connection = {
@@ -120,6 +120,8 @@ export class Nodes {
 			connectionType
 		};
 		this.createNode(newNode);
+		// API call to create a new ConnectionNode in the backend
+		createConnectionNodeQuery(newNode.id, newNode.nodeName, newNode.nodeDescription, host, port, connectionType, this.selectedWorkspace);
 	}
 
 	// Create a new MQTTConnection node
@@ -128,7 +130,7 @@ export class Nodes {
 		nodeDescription: string,
 		position: { x: number; y: number },
 		host: string,
-		port: string,
+		port: number,
 		credentialReference: string
 	) {
 		const newNode: MQTTConnection = {
@@ -151,7 +153,7 @@ export class Nodes {
 		nodeDescription: string,
 		position: { x: number; y: number },
 		host: string,
-		port: string,
+		port: number,
 		bucket: string,
 		org: string,
 		credentialReference: string
