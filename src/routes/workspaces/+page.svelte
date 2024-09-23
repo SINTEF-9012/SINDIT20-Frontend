@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { NodeType } from '$lib/types';
     import type { ModalSettings } from "@skeletonlabs/skeleton";
     import { getModalStore } from '@skeletonlabs/skeleton';
 	import { selectedWorkspace } from '$lib/stores';
@@ -11,6 +12,7 @@
         getNodes as getNodesBackend,
         createAbstractNodeForWorkspace as createWorkspaceBackend
     } from '$apis/sindit-backend/api';
+	import Node from '$lib/components/node.svelte';
 
 
     const KG_BASE_URI = import.meta.env.VITE_SINDIT_KG_BASE_URI
@@ -59,10 +61,14 @@
 
     function addNodesToNodesState(nodes: any[]) {
         nodes.forEach(node => {
-            const nodeName = node.label;
-            const nodeDescription = node.assetDescription;
+            const class_uri = node.class_uri;
+            const class_type = class_uri.split('#')[1] as NodeType;
             const position = {x: Math.random()*100, y: Math.random()*100};
-            nodesState.addAbstractAssetNode(nodeName, nodeDescription, position);
+            if (class_type === 'AbstractAsset') {
+                nodesState.addAbstractAssetNode(node.label, node.assetDescription, position);
+            } else {
+                throw new Error(`Unknown class type: ${class_type}`);
+            }
         });
     }
 

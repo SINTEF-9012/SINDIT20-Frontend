@@ -15,7 +15,9 @@ export async function getNodes() {
     return response.json();
 }
 
-export async function getNode(node_uri: string, depth: number = 1) {
+export async function getNode(
+    node_uri: string, depth: number = 1
+) {
     const endpoint = 'kg/node';
     const uri = `${API_BASE_URL}/${node_uri}`;
     const url = `${API_BASE_URL}/${endpoint}?node_uri=${uri}&depth=${depth}`;
@@ -27,7 +29,9 @@ export async function getNode(node_uri: string, depth: number = 1) {
     return response.json();
 }
 
-export async function createAbstractNodeForWorkspace(workspace: string) {
+export async function createAbstractNodeForWorkspace(
+    workspace: string
+) {
     const data = {
         uri: `${KG_BASE_URI}${workspace}`,
         label: workspace,
@@ -47,9 +51,9 @@ export async function createAbstractNodeForWorkspace(workspace: string) {
 }
 
 export async function createAbstractNode(
-                        nodeId: string, nodeName: string, description: string,
-                        workspace: string = 'default'
-                    ) {
+    nodeId: string, nodeName: string, description: string,
+    workspace: string = 'default'
+) {
     const data = {
         uri: `${KG_BASE_URI}${workspace}/${nodeId}`,
         label: nodeName,
@@ -60,6 +64,37 @@ export async function createAbstractNode(
         headers: {
             'Content-Type': 'application/json'
         },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+        throw new Error('Error performing POST request');
+    }
+    return response.json();
+}
+
+export async function createAbstractPropertyNode(
+    id: string, description: string,
+    propertyName: string, propertyValue: string, propertyDataTypeURI: string, propertyUnitURI: string,
+    workspace: string = 'default'
+) {
+    const data = {
+        uri: `${KG_BASE_URI}${workspace}/${id}`,
+        label: propertyName,
+        propertyName,
+        propertyDescription: description,
+        propertyValue,
+        propertyDataType: {
+            uri: propertyDataTypeURI,
+        },
+        propertyUnit: {
+            uri: propertyUnitURI,
+        },
+    }
+    const response = await fetch(`${API_BASE_URL}/kg/asset_property`, {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+    },
         body: JSON.stringify(data)
     });
     if (!response.ok) {

@@ -11,6 +11,7 @@ import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { writable, get } from 'svelte/store';
 import {
 	createAbstractNode as createAbstractNodeQuery,
+	createAbstractPropertyNode as createAbstracAssetPropertyNodeQuery,
 	createConnectionNode as createConnectionNodeQuery
 } from '$apis/sindit-backend/api';
 import { selectedWorkspace } from '$lib/stores';
@@ -27,11 +28,71 @@ export class Nodes {
 		});
 	}
 
+	private abstractAssetNodeObject(
+		nodeName: string,
+		description: string,
+		position: { x: number; y: number }
+	): AbstractAsset {
+		return {
+			id: crypto.randomUUID(),
+			nodeName,
+			description,
+			position,
+			nodeType: 'AbstractAsset'
+		};
+	}
+
+	private abstractAssetPropertyNodeObject(
+		nodeName: string,
+		description: string,
+		position: { x: number; y: number },
+		propertyName: string,
+		propertyValue: string,
+		propertyDataTypeURI: string,
+		propertyUnitURI: string,
+	): AbstractAssetProperty {
+		return {
+			id: crypto.randomUUID(),
+			nodeName,
+			description,
+			position,
+			nodeType: 'AbstractAssetProperty',
+			propertyName,
+			propertyValue,
+			propertyDataType: {
+				uri: propertyDataTypeURI,
+			},
+			propertyUnit: {
+				uri: propertyUnitURI,
+			},
+		};
+	}
+
+	private connectionNodeObject(
+		nodeName: string,
+		description: string,
+		position: { x: number; y: number },
+		host: string,
+		port: number,
+		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp'
+	): Connection {
+		return {
+			id: crypto.randomUUID(),
+			nodeName,
+			description,
+			position,
+			nodeType: 'Connection',
+			host,
+			port,
+			connectionType
+		};
+	}
+
 	deleteAllNodes() {
 		this.nodes.set([]);
 	}
 
-	// Create a new node
+	// Add or create a new node (add node in frontend, create node in backend)
 	createNode<T extends Node>(
 		node: T
 	) {
@@ -41,93 +102,100 @@ export class Nodes {
 	// Add a new AbstractAsset node (imported from the API)
 	addAbstractAssetNode(
 		nodeName: string,
-		nodeDescription: string,
+		description: string,
 		position: { x: number; y: number },
 	) {
-		const newNode: AbstractAsset = {
-			id: crypto.randomUUID(),
-			nodeName,
-			nodeDescription,
-			position,
-			nodeType: 'AbstractAsset'
-		};
+		const newNode = this.abstractAssetNodeObject(nodeName, description, position);
 		this.createNode(newNode);
 	}
 
-	// Create a new AbstractAsset node
-	createAbstractAssetNode(
+	// Add a new AbstractAssetProperty node (imported from the API)
+	addAbstractAssetPropertyNode(
 		nodeName: string,
-		nodeDescription: string,
-		position: { x: number; y: number },
-	) {
-		const newNode: AbstractAsset = {
-			id: crypto.randomUUID(),
-			nodeName,
-			nodeDescription,
-			position,
-			nodeType: 'AbstractAsset'
-		};
-		this.createNode(newNode);
-		createAbstractNodeQuery(newNode.id, newNode.nodeName, newNode.nodeDescription, this.selectedWorkspace); // API call to create a new AbstractNode in the backend
-		// TODO: Handle the response from the API call to revert the node creation if it fails
-	}
-
-	// Create a new AbstractAssetProperty node
-	createAbstractAssetPropertyNode(
-		nodeName: string,
-		nodeDescription: string,
+		description: string,
 		position: { x: number; y: number },
 		propertyName: string,
-		propertyDescription: string,
 		propertyValue: string,
 		propertyDataType: string,
 		propertyUnit: string,
 		propertySemanticId: string
 	) {
-		const newNode: AbstractAssetProperty = {
-			id: crypto.randomUUID(),
-			nodeName,
-			nodeDescription,
-			position,
-			nodeType: 'AbstractAssetProperty',
-			propertyName,
-			propertyDescription,
-			propertyValue,
-			propertyDataType,
-			propertyUnit,
-			propertySemanticId
-		};
+		const newNode = this.abstractAssetPropertyNodeObject(nodeName, description, position, propertyName, propertyValue, propertyDataType, propertyUnit, propertySemanticId);
 		this.createNode(newNode);
 	}
 
-	// Create a new Connection node
-	createConnectionNode(
+	// Add a new Connection node (imported from the API)
+	addConnectionNode(
 		nodeName: string,
-		nodeDescription: string,
+		description: string,
 		position: { x: number; y: number },
 		host: string,
 		port: number,
 		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp'
 	) {
-		const newNode: Connection = {
-			id: crypto.randomUUID(),
-			nodeName,
-			nodeDescription,
-			position,
-			nodeType: 'Connection',
-			host,
-			port,
-			connectionType
-		};
+		const newNode = this.connectionNodeObject(nodeName, description, position, host, port, connectionType);
 		this.createNode(newNode);
-		// API call to create a new ConnectionNode in the backend
-		createConnectionNodeQuery(newNode.id, newNode.nodeName, newNode.nodeDescription, host, port, connectionType, this.selectedWorkspace);
+	}
+
+	// Create a new AbstractAsset node (frontend and backend)
+	async createAbstractAssetNode(
+		nodeName: string,
+		description: string,
+		position: { x: number; y: number },
+	) {
+		const newNode = this.abstractAssetNodeObject(nodeName, description, position);
+		this.createNode(newNode);
+		try {
+			await createAbstractNodeQuery(newNode.id, newNode.nodeName, newNode.description, this.selectedWorkspace); // API call to create a new AbstractNode in the backend
+		} catch (error) {
+			this.toastState.add('Error creating AbstractAsset node', error, 'error');
+			this.deleteNode(newNode.id);
+		}
+	}
+
+	// Create a new AbstractAssetProperty node
+	async createAbstractAssetPropertyNode(
+		nodeName: string,
+		description: string,
+		position: { x: number; y: number },
+		propertyName: string,
+		propertyValue: string,
+		propertyDataType: string,
+		propertyUnit: string,
+	) {
+		const newNode = this.abstractAssetPropertyNodeObject(nodeName, description, position, propertyName, propertyValue, propertyDataType, propertyUnit);
+		this.createNode(newNode);
+		try {
+			await createAbstracAssetPropertyNodeQuery;
+		} catch (error) {
+			this.toastState.add('Error creating AbstractAssetProperty node', error, 'error');
+			this.deleteNode(newNode.id);
+		}
+	}
+
+	// Create a new Connection node
+	async createConnectionNode(
+		nodeName: string,
+		description: string,
+		position: { x: number; y: number },
+		host: string,
+		port: number,
+		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp'
+	) {
+		const newNode = this.connectionNodeObject(nodeName, description, position, host, port, connectionType);
+		this.createNode(newNode);
+		try {
+			await createConnectionNodeQuery(newNode.id, newNode.nodeName, newNode.description, host, port, connectionType, this.selectedWorkspace);
+		} catch (error) {
+			this.toastState.add('Error creating Connection node', error, 'error');
+			this.deleteNode(newNode.id);
+		}
 	}
 
 	// Create a new MQTTConnection node
 	createMQTTConnectionNode(
 		nodeName: string,
-		nodeDescription: string,
+		description: string,
 		position: { x: number; y: number },
 		host: string,
 		port: number,
@@ -136,7 +204,7 @@ export class Nodes {
 		const newNode: MQTTConnection = {
 			id: crypto.randomUUID(),
 			nodeName,
-			nodeDescription,
+			description,
 			position,
 			nodeType: 'Connection',
 			connectionType: 'MQTT',
@@ -150,7 +218,7 @@ export class Nodes {
 	// Create a new InfluxDBConnection node
 	createInfluxDBConnectionNode(
 		nodeName: string,
-		nodeDescription: string,
+		description: string,
 		position: { x: number; y: number },
 		host: string,
 		port: number,
@@ -161,7 +229,7 @@ export class Nodes {
 		const newNode: InfluxDBConnection = {
 			id: crypto.randomUUID(),
 			nodeName,
-			nodeDescription,
+			description,
 			position,
 			nodeType: 'Connection',
 			connectionType: 'InfluxDB',

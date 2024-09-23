@@ -16,7 +16,7 @@ export type LogLevel = 'debug' | 'info' | 'warning' | 'error';
 export interface Node {
 	id: string;
 	nodeName: string;
-	nodeDescription: string;
+	description: string;
 	position: Position;
 	nodeType: NodeType;
 }
@@ -34,12 +34,15 @@ export interface AbstractAsset extends Node {
 
 export interface AbstractAssetProperty extends Node {
 	nodeType: 'AbstractAssetProperty';
+	description: string;
 	propertyName: string;
-	propertyDescription: string;
 	propertyValue: string;
-	propertyDataType: string;
-	propertyUnit: string;
-	propertySemanticId: string;
+	propertyDataType: {
+		uri: string;
+	};
+	propertyUnit: {
+		uri: string;
+	};
 }
 
 export interface Connection extends Node {
