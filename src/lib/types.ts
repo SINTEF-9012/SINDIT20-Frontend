@@ -30,7 +30,10 @@ export type NodeType = 'AbstractAsset' | 'AbstractAssetProperty' | 'Connection'
 
 export interface AbstractAsset extends Node {
 	nodeType: 'AbstractAsset';
+	assetProperties?: AssetProperties[];
 }
+
+export type AssetProperties = { uri: string }
 
 export interface AbstractAssetProperty extends Node {
 	nodeType: 'AbstractAssetProperty';

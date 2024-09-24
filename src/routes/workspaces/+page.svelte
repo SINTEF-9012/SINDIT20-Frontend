@@ -6,32 +6,31 @@
     import { getNodes } from '$lib/components/states/nodes-state.svelte';
 	import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { getToastState } from '$lib/components/states/toast-state.svelte';
     import {
-        getNode as getNodeBackend,
-        getNodes as getNodesBackend,
-        createAbstractNodeForWorkspace as createWorkspaceBackend
-    } from '$apis/sindit-backend/api';
-	import Node from '$lib/components/node.svelte';
+        getNodes as getNodesBackendQuery,
+    } from '$apis/sindit-backend/kg';
+    import {
+        switchWorkspace,
+        listWorkspaces,
+        getWorkspace,
+    } from '$apis/sindit-backend/workspace';
 
 
-    const KG_BASE_URI = import.meta.env.VITE_SINDIT_KG_BASE_URI
+    type Workspace = {
+        name: string;
+        uri: string;
+    };
 
-    // TODO: Implement workspaces in the form of a list of KGs to select from.
-	// const workspaces: string[] = ['kg1', 'w1', 'workspace-3', 'yolo', 'Han solo', 'Chewbacca'];
-    let nodesData;
-    let workspaces: string[] = [];
+    let workspaces: Workspace[] = [];
 	let searchQuery = '';
 	let _selectedWorkspace = '';
-    let _selectedWorkspaceNodes: string[] = [];
-	let filteredWorkspaces: string[] = [];
-    const toastState = getToastState();
+	let filteredWorkspaces: Workspace[] = [];
     const nodesState = getNodes();
 	$: {
 		if (searchQuery === '') {
-            filteredWorkspaces = workspaces;
+            filteredWorkspaces = workspaces.map(workspace => workspace);
 		} else {
-            filteredWorkspaces = workspaces.filter(workspace => workspace.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5);
+            filteredWorkspaces = workspaces.filter(workspace => workspace.name.toLowerCase().includes(searchQuery.toLowerCase()));
         }
 	}
 
@@ -41,23 +40,9 @@
         component: 'createNew',
         meta: {name: 'workspace'},
         response: (data: {name: string}) => {
-            createWorkspaceNode(data.name);
+            createWorkspace(data.name);
         }
     };
-
-    function extractWorkspaceName(uri: string): string {
-        const workspace = uri.replace(KG_BASE_URI, '').split('/')[0];
-        return workspace;
-    }
-
-    function getNodesInSelectedWorkspace(workspace: string): string[] {
-        const uri = `${KG_BASE_URI}${workspace}/`;
-        console.log("uri:", uri);
-        console.log("nodesData", nodesData);
-        const selectedWorkspaceNodes = nodesData.filter(node =>
-            node.uri.startsWith(uri));
-        return selectedWorkspaceNodes;
-    }
 
     function addNodesToNodesState(nodes: any[]) {
         nodes.forEach(node => {
@@ -65,26 +50,32 @@
             const class_type = class_uri.split('#')[1] as NodeType;
             const position = {x: Math.random()*100, y: Math.random()*100};
             if (class_type === 'AbstractAsset') {
-                nodesState.addAbstractAssetNode(node.label, node.assetDescription, position);
+                nodesState.addAbstractAssetNode(node.label, node.assetDescription, position, node.assetProperties);
+            } else if (class_type === 'Connection') {
+                nodesState.addConnectionNode(node.label, node.connectionDescription, position, node.host, node.port, node.connectionType);
+            } else if (class_type === 'AbstractAssetProperty') {
+                // nodesState.addAbstractAssetPropertyNode(node.label, node.propertyDescription, position, node.propertyType, );
             } else {
-                throw new Error(`Unknown class type: ${class_type}`);
+                throw new Error(`Unknown node type ${class_type}`);
             }
         });
     }
 
-	function selectWorkspace(workspace: string) {
+	async function selectWorkspace(workspace: Workspace) {
         // Set the selected workspace
-		_selectedWorkspace = workspace;
+        console.log("selected workspace:", workspace);
+        await switchWorkspace(workspace.uri);
+		_selectedWorkspace = workspace.name;
         selectedWorkspace.set(_selectedWorkspace);
+        console.log("selected workspace:", getCurrentWorkspace());
         // Delete all nodes in the current workspace
         nodesState.deleteAllNodes();
-        // Get all nodes in the selected workspace
-        _selectedWorkspaceNodes = getNodesInSelectedWorkspace(workspace);
-        // Add the nodes to the nodes state
-        addNodesToNodesState(_selectedWorkspaceNodes);
-        setTimeout(() => {
+        // Get all nodes in the selected workspace and add them to the nodes state
+        setTimeout(async () => {
+            const nodes = await getNodesBackendQuery();
+            addNodesToNodesState(nodes);
             console.log("selected workspace:", _selectedWorkspace);
-            console.log("selected nodes:", _selectedWorkspaceNodes);
+            console.log("selected nodes:", nodes);
             goto(`/canvas`);
         }, 500);
 	}
@@ -93,28 +84,49 @@
         modalStore.trigger(modalCreateNewDashboard);
     }
 
-    function createWorkspaceNode(workspaceName: string) {
-        createWorkspaceBackend(workspaceName);
-        refreshWorkspaces();
+    function getWorkspaceDictFromUri(workspaceUri: string): Workspace {
+        return {
+            name: workspaceUri.split('#')[1] as string,
+            uri: workspaceUri,
+        };
     }
 
-    async function refreshWorkspaces(): Promise<void> {
+    function createWorkspace(workspaceName: string) {
+        switchWorkspace(workspaceName);
+        const workspace = getWorkspaceDictFromUri(workspaceName);
+        workspaces = [...workspaces, workspace];
+    }
+
+    async function getWorkspaces(): Promise<void> {
         try {
-            nodesData = await getNodesBackend();
-            const workspaceNames = nodesData.map(node => extractWorkspaceName(node.uri));
-            for (const workspace of workspaceNames) {
-                if (!workspaces.includes(workspace) && workspace !== '') {
-                    workspaces = [...workspaces, workspace];
-                }
+            const workspace_uris = await listWorkspaces();
+            for (const uri of workspace_uris) {
+                const workspace = getWorkspaceDictFromUri(uri);
+                workspaces.push(workspace);
             }
         } catch (err) {
             console.error(err);
         }
+        // trigger reactivity
+        workspaces = [...workspaces];
+    }
+
+    async function getCurrentWorkspace(): Promise<void> {
+        const workspace = await getWorkspace();
+        console.log("getCurrentWorkspace:", workspace);
+        if (!workspace.workspace_uri) {
+            _selectedWorkspace = '';
+            selectedWorkspace.set(_selectedWorkspace);
+        } else {
+            const workspaceDict = getWorkspaceDictFromUri(workspace.workspace_uri);
+            _selectedWorkspace = workspaceDict.name;
+            selectedWorkspace.set(_selectedWorkspace);
+        }
     }
 
     onMount(async () => {
-        nodesState.deleteAllNodes();
-        await refreshWorkspaces();
+        await getWorkspaces();
+        await getCurrentWorkspace();
     });
 
     $: console.log('workspaces', workspaces);
@@ -140,19 +152,19 @@
 <main class="main-content">
     <div class="logo-cloud grid-cols-3 gap-2 p-4">
         {#each filteredWorkspaces as workspace}
-            {#if workspace === _selectedWorkspace}
+            {#if workspace.name === _selectedWorkspace}
                 <button class="btn logo-item variant-ghost-primary"
                         on:click={() => selectWorkspace(workspace)}
-                        class:selected={_selectedWorkspace === workspace}
+                        class:selected={_selectedWorkspace === workspace.name}
                 >
-                    <span>{workspace}</span>
+                    <span>{workspace.name}</span>
                 </button>
             {:else}
                 <button class="btn logo-item variant-ghost-tertiary"
                         on:click={() => selectWorkspace(workspace)}
-                        class:selected={_selectedWorkspace === workspace}
+                        class:selected={_selectedWorkspace === workspace.name}
                 >
-                    <span>{workspace}</span>
+                    <span>{workspace.name}</span>
                 </button>
             {/if}
         {/each}

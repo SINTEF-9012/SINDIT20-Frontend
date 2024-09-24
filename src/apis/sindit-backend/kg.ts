@@ -1,12 +1,13 @@
-import type { ConnectionType } from '$lib/types';
+import type { ConnectionType, AbstractAsset } from '$lib/types';
 
-const API_BASE_URL = import.meta.env.VITE_SINDIT_BACKEND_API
 const KG_BASE_URI = import.meta.env.VITE_SINDIT_KG_BASE_URI
+const API_BASE_URL = import.meta.env.VITE_SINDIT_BACKEND_API
+const API_BASE_ENDPOINT = `${API_BASE_URL}/kg`
 
 
 export async function getNodes() {
-    const endpoint = 'kg/nodes';
-    const url = `${API_BASE_URL}/${endpoint}`;
+    const endpoint = 'nodes';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}`;
     console.log("getNodes", `${url}`)
     const response = await fetch(`${url}`);
     if (!response.ok) {
@@ -18,10 +19,9 @@ export async function getNodes() {
 export async function getNode(
     node_uri: string, depth: number = 1
 ) {
-    const endpoint = 'kg/node';
-    const uri = `${API_BASE_URL}/${node_uri}`;
-    const url = `${API_BASE_URL}/${endpoint}?node_uri=${uri}&depth=${depth}`;
-    console.log("getNodes", `${url}`)
+    const endpoint = 'node';
+    const uri = `${KG_BASE_URI}${node_uri}`;
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${uri}&depth=${depth}`;
     const response = await fetch(`${url}`);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
@@ -29,37 +29,49 @@ export async function getNode(
     return response.json();
 }
 
-export async function createAbstractNodeForWorkspace(
-    workspace: string
+
+export async function createAbstractNode(
+    nodeId: string, nodeName: string, description: string,
 ) {
+    const endpoint = 'asset';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}`;
     const data = {
-        uri: `${KG_BASE_URI}${workspace}`,
-        label: workspace,
-        assetDescription: 'Workspace'
+        uri: `${KG_BASE_URI}${nodeId}`,
+        label: nodeName,
+        assetDescription: description
     }
-    const response = await fetch(`${API_BASE_URL}/kg/asset`, {
+    const response = await fetch(`${url}`, {
         method: 'POST',
         headers: {
-        'Content-Type': 'application/json'
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify(data)
     });
     if (!response.ok) {
         throw new Error('Error performing POST request');
     }
-        return response.json();
+    return response.json();
 }
 
-export async function createAbstractNode(
-    nodeId: string, nodeName: string, description: string,
-    workspace: string = 'default'
+export async function addAbstractPropertyToNode(
+    assetNode: AbstractAsset, propertyURI: string
 ) {
+    const endpoint = 'asset';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}`;
+    const assetProperties = assetNode.assetProperties || [];
     const data = {
-        uri: `${KG_BASE_URI}${workspace}/${nodeId}`,
-        label: nodeName,
-        assetDescription: description
+        uri: `${KG_BASE_URI}${assetNode.id}`,
+        label: assetNode.nodeName,
+        assetDescription: assetNode.description,
+        assetProperties: [
+            ...assetProperties,
+            {
+                uri: propertyURI
+            }
+        ]
+
     }
-    const response = await fetch(`${API_BASE_URL}/kg/asset`, {
+    const response = await fetch(`${url}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -75,10 +87,9 @@ export async function createAbstractNode(
 export async function createAbstractPropertyNode(
     id: string, description: string,
     propertyName: string, propertyValue: string, propertyDataTypeURI: string, propertyUnitURI: string,
-    workspace: string = 'default'
 ) {
     const data = {
-        uri: `${KG_BASE_URI}${workspace}/${id}`,
+        uri: `${KG_BASE_URI}${id}`,
         label: propertyName,
         propertyName,
         propertyDescription: description,
@@ -107,10 +118,9 @@ export async function createConnectionNode(
     nodeId: string, nodeName: string, description: string,
     host: string, port: number,
     connectionType: ConnectionType,
-    workspace: string = 'default'
 ) {
     const data = {
-        uri: `${KG_BASE_URI}${workspace}/${nodeId}`,
+        uri: `${KG_BASE_URI}${nodeId}`,
         label: nodeName,
         connectionDescription: description,
         host: host,

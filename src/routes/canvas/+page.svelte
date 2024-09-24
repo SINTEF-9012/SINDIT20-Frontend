@@ -29,7 +29,7 @@
 	let zoomLevel = 1;
 
 	let nodesState = getNodes();
-	$: nodes = nodesState.nodes;
+	$: abstractAssetNodes = nodesState.assets;
 
 	let linksState = getLinks();
 	$: links = linksState.links;
@@ -174,7 +174,7 @@
 	function applyRepulsion(nodes: NodeType[]): NodeType[] {
 		for (let i = 0; i < nodes.length; i++) {
 			for (let j = i + 1; j < nodes.length; j++) {
-				const distance = calculateDistance(nodes[i], $nodes[j]);
+				const distance = calculateDistance(nodes[i], nodes[j]);
 				if (distance < thresholdDistance) {
 					const force = repulsionForce / (distance * distance);
 					const angle = Math.atan2(
@@ -212,12 +212,12 @@
 
 	function updateNodePositions(): void {
 
-		let nodes = $nodes.map((node) => ({ ...node }));
+		let nodes = $abstractAssetNodes.map((node) => ({ ...node }));
 		const links = $links.map((link) => ({ ...link }));
 		nodes = applyRepulsion(nodes);
 		// nodes = applySping(nodes, links); // Uncomment this line to enable spring force
 
-		$nodes = [...nodes]; // trigger reactivity of nodes
+		$abstractAssetNodes = [...nodes]; // trigger reactivity of nodes
 		$links = [...links]; // trigger reactivity of links
 	}
 
@@ -245,7 +245,7 @@
 		const canvas = canvasRef;
 		const context = canvas.getContext('2d');
 		context?.clearRect(0, 0, canvas.width, canvas.height);
-		$nodes.forEach((node) => {
+		$abstractAssetNodes.forEach((node) => {
 			node.position.x += deltaX / zoomLevel;
 			node.position.y += deltaY / zoomLevel;
 		});
@@ -313,7 +313,7 @@
 		<canvas bind:this={canvasRef} style="width: 100%; height: 100%;" on:wheel={handleMouseWheel}
 		></canvas>
 		<div class="canvas-content" bind:this={canvasContent} style="position: absolute; top: 50%; left: 50%">
-				{#each $nodes as node (node.id)}
+				{#each $abstractAssetNodes as node (node.id)}
 					<Node
 						{node}
 						{zoomLevel}

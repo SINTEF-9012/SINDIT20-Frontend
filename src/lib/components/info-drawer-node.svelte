@@ -8,7 +8,7 @@
 
     const drawerStore = getDrawerStore();
     const nodesState = getNodes();
-    const node: NodeType = nodesState.getNode($selectedNodeId) as NodeType;
+    const node: NodeType = nodesState.getAbstractAssetNode($selectedNodeId) as NodeType;
 
     const settingsInfoDrawer: DrawerSettings = {
         id: "info-drawer-node",

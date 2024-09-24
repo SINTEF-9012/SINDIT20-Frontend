@@ -1,6 +1,6 @@
 <!-- src/routes/index.svelte -->
 <script lang="ts">
-    import { getNodes, createAbstractNode } from '$apis/sindit-backend/api';
+    import { getNodes, createAbstractNode } from '$apis/sindit-backend/kg';
     import { onMount } from 'svelte';
 
     let data;

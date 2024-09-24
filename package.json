@@ -12,7 +12,7 @@
 		"format": "prettier --write ."
 	},
 	"devDependencies": {
-		"@skeletonlabs/skeleton": "2.10.2",
+		"@skeletonlabs/skeleton": "^2.10.2",
 		"@skeletonlabs/tw-plugin": "0.4.0",
 		"@sveltejs/adapter-auto": "^3.0.0",
 		"@sveltejs/kit": "^2.0.0",
@@ -44,6 +44,8 @@
 		"@threlte/extras": "^8.11.5",
 		"@types/three": "^0.168.0",
 		"dotenv": "^16.4.5",
+		"list": "^2.0.19",
+		"npm": "^10.8.3",
 		"svelte-feather-icons": "^4.1.0",
 		"three": "^0.168.0"
 	}
