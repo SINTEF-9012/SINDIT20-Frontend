@@ -62,7 +62,7 @@
 
 
 	function dblclick() {
-		const thisNode = nodesState.getNode(node.id);
+		const thisNode = nodesState.getAbstractAssetNode(node.id);
 		console.log('node dblclick:', thisNode);
 		selectedNodes.update((value) => {
 			if (value.includes(node.id)) {
@@ -102,7 +102,7 @@
 			</div>
 			<div class="text-center">
 				<span class="text-gray-400" style="font-size: {fontSizeDescription}"
-					>{node.nodeDescription}</span
+					>{node.description}</span
 				>
 			</div>
 		</div>
