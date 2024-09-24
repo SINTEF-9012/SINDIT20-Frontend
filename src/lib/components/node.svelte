@@ -40,6 +40,8 @@
 		moving = true;
 		offset.x = event.clientX - node.position.x * zoomLevel;
 		offset.y = event.clientY - node.position.y * zoomLevel;
+		window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', stopMoving);
 	}
 
 	function onKeyDown(event: KeyboardEvent) {
@@ -50,6 +52,8 @@
 
 	function stopMoving() {
 		moving = false;
+		window.removeEventListener('mousemove', move);
+		window.removeEventListener('mouseup', stopMoving);
 	}
 
 	function move(event: MouseEvent) {
