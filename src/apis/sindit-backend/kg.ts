@@ -86,14 +86,13 @@ export async function addAbstractPropertyToNode(
 
 export async function createAbstractPropertyNode(
     id: string, description: string,
-    propertyName: string, propertyValue: string, propertyDataTypeURI: string, propertyUnitURI: string,
+    propertyName: string, propertyDataTypeURI: string, propertyUnitURI: string,
 ) {
     const data = {
         uri: `${KG_BASE_URI}${id}`,
         label: propertyName,
         propertyName,
         propertyDescription: description,
-        propertyValue,
         propertyDataType: {
             uri: propertyDataTypeURI,
         },

@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import type { NodeType } from '$lib/stores';
+import type { NodeType, GLTFModel } from '$lib/types';
 
 export const selectedWorkspace = writable('');
 export const createNodeMode = writable(false);
@@ -11,3 +11,5 @@ export const selectedLinkId = writable('');
 
 export const nodeSize = 100; //
 export const defaultNodeType: NodeType = 'AbstractAsset';
+
+export const selected3DModel = writable<GLTFModel>({name: '', path: ''});

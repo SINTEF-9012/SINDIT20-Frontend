@@ -2,7 +2,7 @@
 	import { getNodes } from './states/nodes-state.svelte';
 	import type { Node as NodeType } from '$lib/types';
 	import { selectedNodes, selectedNodeId, nodeSize } from '$lib/stores';
-	import { InfoIcon } from 'svelte-feather-icons';
+	import { InfoIcon, SettingsIcon, PlusCircleIcon } from 'svelte-feather-icons';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 
 	export let node: NodeType;
@@ -16,6 +16,16 @@
 	let threshold = 20;
 	let nodeSelected = false;
 	let selectedNodesIds: string[] = [];
+	let showProperties = false;
+	let showShortProperties = true;
+	let properties = [
+		{name: "Temperature long text yeah", value: "25", unit: "°C"},
+		{name: "Humidity", value: "50", unit: "%"},
+		{name: "Pressure", value: "1013", unit: "hPa"},
+		{name: "Wind Speed", value: "5", unit: "m/s"},
+		{name: "Wind Direction", value: "N", unit: "°"},
+		{name: "Rainfall", value: "0", unit: "mm"},
+	];
 
 	const fontSize = nodeSize * 0.15;
 	const fontSizeTitle = fontSize * 1.1 + 'px';
@@ -85,6 +95,18 @@
 		drawerStore.open({id: 'info-drawer-node'});
 	}
 
+	function toggleProperties() {
+		showProperties = !showProperties;
+	}
+
+	function handleAddPropertyToNode() {
+		console.log("addPropertyToNode:", node.id);
+	}
+
+	function shortPropertyName(name: string) {
+		return name[0] + '.';
+	}
+
 </script>
 
 <svelte:window on:mouseup={stopMoving} />
@@ -111,10 +133,38 @@
 			</div>
 		</div>
 	{/if}
-	<button class="node-info top-0 left-0 variant-soft-primary"
+	<button class="node-info variant-soft-primary"
 			on:click={onClickInfoButton}>
 		<InfoIcon />
 	</button>
+	<div>
+		<button class="node-properties-settings variant-soft-primary"
+				on:click={toggleProperties}>
+			<SettingsIcon />
+		</button>
+	</div>
+	{#if showProperties}
+		<div class="node-properties-box">
+			{#each properties as property}
+				<div class="node-property variant-soft-primary gap-2">
+					{#if showShortProperties}
+						<div>{shortPropertyName(property.name)}</div>
+					{:else}
+						<div>{property.name}</div>
+					{/if}
+					<div class="node-prop-value gap-1">
+						<div>{property.value}</div>
+						<div>{property.unit}</div>
+					</div>
+				</div>
+			{/each}
+			<button class="add-node-property variant-soft-secondary text-sm"
+					on:click={handleAddPropertyToNode}>
+				<PlusCircleIcon size="10"/>
+				<span>New property...</span>
+			</button>
+		</div>
+	{/if}
 </div>
 
 
@@ -138,6 +188,45 @@
 	.node-info {
 		position: absolute;
 		border-radius: 50%;
-		z-index: 3
+		top: -16px;
+		right: 18px;
+		z-index: 3;
+	}
+	.node-properties-settings {
+		position: absolute;
+		border-radius: 50%;
+		top: 0;
+		right: -5px;
+		z-index: 3;
+	}
+	.node-properties-box {
+		position: absolute;
+		top: -20px;
+		left: 100%;
+		z-index: 3;
+		max-height: 200px;
+		overflow-y: scroll;
+	}
+	.node-property {
+		display:flex;
+		flex-direction: row;
+		justify-content: space-between;
+		border-radius: 5px;
+		padding: 5px;
+		margin: 5px;
+		overflow-x: hidden;
+	}
+	.add-node-property {
+		display: flex;
+		flex-direction: row;
+		justify-content: left;
+		border-radius: 5px;
+		padding: 5px;
+		margin: 5px;
+	}
+	.node-prop-value {
+		display: flex;
+		flex-direction: row;
+		justify-content: right;
 	}
 </style>

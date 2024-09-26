@@ -12,6 +12,10 @@ export type Toast = {
 export type LogLevel = 'debug' | 'info' | 'warning' | 'error';
 
 
+// 3D Model
+
+export type GLTFModel = {name: string, path: string};
+
 // Nodes
 export interface Node {
 	id: string;
@@ -35,11 +39,11 @@ export interface AbstractAsset extends Node {
 
 export type AssetProperties = { uri: string }
 
-export interface AbstractAssetProperty extends Node {
+export interface AbstractAssetProperty {
+	id: string;
 	nodeType: 'AbstractAssetProperty';
-	description: string;
 	propertyName: string;
-	propertyValue: string;
+	description: string;
 	propertyDataType: {
 		uri: string;
 	};

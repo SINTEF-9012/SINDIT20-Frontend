@@ -36,14 +36,6 @@
         nodeDescription: '',
 		nodeType: '',
 	};
-	$: abstractAssetProperty = {
-		propertyName: '',
-		propertyDescription: '',
-		propertyType: '',
-		propertyValue: '',
-		propertyUnit: '',
-		propertySemanticId: '',
-	};
 	$: connection = {
 		host: '',
 		port: '',
@@ -54,11 +46,6 @@
 		isBaseFormValid = ((abstractAsset.nodeName != '') && (isValidNodeType(abstractAsset.nodeType)));
 		if (abstractAsset.nodeType === 'AbstractAsset') {
 			isFormValid = isBaseFormValid;
-		} else if (abstractAsset.nodeType === 'AbstractAssetProperty') {
-			isFormValid = (isBaseFormValid &&
-				(abstractAssetProperty.propertyName != '') && (abstractAssetProperty.propertyDescription != '') && (abstractAssetProperty.propertyType != '') &&
-				(abstractAssetProperty.propertyValue != '') && (abstractAssetProperty.propertyUnit != '') && (abstractAssetProperty.propertySemanticId != '')
-			);
 		} else if (abstractAsset.nodeType === 'Connection') {
 			isFormValid = (isBaseFormValid &&
 				(isValidHost(connection.host)) && (isValidPort(connection.port)) && (isValidConnectionType(connection.connectionType))
@@ -108,16 +95,6 @@
 		if (abstractAsset.nodeType === 'AbstractAsset') {
 			nodes.createAbstractAssetNode(
 				abstractAsset.nodeName, abstractAsset.nodeDescription, position);
-		} else if (abstractAsset.nodeType === 'AbstractAssetProperty') {
-			nodes.createAbstractAssetPropertyNode(
-				abstractAsset.nodeName, abstractAsset.nodeDescription, position,
-				abstractAssetProperty.propertyName,
-				abstractAssetProperty.propertyDescription,
-				abstractAssetProperty.propertyType,
-				abstractAssetProperty.propertyUnit,
-				abstractAssetProperty.propertyValue,
-				abstractAssetProperty.propertySemanticId
-			);
 		} else if (abstractAsset.nodeType === 'Connection') {
 			nodes.createConnectionNode(
 				abstractAsset.nodeName, abstractAsset.nodeDescription, position,
@@ -181,28 +158,7 @@
 					{/each}
 				</select>
 			</label>
-			{#if (abstractAsset.nodeType === 'AbstractAssetProperty')}
-				<div class="abstract-asset-properties {cForm} ml-4">
-					<label>
-						<input class="input" type="text" bind:value={abstractAssetProperty.propertyName} placeholder="Property name..." />
-					</label>
-					<label>
-						<input class="input" type="text" bind:value={abstractAssetProperty.propertyDescription} placeholder="Property description..." />
-					</label>
-					<label>
-						<input class="input" type="text" bind:value={abstractAssetProperty.propertyType} placeholder="Property type..." />
-					</label>
-					<label>
-						<input class="input" type="text" bind:value={abstractAssetProperty.propertyValue} placeholder="Property value..." />
-					</label>
-					<label>
-						<input class="input" type="text" bind:value={abstractAssetProperty.propertyUnit} placeholder="Property unit..." />
-					</label>
-					<label>
-						<input class="input" type="text" bind:value={abstractAssetProperty.propertySemanticId} placeholder="Property semantic Id..." />
-					</label>
-				</div>
-			{:else if (abstractAsset.nodeType === 'Connection')}
+			{#if (abstractAsset.nodeType === 'Connection')}
 				<div class="connection-properties {cForm} ml-4">
 					<label>
 						<input class="input" type="text" bind:value={connection.host} placeholder="Host..." />

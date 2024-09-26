@@ -1,0 +1,11 @@
+Model Information:
+* title:	Nuclear Powerplant Low-poly
+* source:	https://sketchfab.com/3d-models/nuclear-powerplant-low-poly-44100dd4134b40a1a8bb6a0490a2d83d
+* author:	Scilence (https://sketchfab.com/Scilence)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Nuclear Powerplant Low-poly" (https://sketchfab.com/3d-models/nuclear-powerplant-low-poly-44100dd4134b40a1a8bb6a0490a2d83d) by Scilence (https://sketchfab.com/Scilence) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

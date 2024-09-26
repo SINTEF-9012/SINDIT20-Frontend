@@ -2,12 +2,39 @@
   import { Canvas } from '@threlte/core'
   import Scene from './Scene.svelte'
   import Toolbox from './Toolbox.svelte'
+  import { selected3DModel } from '$lib/stores'
+  import type { GLTFModel } from '$lib/types'
 
   let showToolbox = false
+  let addNodeMode = false
+
+  let nodes = []
+
+  let models: GLTFModel[] = [
+    { name: 'Toyfactory', path: 'assets/3d-scans/toyfactory.gltf'},
+    { name: 'Powerplant', path: 'assets/3d-models/powerplant/scene.gltf'},
+  ]
+  selected3DModel.set(models[0])
 
   function handleCloseToolbox(event: any) {
     if ((event.detail.message === 'close') && (showToolbox = true)) {
       showToolbox = false
+    }
+  }
+
+  function handleAddNode(event: any) {
+    if ((event.detail.message === 'addNodeMode')) {
+      addNodeMode = true
+    }
+  }
+
+  function handleCanvasClick(event: MouseEvent) {
+    if (addNodeMode) {
+      const { clientX, clientY } = event
+      // Convert screen coordinates to 3D coordinates
+      const node = { x: clientX, y: clientY, text: 'Node Text' }
+      nodes = [...nodes, node]
+      addNodeMode = false
     }
   }
 </script>
@@ -16,13 +43,12 @@
   <div class="content-wrapper">
   {#if showToolbox}
     <div class="column toolbox bg-gray-300 border-gray-50">
-      <Toolbox on:closeToolbox={handleCloseToolbox} />
+      <Toolbox {models} on:closeToolbox={handleCloseToolbox} />
     </div>
   {/if}
   <div class="column threlte-canvas" class:full-width={!showToolbox}>
     <Canvas>
-      <Scene
-      />
+      <Scene selectedModel={$selected3DModel} />
     </Canvas>
   </div>
   </div>
@@ -53,7 +79,6 @@
   }
   .toolbox {
     flex: 0 0 200px;
-    height: 100%;
   }
   .threlte-canvas {
     height: 100%;
