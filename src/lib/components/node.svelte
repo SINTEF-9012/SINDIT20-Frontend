@@ -4,12 +4,15 @@
 	import { selectedNodes, selectedNodeId, nodeSize } from '$lib/stores';
 	import { InfoIcon, SettingsIcon, PlusCircleIcon } from 'svelte-feather-icons';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
+	import type { ModalSettings } from '@skeletonlabs/skeleton';
+	import { getModalStore } from '@skeletonlabs/skeleton';
 
 	export let node: NodeType;
 	export let zoomLevel = 1;
 
 	const nodesState = getNodes();
 	const drawerStore = getDrawerStore();
+	const modalStore = getModalStore();
 
 	let offset = { x: 0, y: 0 };
 	let moving = false;
@@ -45,6 +48,12 @@
 			nodeSelected = false;
 		}
 	}
+
+	const nodePropertyModalSettings: ModalSettings = {
+        type: 'component',
+        component: 'createNewNodeProperty',
+        meta: {nodeId: 'new-node-id'},
+	};
 
 	function startMoving(event: MouseEvent) {
 		moving = true;
@@ -99,8 +108,9 @@
 		showProperties = !showProperties;
 	}
 
-	function handleAddPropertyToNode() {
-		console.log("addPropertyToNode:", node.id);
+	function handleAddPropertyToNode(nodeId: string) {
+		nodePropertyModalSettings.meta.nodeId = node.id;
+		modalStore.trigger(nodePropertyModalSettings);
 	}
 
 	function shortPropertyName(name: string) {
@@ -145,19 +155,21 @@
 	</div>
 	{#if showProperties}
 		<div class="node-properties-box">
-			{#each properties as property}
-				<div class="node-property variant-soft-primary gap-2">
-					{#if showShortProperties}
-						<div>{shortPropertyName(property.name)}</div>
-					{:else}
-						<div>{property.name}</div>
-					{/if}
-					<div class="node-prop-value gap-1">
-						<div>{property.value}</div>
-						<div>{property.unit}</div>
+			{#if properties.length > 0}
+				{#each properties as property}
+					<div class="node-property variant-soft-primary gap-2">
+						{#if showShortProperties}
+							<div>{shortPropertyName(property.name)}</div>
+						{:else}
+							<div>{property.name}</div>
+						{/if}
+						<div class="node-prop-value gap-1">
+							<div>{property.value}</div>
+							<div>{property.unit}</div>
+						</div>
 					</div>
-				</div>
-			{/each}
+				{/each}
+			{/if}
 			<button class="add-node-property variant-soft-secondary text-sm"
 					on:click={handleAddPropertyToNode}>
 				<PlusCircleIcon size="10"/>

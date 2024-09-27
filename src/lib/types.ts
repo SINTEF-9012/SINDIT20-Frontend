@@ -82,3 +82,29 @@ export interface Link {
 }
 
 export type LinkDirection = 'left' | 'right' | 'none';
+
+
+
+// APIs
+
+// sindit-backend
+
+// metamodel
+
+export type ReturnedDataTypeAllUnits = {
+	uri: string,
+	prefName: string,
+	code: string
+}
+
+export type ReturnedDataTypeSearchUnits = {
+	uri: string,
+	prefName: string,
+	symbol: string,
+	code: string
+}
+
+export type ReturnedDataTypeAllDataTypes = {
+	uri: string,
+	label: string
+}
