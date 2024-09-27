@@ -233,6 +233,7 @@ export class Nodes {
 			// Add the new property to the AbstractAsset node
 			asset.assetProperties.push({ uri: newPropertyNode.id }); // (frontend)
 			await addAbstractPropertyToNodeQuery(asset, newPropertyNode.uri) // (backend)
+			console.log(this.assets)
 
 		} catch (error) {
 			this.toastState.add('Error creating AbstractAssetProperty node', error, 'error');
