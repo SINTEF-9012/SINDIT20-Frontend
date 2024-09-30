@@ -1,6 +1,5 @@
 import type { ConnectionType, AbstractAsset } from '$lib/types';
 
-const KG_BASE_URI = import.meta.env.VITE_SINDIT_KG_BASE_URI
 const API_BASE_URL = import.meta.env.VITE_SINDIT_BACKEND_API
 const API_BASE_ENDPOINT = `${API_BASE_URL}/kg`
 
@@ -20,8 +19,7 @@ export async function getNode(
     node_uri: string, depth: number = 1
 ) {
     const endpoint = 'node';
-    const uri = `${KG_BASE_URI}${node_uri}`;
-    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${uri}&depth=${depth}`;
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${node_uri}&depth=${depth}`;
     const response = await fetch(`${url}`);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
@@ -36,7 +34,7 @@ export async function createAbstractNode(
     const endpoint = 'asset';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
     const data = {
-        uri: `${KG_BASE_URI}${nodeId}`,
+        uri: nodeId,
         label: nodeName,
         assetDescription: description
     }
@@ -58,28 +56,17 @@ export async function addAbstractPropertyToNode(
 ) {
     const endpoint = 'asset';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    const assetProperties = assetNode.assetProperties || [];
-    const data = {
-        uri: `${KG_BASE_URI}${assetNode.id}`,
-        label: assetNode.nodeName,
-        assetDescription: assetNode.description,
-        assetProperties: [
-            ...assetProperties,
-            {
-                uri: propertyURI
-            }
-        ]
-
-    }
+    const asset = await getNode(assetNode.id);
+    asset.assetProperties.push({ uri: propertyURI });
     const response = await fetch(`${url}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(asset)
     });
     if (!response.ok) {
-        throw new Error('Error performing POST request');
+        throw new Error(`Error performing POST request`);
     }
     return response.json();
 }
@@ -89,7 +76,7 @@ export async function createAbstractPropertyNode(
     propertyName: string, propertyDataTypeURI: string, propertyUnitURI: string,
 ) {
     const data = {
-        uri: `${KG_BASE_URI}${id}`,
+        uri: id,
         label: propertyName,
         propertyName,
         propertyDescription: description,
@@ -119,7 +106,7 @@ export async function createConnectionNode(
     connectionType: ConnectionType,
 ) {
     const data = {
-        uri: `${KG_BASE_URI}${nodeId}`,
+        uri: nodeId,
         label: nodeName,
         connectionDescription: description,
         host: host,

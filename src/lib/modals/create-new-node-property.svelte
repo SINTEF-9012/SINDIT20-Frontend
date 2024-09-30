@@ -57,8 +57,8 @@
 		const description = abstractAssetProperty.propertyDescription
 		const dataTypeUri = abstractAssetProperty.propertyDataType;
 		const unitUri = abstractAssetProperty.propertyUnit;
-		// nodeState.createAbstractAssetPropertyNode(metadata.nodeId, propertyName, description, dataTypeUri, unitUri);
-		toastState.add('Failed', `Not implemented! New Node Property NOT created`, 'warning');
+		nodeState.createAbstractAssetPropertyNode(metadata.nodeId, propertyName, description, dataTypeUri, unitUri);
+		//toastState.add('Failed', `Not implemented! New Node Property NOT created`, 'warning');
 		modalStore.close();
 	}
 
