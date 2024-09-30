@@ -23,7 +23,9 @@
     if (!metadata.nodeId) throw new Error('Metadata nodeId missing from modal settings.');
 
     const node = nodeState.getAbstractAssetNode(metadata.nodeId);
-	const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'SensApp'];
+	if (!node) throw new Error('Node not found in nodes state.');
+	// TODO: Add connection to Asset Property
+	// const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'SensApp'];
 
 	$: isFormValid = false;
 	$: searchQuery = ''
@@ -51,7 +53,11 @@
 
 	// We've created a custom submit function to pass the response and close the modal.
 	function onFormSubmit(): void {
+		const propertyName = abstractAssetProperty.propertyName;
 		const description = abstractAssetProperty.propertyDescription
+		const dataTypeUri = abstractAssetProperty.propertyDataType;
+		const unitUri = abstractAssetProperty.propertyUnit;
+		// nodeState.createAbstractAssetPropertyNode(metadata.nodeId, propertyName, description, dataTypeUri, unitUri);
 		toastState.add('Failed', `Not implemented! New Node Property NOT created`, 'warning');
 		modalStore.close();
 	}
