@@ -1,14 +1,20 @@
 <script lang="ts">
+    import type { DrawerSettings } from '@skeletonlabs/skeleton';
     import { getDrawerStore } from "@skeletonlabs/skeleton";
     import { PlusCircleIcon } from 'svelte-feather-icons';
-    import type { DrawerSettings } from '@skeletonlabs/skeleton';
-    import { createNodeMode, createLinkMode, modalMetadata } from "$lib/stores";
     import { getToastState } from "$lib/components/states/toast-state.svelte";
+    import {
+        createNodeMode,
+        createLinkMode,
+        createConnectionMode,
+        modalMetadata
+    } from "$lib/stores";
+
 
     const drawerStore = getDrawerStore();
     const toastState = getToastState();
 
-    const tools = ["node", "link"];
+    const tools = ["node", "link", "connection"];
 
     const settingsToolbox: DrawerSettings = {
         id: "toolbox",
@@ -35,6 +41,13 @@
         drawerStore.close();
     }
 
+    function enterConnectionCreationMode() {
+        modalMetadata.set({toolName: tools[2], operationMode: 'create'});
+        createConnectionMode.set(true);
+        // toastState.add('Create new connection', 'Select two nodes to create a new link', 'info');
+        drawerStore.close();
+    }
+
 </script>
 
 
@@ -57,6 +70,16 @@
             <div class="card-content columns-1 gap-1">
                 <div>
                     Create new link
+                </div>
+                <div>
+                    <PlusCircleIcon />
+                </div>
+            </div>
+        </button>
+        <button class="btn btn-create border border-tertiary-500 bg-tertiary-50" on:click={enterConnectionCreationMode}>
+            <div class="card-content columns-1 gap-1">
+                <div>
+                    Create new connection
                 </div>
                 <div>
                     <PlusCircleIcon />

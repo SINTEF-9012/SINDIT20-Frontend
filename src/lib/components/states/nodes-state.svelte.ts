@@ -1,9 +1,8 @@
 import type {
-	Node,
 	AbstractAsset,
-	AssetProperties,
 	AbstractAssetProperty,
 	Connection,
+	AssetPropertyUri,
 } from '$lib/types';
 import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
@@ -17,7 +16,7 @@ import {
 } from '$apis/sindit-backend/kg';
 
 
-// TODO: Split into AbstractAssets, AbstractAssetProperties, and Connections?
+// TODO: Split class into AbstractAssets, AbstractAssetProperties, and Connections?
 export class Nodes {
 	assets = writable<AbstractAsset[]>([]); // AbstractAssetNodes
 	assetProperties = writable<AbstractAssetProperty[]>([]); // AbstractAssetPropertyNodes
@@ -33,7 +32,7 @@ export class Nodes {
 		nodeName: string,
 		description: string,
 		position: { x: number; y: number },
-		assetProperties: AssetProperties[] = []
+		assetProperties: AssetPropertyUri[] = []
 	): AbstractAsset {
 		return {
 			id: crypto.randomUUID(),
@@ -66,18 +65,16 @@ export class Nodes {
 	}
 
 	private connectionNodeObject(
-		nodeName: string,
+		connectionName: string,
 		description: string,
-		position: { x: number; y: number },
 		host: string,
 		port: number,
 		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp'
 	): Connection {
 		return {
 			id: crypto.randomUUID(),
-			nodeName,
+			connectionName,
 			description,
-			position,
 			nodeType: 'Connection',
 			host,
 			port,
@@ -141,7 +138,7 @@ export class Nodes {
 		nodeName: string,
 		description: string,
 		position: { x: number; y: number },
-		assetProperties: AbstractAssetProperty[]
+		assetProperties: AssetPropertyUri[]
 	) {
 		const newAsset = this.abstractAssetNodeObject(nodeName, description, position, assetProperties);
 		this.addAsset(newAsset);
@@ -149,14 +146,13 @@ export class Nodes {
 
 	// Add a new Connection node
 	addConnectionNode(
-		nodeName: string,
+		connectionName: string,
 		description: string,
-		position: { x: number; y: number },
 		host: string,
 		port: number,
 		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp'
 	) {
-		const newNode = this.connectionNodeObject(nodeName, description, position, host, port, connectionType);
+		const newNode = this.connectionNodeObject(connectionName, description, host, port, connectionType);
 		this.addConnection(newNode);
 	}
 

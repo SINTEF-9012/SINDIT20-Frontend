@@ -34,10 +34,10 @@ export type NodeType = 'AbstractAsset' | 'AbstractAssetProperty' | 'Connection'
 
 export interface AbstractAsset extends Node {
 	nodeType: 'AbstractAsset';
-	assetProperties?: AssetProperties[];
+	assetProperties?: AssetPropertyUri[];
 }
 
-export type AssetProperties = { uri: string }
+export type AssetPropertyUri = { uri: string }
 
 export interface AbstractAssetProperty {
 	id: string;
@@ -52,11 +52,16 @@ export interface AbstractAssetProperty {
 	};
 }
 
-export interface Connection extends Node {
+export interface Connection {
+	id: string;
 	nodeType: 'Connection'
+	connectionName: string;
+	description: string;
 	host: string;
 	port: number;
 	connectionType: ConnectionType;
+	// assets: AbstractAssetIds[]; TODO ? list of assets that are connected to this connection
+	// assetProperties: AbstractAssetPropertyIds[]; TODO ? list of asset properties that are connected to this connection
 }
 
 export type ConnectionType = 'MQTT' | 'InfluxDB' | 'SensApp'
@@ -87,9 +92,9 @@ export type LinkDirection = 'left' | 'right' | 'none';
 
 // APIs
 
-// sindit-backend
+// APIs // sindit-backend
 
-// metamodel
+// APIs // sindit-backend // metamodel
 
 export type ReturnedDataTypeAllUnits = {
 	uri: string,

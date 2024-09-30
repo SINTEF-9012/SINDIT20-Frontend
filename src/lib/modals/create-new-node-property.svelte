@@ -6,7 +6,6 @@
 	import { getNodes } from '$lib/components/states/nodes-state.svelte';
 	import {
 		getAllDataTypes as getAllDataTypesQuery,
-		getAllUnits as getAllUnitsQuery,
 		searchUnits as searchUnitsQuery
 	} from '$apis/sindit-backend/metamodel'
 
