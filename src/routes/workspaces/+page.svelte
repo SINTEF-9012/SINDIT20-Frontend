@@ -15,6 +15,7 @@
         getWorkspace,
     } from '$apis/sindit-backend/workspace';
 
+    const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
 
     type Workspace = {
         name: string;
@@ -47,14 +48,14 @@
     function addNodesToNodesState(nodes: any[]) {
         nodes.forEach(node => {
             const class_uri = node.class_uri;
+            const uri = node.uri.split(API_BASE_URI)[1] as string;
             const class_type = class_uri.split('#')[1] as NodeType;
-            const position = {x: Math.random()*100, y: Math.random()*100};
             if (class_type === 'AbstractAsset') {
-                nodesState.addAbstractAssetNode(node.label, node.assetDescription, position, node.assetProperties);
+                nodesState.addAbstractAssetNode(uri, node.label, node.assetDescription, node.assetProperties);
             } else if (class_type === 'Connection') {
-                nodesState.addConnectionNode(node.label, node.connectionDescription, position, node.host, node.port, node.connectionType);
+                nodesState.addConnectionNode(uri, node.label, node.connectionDescription, node.host, node.port, node.connectionType);
             } else if (class_type === 'AbstractAssetProperty') {
-                // nodesState.addAbstractAssetPropertyNode(node.label, node.propertyDescription, position, node.propertyType, );
+                nodesState.addAbstractAssetPropertyNode(uri, node.label, node.propertyDescription, node.propertyDataType.uri, node.propertyUnit.uri);
             } else {
                 throw new Error(`Unknown node type ${class_type}`);
             }
@@ -85,8 +86,12 @@
     }
 
     function getWorkspaceDictFromUri(workspaceUri: string): Workspace {
+        let workspaceName = workspaceUri.split('#')[1] as string
+        if (workspaceName === '' || workspaceName === undefined) {
+            workspaceName = workspaceUri;
+        }
         return {
-            name: workspaceUri.split('#')[1] as string,
+            name: workspaceName,
             uri: workspaceUri,
         };
     }

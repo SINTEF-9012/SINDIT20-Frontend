@@ -1,8 +1,13 @@
-import type { ConnectionType, AbstractAsset } from '$lib/types';
+import type { ConnectionType } from '$lib/types';
 
 const API_BASE_URL = import.meta.env.VITE_SINDIT_BACKEND_API
 const API_BASE_ENDPOINT = `${API_BASE_URL}/kg`
+const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
 
+function getBackendUri(nodeId: string) {
+    // Get the backend URI for a node. The backend URI is the base URI + the node ID
+    return `${API_BASE_URI}${nodeId}`
+}
 
 export async function getNodes() {
     const endpoint = 'nodes';
@@ -16,10 +21,11 @@ export async function getNodes() {
 }
 
 export async function getNode(
-    node_uri: string, depth: number = 1
+    nodeId: string, depth: number = 1
 ) {
     const endpoint = 'node';
-    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${node_uri}&depth=${depth}`;
+    const uri = getBackendUri(nodeId);
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}&depth=${depth}`;
     const response = await fetch(`${url}`);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
@@ -34,10 +40,12 @@ export async function createAbstractNode(
     const endpoint = 'asset';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
     const data = {
-        uri: nodeId,
+        uri: getBackendUri(nodeId),
         label: nodeName,
-        assetDescription: description
+        assetDescription: description,
+        assetProperties: []
     }
+    console.log("create node:", data, url)
     const response = await fetch(`${url}`, {
         method: 'POST',
         headers: {
@@ -46,18 +54,25 @@ export async function createAbstractNode(
         body: JSON.stringify(data)
     });
     if (!response.ok) {
-        throw new Error('Error performing POST request');
+        throw new Error(`Error performing POST request ${response.statusText}`);
     }
     return response.json();
 }
 
 export async function addAbstractPropertyToNode(
-    assetNode: AbstractAsset, propertyURI: string
+    nodeId: string, propertyURI: string
 ) {
     const endpoint = 'asset';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    const asset = await getNode(assetNode.id);
-    asset.assetProperties.push({ uri: propertyURI });
+    const asset = await getNode(nodeId);
+    if (!asset) {
+        throw new Error('Node not found');
+    }
+    if (!asset.assetProperties) {
+        asset.assetProperties = [];
+    }
+    asset.assetProperties.push({ uri: getBackendUri(propertyURI) });
+    console.log("asset", asset)
     const response = await fetch(`${url}`, {
         method: 'POST',
         headers: {
@@ -66,7 +81,7 @@ export async function addAbstractPropertyToNode(
         body: JSON.stringify(asset)
     });
     if (!response.ok) {
-        throw new Error(`Error performing POST request`);
+        throw new Error(`Error performing POST request ${response.statusText}`);
     }
     return response.json();
 }
@@ -76,7 +91,7 @@ export async function createAbstractPropertyNode(
     propertyName: string, propertyDataTypeURI: string, propertyUnitURI: string,
 ) {
     const data = {
-        uri: id,
+        uri: getBackendUri(id),
         label: propertyName,
         propertyName,
         propertyDescription: description,
@@ -87,6 +102,7 @@ export async function createAbstractPropertyNode(
             uri: propertyUnitURI,
         },
     }
+    console.log("createAbstractPropertyNode", data)
     const response = await fetch(`${API_BASE_URL}/kg/asset_property`, {
         method: 'POST',
         headers: {
@@ -95,19 +111,19 @@ export async function createAbstractPropertyNode(
         body: JSON.stringify(data)
     });
     if (!response.ok) {
-        throw new Error('Error performing POST request');
+        throw new Error(`Error performing POST request ${response.statusText}`);
     }
     return response.json();
 }
 
 export async function createConnectionNode(
-    nodeId: string, nodeName: string, description: string,
+    id: string, connectionName: string, description: string,
     host: string, port: number,
     connectionType: ConnectionType,
 ) {
     const data = {
-        uri: nodeId,
-        label: nodeName,
+        uri: getBackendUri(id),
+        label: connectionName,
         connectionDescription: description,
         host: host,
         port: port,
