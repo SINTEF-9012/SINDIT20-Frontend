@@ -1,13 +1,9 @@
 import type { ConnectionType } from '$lib/types';
+import { getBackendUri } from '$lib/utils';
 
 const API_BASE_URL = import.meta.env.VITE_SINDIT_BACKEND_API
 const API_BASE_ENDPOINT = `${API_BASE_URL}/kg`
-const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
 
-function getBackendUri(nodeId: string) {
-    // Get the backend URI for a node. The backend URI is the base URI + the node ID
-    return `${API_BASE_URI}${nodeId}`
-}
 
 export async function getNodes() {
     const endpoint = 'nodes';

@@ -7,7 +7,7 @@
 	import { getLinks } from '$lib/components/states/links-state.svelte';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import Link from '$lib/components/nodes-link.svelte';
-	import { createNodeMode, createLinkMode, selectedNodes, modalMetadata } from '$lib/stores';
+	import { createNodeMode, createLinkMode, createConnectionMode, selectedNodes, modalMetadata } from '$lib/stores';
 	import type { ModalSettings } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 
@@ -36,35 +36,38 @@
 
 	let isCreateNodeMode: boolean;
 	let isCreateLinkMode: boolean;
+	let isCreateConnectionMode: boolean;
 	let createNodeModeMetadata: {toolName: string, operationMode: string};
 	let selectedCanvasPosition = { x: 0, y: 0 };
 	let selectedNodesIds: string[] = [];
 	createNodeMode.subscribe((value) => isCreateNodeMode = value);
 	createLinkMode.subscribe((value) => isCreateLinkMode = value);
+	createConnectionMode.subscribe((value) => isCreateConnectionMode = value);
 	modalMetadata.subscribe((value) => createNodeModeMetadata = value);
 	selectedNodes.subscribe((value) => selectedNodesIds = value);
 
-    const modal: ModalSettings = {
+    const modalCreateNewAssetNode: ModalSettings = {
         type: 'component',
         component: 'createNewNode',
-        meta: {name: 'card', mode: 'create'},
-        response: (data: {name: string, description: string}) => console.log('response:', data)
     };
 
 	const modalCreateNewLink: ModalSettings = {
         type: 'component',
         component: 'createNewLink',
-        meta: {name: 'card', mode: 'create'},
-        response: (data: {name: string, description: string}) => console.log('response:', data)
     };
 
-    export function openModal(): void {
-        modal.meta = {
+	const modalCreateNewConnection: ModalSettings = {
+		type: 'component',
+		component: 'createNewConnection',
+	};
+
+    export function openModalCreateNewAssetNode(): void {
+        modalCreateNewAssetNode.meta = {
 			name: createNodeModeMetadata.toolName,
 			mode: createNodeModeMetadata.operationMode,
 			position: selectedCanvasPosition
 		};
-        modalStore.trigger(modal);
+        modalStore.trigger(modalCreateNewAssetNode);
     }
 
 	function openModalCreateNewLink(): void {
@@ -73,6 +76,10 @@
 			mode: 'create'
 		};
 		modalStore.trigger(modalCreateNewLink);
+	}
+
+	function openModalCreateNewConnection(): void {
+		modalStore.trigger(modalCreateNewConnection);
 	}
 
 	function openToolbox(): void {
@@ -111,12 +118,15 @@
 			createNodeMode.set(false);
 
 			// Open the modal to create a new node
-			openModal();
+			openModalCreateNewAssetNode();
 		} else if (isCreateLinkMode) {
 			const nodes = await waitForTwoSelectedNodes();
-			console.log('sourceNodeId:', nodes);
+			// console.log('sourceNodeId:', nodes);
 			createLinkMode.set(false);
 			openModalCreateNewLink();
+		} else if (isCreateConnectionMode) {
+			createConnectionMode.set(false);
+			openModalCreateNewConnection();
 		}
 		else {return;}
     }

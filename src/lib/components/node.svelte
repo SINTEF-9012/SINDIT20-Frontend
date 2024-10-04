@@ -21,14 +21,9 @@
 	let selectedNodesIds: string[] = [];
 	let showProperties = false;
 	let showShortProperties = true;
-	let properties = [
-		{name: "Temperature long text yeah", value: "25", unit: "°C"},
-		{name: "Humidity", value: "50", unit: "%"},
-		{name: "Pressure", value: "1013", unit: "hPa"},
-		{name: "Wind Speed", value: "5", unit: "m/s"},
-		{name: "Wind Direction", value: "N", unit: "°"},
-		{name: "Rainfall", value: "0", unit: "mm"},
-	];
+
+	const propertyUris = nodesState.getAbstractAssetNode(node.id)?.assetProperties;
+	const properties = nodesState.getAbstractAssetNodeProperties(propertyUris);
 
 	const fontSize = nodeSize * 0.15;
 	const fontSizeTitle = fontSize * 1.1 + 'px';
@@ -87,6 +82,7 @@
 	function dblclick() {
 		const thisNode = nodesState.getAbstractAssetNode(node.id);
 		console.log('node dblclick:', thisNode);
+		console.log('node properties:', properties);
 		selectedNodes.update((value) => {
 			if (value.includes(node.id)) {
 				return value.filter((id) => id !== node.id);
@@ -108,9 +104,10 @@
 		showProperties = !showProperties;
 	}
 
-	function handleAddPropertyToNode(nodeId: string) {
+	function handleAddPropertyToNode() {
 		nodePropertyModalSettings.meta.nodeId = node.id;
 		modalStore.trigger(nodePropertyModalSettings);
+		console.log('node', nodesState.getAbstractAssetNode(node.id));
 	}
 
 	function shortPropertyName(name: string) {
@@ -159,13 +156,13 @@
 				{#each properties as property}
 					<div class="node-property variant-soft-primary gap-2">
 						{#if showShortProperties}
-							<div>{shortPropertyName(property.name)}</div>
+							<div>{shortPropertyName(property.propertyName)}</div>
 						{:else}
-							<div>{property.name}</div>
+							<div>{property.propertyName}</div>
 						{/if}
 						<div class="node-prop-value gap-1">
-							<div>{property.value}</div>
-							<div>{property.unit}</div>
+							<div>Yolo</div>
+							<div>{property.propertyUnit}</div>
 						</div>
 					</div>
 				{/each}

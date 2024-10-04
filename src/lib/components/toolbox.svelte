@@ -44,7 +44,6 @@
     function enterConnectionCreationMode() {
         modalMetadata.set({toolName: tools[2], operationMode: 'create'});
         createConnectionMode.set(true);
-        // toastState.add('Create new connection', 'Select two nodes to create a new link', 'info');
         drawerStore.close();
     }
 

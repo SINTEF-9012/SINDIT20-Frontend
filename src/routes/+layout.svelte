@@ -39,12 +39,14 @@
 	// Modals
 	import CreateNewNode from '$lib/modals/create-new-node.svelte';
 	import CreateNewNodeProperty from '$lib/modals/create-new-node-property.svelte';
+	import CreateNewConnection from '$lib/modals/create-new-connection.svelte';
 	import CreateNewLink from '$lib/modals/create-new-link.svelte';
 	import CreateNew from '$lib/modals/create-new.svelte';
 
 	const modalRegistry: Record<string, ModalComponent> = {
 		createNewNode: { ref: CreateNewNode },
 		createNewNodeProperty: { ref: CreateNewNodeProperty },
+		createNewConnection: { ref: CreateNewConnection },
 		createNewLink: { ref: CreateNewLink },
 		createNew: { ref: CreateNew },
 	};

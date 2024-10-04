@@ -23,7 +23,7 @@
 	const mode = metadata.mode.toLowerCase().replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
 	const title = `${mode} new ${metadata.name}`;
 	const body = `${mode} a new ${metadata.name} in the knowledge graph.`;
-	const nodeTypes: NodeType[] = ['AbstractAsset', 'AbstractAssetProperty', 'Connection'];
+	const nodeTypes: NodeType[] = ['AbstractAsset'];
 	const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'SensApp'];
 
 	$: isBaseFormValid = false;
@@ -90,18 +90,9 @@
 		if (metadata.position) {
 			position = metadata.position;
 		}
-		// console.log('position:', position);
-		// TODO: handle creation of different node types
 		if (abstractAsset.nodeType === 'AbstractAsset') {
 			nodes.createAbstractAssetNode(
 				abstractAsset.nodeName, abstractAsset.nodeDescription, position);
-		} else if (abstractAsset.nodeType === 'Connection') {
-			nodes.createConnectionNode(
-				abstractAsset.nodeName, abstractAsset.nodeDescription, position,
-				connection.host,
-				parsePort(connection.port),
-				getValidConnectionType(connection.connectionType)
-			);
 		} else {
 			const title = 'Error';
 			const message = `Node type '${abstractAsset.nodeType}' not supported.`;
@@ -110,9 +101,7 @@
 		}
 	}
 
-	// We've created a custom submit function to pass the response and close the modal.
 	function onFormSubmit(): void {
-		// if ($modalStore[0].response) $modalStore[0].response(formData);
 		// TODO: Create new item in the knowledge graph // this should be handled in separate func
 		if (metadata.mode === 'create' && metadata.name === 'node') createNewNode();
 		const title = `Successfully "${metadata.mode}d"`;

@@ -47,6 +47,7 @@
 		"list": "^2.0.19",
 		"npm": "^10.8.3",
 		"svelte-feather-icons": "^4.1.0",
+		"svelte-jsoneditor": "^1.0.6",
 		"three": "^0.168.0"
 	}
 }

@@ -14,6 +14,10 @@
         listWorkspaces,
         getWorkspace,
     } from '$apis/sindit-backend/workspace';
+    import {
+        getNodeClassTypeFromBackendClassUri,
+        getNodeIdFromBackendUri
+    } from '$lib/utils';
 
     const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
 
@@ -48,8 +52,8 @@
     function addNodesToNodesState(nodes: any[]) {
         nodes.forEach(node => {
             const class_uri = node.class_uri;
-            const uri = node.uri.split(API_BASE_URI)[1] as string;
-            const class_type = class_uri.split('#')[1] as NodeType;
+            const uri = getNodeIdFromBackendUri(node.uri);
+            const class_type = getNodeClassTypeFromBackendClassUri(class_uri);
             if (class_type === 'AbstractAsset') {
                 nodesState.addAbstractAssetNode(uri, node.label, node.assetDescription, node.assetProperties);
             } else if (class_type === 'Connection') {

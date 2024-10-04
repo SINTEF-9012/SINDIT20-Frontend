@@ -13,6 +13,10 @@ import {
 	addAbstractPropertyToNode as addAbstractPropertyToNodeQuery,
 	createAbstractPropertyNode as createAbstractAssetPropertyQuery,
 } from '$apis/sindit-backend/kg';
+import {
+	getBackendUri,
+	getNodeIdFromBackendUri
+} from '$lib/utils';
 
 
 // TODO: Split class into AbstractAssets, AbstractAssetProperties, and Connections?
@@ -206,7 +210,6 @@ export class Nodes {
 	async createConnectionNode(
 		nodeName: string,
 		description: string,
-		position: { x: number; y: number },
 		host: string,
 		port: number,
 		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp'
@@ -235,7 +238,6 @@ export class Nodes {
 		try {
 			// API call to create a new AbstractAssetProperty in the backend
 			await createAbstractAssetPropertyQuery(newProperty.id, description, propertyName, propertyDataTypeURI, propertyUnitURI);
-			// newPropertyNode = await getNodeQuery(newProperty.id);
 			// TODO: Add property to AbstractAsset node
 			const asset = this.getAbstractAssetNode(nodeId) as AbstractAsset;
 			if (!asset) {
@@ -245,7 +247,7 @@ export class Nodes {
 				asset.assetProperties = [];
 			}
 			// Add the new property to the AbstractAsset node
-			asset.assetProperties.push({ uri: newProperty.id }); // (frontend)
+			asset.assetProperties.push({ uri: getBackendUri(newProperty.id) }); // (frontend)
 			await addAbstractPropertyToNodeQuery(nodeId, newProperty.id) // (backend)
 			console.log("node with new property:", this.getAbstractAssetNode(nodeId));
 
@@ -254,6 +256,17 @@ export class Nodes {
 			this.toastState.add('Error creating AbstractAssetProperty node', error as string, 'error');
 			// TODO: revert all changes...
 		}
+	}
+
+	// Get an AbstractAssetProperty node by id
+	getAbstractAssetNodeProperties(ids: AssetPropertyUri[]) {
+		const properties = get(this.assetProperties);
+		// console.log("properties 1", properties);
+		const uris = ids.map((id) => getNodeIdFromBackendUri(id.uri));
+		// console.log("uris 2", uris);
+		const fp = properties.filter((property) => uris.includes(property.id));
+		// console.log("fp 3", fp);
+		return fp;
 	}
 
 	// Get an AbstractAsset node by id
