@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { getNodes } from '$lib/components/states/nodes-state.svelte';
+    import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 
-    const nodeState = getNodes();
+    const nodeState = getNodesState();
 
     $: connections = nodeState.getAllConnectionNodes();
 

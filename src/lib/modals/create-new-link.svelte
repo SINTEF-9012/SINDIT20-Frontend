@@ -4,8 +4,8 @@
 	import type { Node as NodeType } from '$lib/types';
 	import { getModalStore, RangeSlider } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
-	import { getNodes } from '$lib/components/states/nodes-state.svelte';
-	import { getLinks } from '$lib/components/states/links-state.svelte';
+	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
+	import { getLinksState } from '$lib/components/states/links-state.svelte';
 	import { selectedNodes } from '$lib/stores';
 
 	// Props
@@ -14,8 +14,8 @@
 
 	const modalStore = getModalStore();
 	const toastState = getToastState();
-	const nodes = getNodes();
-	const links = getLinks();
+	const nodes = getNodesState();
+	const links = getLinksState();
 
 	let source: NodeType;
 	let target: NodeType;

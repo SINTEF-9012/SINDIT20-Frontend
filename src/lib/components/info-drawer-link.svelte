@@ -1,13 +1,13 @@
 <script lang="ts">
     import { getDrawerStore } from "@skeletonlabs/skeleton";
-    import { getLinks } from './states/links-state.svelte';
+    import { getLinksState } from './states/links-state.svelte';
     import PropertyDisplay from "./property-display.svelte";
     import type { DrawerSettings } from '@skeletonlabs/skeleton';
     import type { Link as LinkType } from '$lib/types';
     import { selectedLinkId } from "$lib/stores";
 
     const drawerStore = getDrawerStore();
-    const linksState = getLinks();
+    const linksState = getLinksState();
     const link: LinkType = linksState.getLink($selectedLinkId) as LinkType;
 
     const settingsInfoDrawer: DrawerSettings = {

@@ -1,9 +1,8 @@
 <script lang="ts">
-    import type { NodeType } from '$lib/types';
     import type { ModalSettings } from "@skeletonlabs/skeleton";
     import { getModalStore } from '@skeletonlabs/skeleton';
 	import { selectedWorkspace } from '$lib/stores';
-    import { getNodes } from '$lib/components/states/nodes-state.svelte';
+    import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 	import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import {
@@ -30,7 +29,7 @@
 	let searchQuery = '';
 	let _selectedWorkspace = '';
 	let filteredWorkspaces: Workspace[] = [];
-    const nodesState = getNodes();
+    const nodesState = getNodesState();
 	$: {
 		if (searchQuery === '') {
             filteredWorkspaces = workspaces.map(workspace => workspace);

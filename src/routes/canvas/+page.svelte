@@ -3,8 +3,8 @@
 	import Node from '$lib/components/node.svelte';
 	import type { Node as NodeType } from '$lib/types';
 	import type { Link as LinkType } from '$lib/types';
-	import { getNodes } from '$lib/components/states/nodes-state.svelte';
-	import { getLinks } from '$lib/components/states/links-state.svelte';
+	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
+	import { getLinksState } from '$lib/components/states/links-state.svelte';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import Link from '$lib/components/nodes-link.svelte';
 	import { createNodeMode, createLinkMode, createConnectionMode, selectedNodes, modalMetadata } from '$lib/stores';
@@ -28,10 +28,10 @@
 	let isMouseDragging = false;
 	let zoomLevel = 1;
 
-	let nodesState = getNodes();
+	let nodesState = getNodesState();
 	$: abstractAssetNodes = nodesState.assets;
 
-	let linksState = getLinks();
+	let linksState = getLinksState();
 	$: links = linksState.links;
 
 	let isCreateNodeMode: boolean;

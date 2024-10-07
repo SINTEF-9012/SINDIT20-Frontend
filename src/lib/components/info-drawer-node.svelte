@@ -1,13 +1,13 @@
 <script lang="ts">
     import { getDrawerStore } from "@skeletonlabs/skeleton";
-    import { getNodes } from './states/nodes-state.svelte';
+    import { getNodesState } from './states/nodes-state.svelte';
     import { selectedNodeId } from "$lib/stores";
     import PropertyDisplay from "./property-display.svelte";
     import type { DrawerSettings } from '@skeletonlabs/skeleton';
     import type { Node as NodeType } from '$lib/types';
 
     const drawerStore = getDrawerStore();
-    const nodesState = getNodes();
+    const nodesState = getNodesState();
     const node: NodeType = nodesState.getAbstractAssetNode($selectedNodeId) as NodeType;
 
     const settingsInfoDrawer: DrawerSettings = {

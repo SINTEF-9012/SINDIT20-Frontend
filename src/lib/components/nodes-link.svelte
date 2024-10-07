@@ -2,16 +2,16 @@
 	import type { Node as NodeType } from '$lib/types';
 	import type { Link as LinkType } from '$lib/types';
 	import Link from '$lib/components/svg/link.svelte';
-	import { getNodes } from '$lib/components/states/nodes-state.svelte';
+	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 	import { nodeSize } from '$lib/stores'
 
-	const nodesState = getNodes();
+	const nodesState = getNodesState();
 
 	export let link: LinkType;
 	export let zoomLevel: number;
 
-	$: source = nodesState.getNode(link.sourceNodeId);
-	$: target = nodesState.getNode(link.targetNodeId);
+	$: source = nodesState.getAbstractAssetNode(link.sourceNodeId);
+	$: target = nodesState.getAbstractAssetNode(link.targetNodeId);
 	$: linkDescription = link.linkDescription;
 	$: linkWeight = link.linkWeight;
 	$: linkDirection = link.linkDirection;

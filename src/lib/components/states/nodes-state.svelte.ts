@@ -304,12 +304,12 @@ export class Nodes {
 // Unique key to store the state in the Svelte context
 const NODES_KEY = Symbol('NODES');
 
-export function setNodes() {
+export function setNodesState() {
 	const nodeState = new Nodes();
 	setContext(NODES_KEY, nodeState);
 	return nodeState;
 }
 
-export function getNodes() {
-	return getContext<ReturnType<typeof setNodes>>(NODES_KEY);
+export function getNodesState() {
+	return getContext<ReturnType<typeof setNodesState>>(NODES_KEY);
 }

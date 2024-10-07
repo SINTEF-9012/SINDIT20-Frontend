@@ -3,7 +3,7 @@
 	import type { LogLevel, NodeType, ConnectionType } from '$lib/types';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
-	import { getNodes } from '$lib/components/states/nodes-state.svelte';
+	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 
 
 	// Props
@@ -12,7 +12,7 @@
 
 	const modalStore = getModalStore();
 	const toastState = getToastState();
-	const nodesState = getNodes();
+	const nodesState = getNodesState();
 
 	const nodeTypes: NodeType[] = ['Connection'];
 	const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'SensApp'];

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getNodes } from './states/nodes-state.svelte';
+	import { getNodesState } from './states/nodes-state.svelte';
 	import type { Node as NodeType } from '$lib/types';
 	import { selectedNodes, selectedNodeId, nodeSize } from '$lib/stores';
 	import { InfoIcon, SettingsIcon, PlusCircleIcon } from 'svelte-feather-icons';
@@ -10,7 +10,7 @@
 	export let node: NodeType;
 	export let zoomLevel = 1;
 
-	const nodesState = getNodes();
+	const nodesState = getNodesState();
 	const drawerStore = getDrawerStore();
 	const modalStore = getModalStore();
 

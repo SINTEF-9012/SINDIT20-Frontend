@@ -2,7 +2,7 @@
     import type { LinkDirection } from "$lib/types";
     import type { Link as LinkType } from '$lib/types';
     import { onMount } from "svelte";
-    import { getLinks } from "$lib/components/states/links-state.svelte";
+    import { getLinksState } from "$lib/components/states/links-state.svelte";
     import { selectedLinkId } from "$lib/stores";
     import { getDrawerStore } from "@skeletonlabs/skeleton";
 
@@ -14,7 +14,7 @@
     export let angleRadians: number;
     export let linkWeight: number;
 
-    let linksState = getLinks();
+    let linksState = getLinksState();
     const drawerStore = getDrawerStore();
 
     let height = 10; // Height of the link line element (ink arrow)

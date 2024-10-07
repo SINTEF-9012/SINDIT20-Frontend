@@ -3,7 +3,7 @@
 	import type { LogLevel, ConnectionType, ReturnedDataTypeSearchUnits, ReturnedDataTypeAllDataTypes } from '$lib/types';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
-	import { getNodes } from '$lib/components/states/nodes-state.svelte';
+	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 	import {
 		getAllDataTypes as getAllDataTypesQuery,
 		searchUnits as searchUnitsQuery
@@ -15,7 +15,7 @@
 
 	const modalStore = getModalStore();
 	const toastState = getToastState();
-	const nodeState = getNodes();
+	const nodeState = getNodesState();
 
     // Modal metadata - data input
     const metadata = $modalStore[0].meta;

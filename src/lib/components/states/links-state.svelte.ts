@@ -2,16 +2,16 @@ import type { Link, LinkDirection } from '$lib/types';
 import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { writable, get } from 'svelte/store';
-import { getNodes } from './nodes-state.svelte';
+import { getNodesState } from './nodes-state.svelte';
 
 export class Links {
 	links = writable<Link[]>([]);
 	private toastState: ReturnType<typeof getToastState>;
-    private nodesState: ReturnType<typeof getNodes>;
+    private nodesState: ReturnType<typeof getNodesState>;
 
 	constructor() {
 		this.toastState = getToastState();
-        this.nodesState = getNodes();
+        this.nodesState = getNodesState();
 	}
 
 	// Create a new link
@@ -30,8 +30,8 @@ export class Links {
             sourceNodeId,
             targetNodeId
 		};
-        const sourceNode = this.nodesState.getNode(sourceNodeId);
-        const targetNode = this.nodesState.getNode(targetNodeId);
+        const sourceNode = this.nodesState.getAbstractAssetNode(sourceNodeId);
+        const targetNode = this.nodesState.getAbstractAssetNode(targetNodeId);
 		this.links.update((links) => [...links, newLink]);
 		this.toastState.add('Link created', `Link "${newLink.linkDescription}" created from "${sourceNode?.nodeName}" to "${targetNode?.nodeName}"`, 'info');
 
@@ -78,12 +78,12 @@ export class Links {
 // Unique key to store the state in the Svelte context
 const LINKS_KEY = Symbol('LINKS');
 
-export function setLinks() {
+export function setLinksState() {
 	const linkState = new Links();
 	setContext(LINKS_KEY, linkState);
 	return linkState;
 }
 
-export function getLinks() {
-	return getContext<ReturnType<typeof setLinks>>(LINKS_KEY);
+export function getLinksState() {
+	return getContext<ReturnType<typeof setLinksState>>(LINKS_KEY);
 }

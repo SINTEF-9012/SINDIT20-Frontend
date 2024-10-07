@@ -11,6 +11,7 @@ export const selectedNodeId = writable('');
 export const nodeSize = 100;
 export const defaultNodeType: NodeType = 'AbstractAsset';
 export const createNodeMode = writable(false);
+export const backendNodesData = writable([]);
 
 
 // links
