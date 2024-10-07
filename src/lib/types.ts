@@ -16,32 +16,33 @@ export type LogLevel = 'debug' | 'info' | 'warning' | 'error';
 
 export type GLTFModel = {name: string, path: string};
 
-// Nodes
-export interface Node {
-	id: string;
-	nodeName: string;
-	description: string;
-	position: Position;
-	nodeType: NodeType;
-}
 
+// Backend node types
+export type NodeType = 'AbstractAsset' | 'Connection' | 'AbstractAssetProperty' | 'DatabaseProperty' | 'StreamingProperty' | 'TimeseriesProperty';
+// Backend node uris
+export type NodeUri = { uri: string }
+// Internal position type
 type Position = {
 	x: number;
 	y: number;
 };
 
-export type NodeType = 'AbstractAsset' | 'AbstractAssetProperty' | 'Connection'
-
-export interface AbstractAsset extends Node {
-	nodeType: 'AbstractAsset';
-	assetProperties?: AssetPropertyUri[];
+// Nodes (Assets)
+export interface Node {
+	id: string;
+	nodeName: string;
+	description: string;
+	position: Position;
 }
 
-export type AssetPropertyUri = { uri: string }
 
-export interface AbstractAssetProperty {
+export interface AbstractAsset extends Node {
+	assetProperties?: NodeUri[];
+	nodeType: 'AbstractAsset';
+}
+
+export interface Property {
 	id: string;
-	nodeType: 'AbstractAssetProperty';
 	propertyName: string;
 	description: string;
 	propertyDataType: {
@@ -50,6 +51,18 @@ export interface AbstractAssetProperty {
 	propertyUnit: {
 		uri: string;
 	};
+	propertyValue?: string;
+	propertyValueTimestamp?: string;
+	propertyConnection?: NodeUri;
+}
+
+export interface AbstractAssetProperty extends Property {
+	nodeType: 'AbstractAssetProperty';
+}
+
+export interface DatabaseProperty extends Property {
+	nodeType: 'DatabaseProperty';
+	query?: string;
 }
 
 export interface Connection {
@@ -60,21 +73,10 @@ export interface Connection {
 	host: string;
 	port: number;
 	connectionType: ConnectionType;
-	// assets: AbstractAssetIds[]; TODO ? list of assets that are connected to this connection
-	// assetProperties: AbstractAssetPropertyIds[]; TODO ? list of asset properties that are connected to this connection
 }
 
 export type ConnectionType = 'MQTT' | 'InfluxDB' | 'SensApp'
 
-export interface MQTTConnection extends Connection {
-	credentialReference: string; // reference to credentials
-}
-
-export interface InfluxDBConnection extends Connection {
-	bucket: string;
-	org: string;
-	credentialReference: string; // reference to credentials
-}
 
 // Links
 export interface Link {

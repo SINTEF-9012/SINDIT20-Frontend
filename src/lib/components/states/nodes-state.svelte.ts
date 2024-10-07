@@ -1,7 +1,7 @@
 import type {
 	AbstractAsset,
 	AbstractAssetProperty,
-	AssetPropertyUri,
+	NodeUri,
 } from '$lib/types';
 import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
@@ -31,7 +31,7 @@ export class Nodes {
 	private abstractAssetNodeObject(
 		nodeName: string,
 		description: string,
-		assetProperties: AssetPropertyUri[] = [],
+		assetProperties: NodeUri[] = [],
 		position?: { x: number; y: number },
 		id?: string
 	): AbstractAsset {
@@ -115,7 +115,7 @@ export class Nodes {
 		id: string,
 		nodeName: string,
 		description: string,
-		assetProperties: AssetPropertyUri[],
+		assetProperties: NodeUri[],
 	) {
 		const newAsset = this.abstractAssetNodeObject(nodeName, description, assetProperties, undefined, id);
 		this.addAsset(newAsset);
@@ -187,7 +187,7 @@ export class Nodes {
 	}
 
 	// Get an AbstractAssetProperty node by id
-	getAbstractAssetNodeProperties(ids: AssetPropertyUri[]) {
+	getAbstractAssetNodeProperties(ids: NodeUri[]) {
 		const properties = get(this.assetProperties);
 		// console.log("properties 1", properties);
 		const uris = ids.map((id) => getNodeIdFromBackendUri(id.uri));
