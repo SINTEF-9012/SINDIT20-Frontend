@@ -1,10 +1,13 @@
 <script lang="ts">
     import type { ModalSettings } from "@skeletonlabs/skeleton";
     import { getModalStore } from '@skeletonlabs/skeleton';
-	import { selectedWorkspace } from '$lib/stores';
     import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 	import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
+    import {
+        selectedWorkspace,
+        backendNodesData,
+    } from '$lib/stores';
     import {
         getNodes as getNodesBackendQuery,
     } from '$apis/sindit-backend/kg';
@@ -49,6 +52,7 @@
     };
 
     function addNodesToNodesState(nodes: any[]) {
+        backendNodesData.set(nodes);
         nodes.forEach(node => {
             const class_uri = node.class_uri;
             const uri = getNodeIdFromBackendUri(node.uri);
@@ -79,7 +83,6 @@
             const nodes = await getNodesBackendQuery();
             addNodesToNodesState(nodes);
             console.log("selected workspace:", _selectedWorkspace);
-            console.log("selected nodes:", nodes);
             goto(`/canvas`);
         }, 500);
 	}
