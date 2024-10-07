@@ -1,7 +1,6 @@
 import type {
 	AbstractAsset,
 	AbstractAssetProperty,
-	Connection,
 	AssetPropertyUri,
 } from '$lib/types';
 import { getContext, setContext } from 'svelte';
@@ -9,7 +8,6 @@ import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { writable, get } from 'svelte/store';
 import {
 	createAbstractNode as createAbstractNodeQuery,
-	createConnectionNode as createConnectionNodeQuery,
 	addAbstractPropertyToNode as addAbstractPropertyToNodeQuery,
 	createAbstractPropertyNode as createAbstractAssetPropertyQuery,
 } from '$apis/sindit-backend/kg';
@@ -23,7 +21,6 @@ import {
 export class Nodes {
 	assets = writable<AbstractAsset[]>([]); // AbstractAssetNodes
 	assetProperties = writable<AbstractAssetProperty[]>([]); // AbstractAssetPropertyNodes
-	connections = writable<Connection[]>([]); // ConnectionNodes
 
 	private toastState: ReturnType<typeof getToastState>;
 
@@ -78,38 +75,12 @@ export class Nodes {
 		};
 	}
 
-	private connectionNodeObject(
-		connectionName: string,
-		description: string,
-		host: string,
-		port: number,
-		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp',
-		id?: string
-	): Connection {
-		if (!id) {
-			id = crypto.randomUUID();
-		}
-		return {
-			id,
-			connectionName,
-			description,
-			nodeType: 'Connection',
-			host,
-			port,
-			connectionType
-		};
-	}
-
 	getAllAbstractAssetNodes() {
 		return this.assets;
 	}
 
 	getAllAbstractAssetPropertyNodes() {
 		return this.assetProperties;
-	}
-
-	getAllConnectionNodes() {
-		return this.connections;
 	}
 
 	deleteAllAbstractAssets() {
@@ -120,14 +91,9 @@ export class Nodes {
 		this.assetProperties.set([]);
 	}
 
-	deleteAllConnections() {
-		this.connections.set([]);
-	}
-
 	deleteAllNodes() {
 		this.deleteAllAbstractAssets();
 		this.deleteAllAbstractProperties();
-		this.deleteAllConnections();
 	}
 
 	// Add a new asset node to the state
@@ -144,13 +110,6 @@ export class Nodes {
 		this.assetProperties.update((assetProperties) => [...assetProperties, assetProperty]);
 	}
 
-	// Add a new connection node to the state
-	addConnection<T extends Connection>(
-		connection: T
-	) {
-		this.connections.update((connections) => [...connections, connection]);
-	}
-
 	// Add a new AbstractAsset node
 	addAbstractAssetNode(
 		id: string,
@@ -160,19 +119,6 @@ export class Nodes {
 	) {
 		const newAsset = this.abstractAssetNodeObject(nodeName, description, assetProperties, undefined, id);
 		this.addAsset(newAsset);
-	}
-
-	// Add a new Connection node
-	addConnectionNode(
-		id: string,
-		connectionName: string,
-		description: string,
-		host: string,
-		port: number,
-		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp'
-	) {
-		const newNode = this.connectionNodeObject(connectionName, description, host, port, connectionType, id);
-		this.addConnection(newNode);
 	}
 
 	// Add a new AbstractAssetProperty node
@@ -203,24 +149,6 @@ export class Nodes {
 		} catch (error) {
 			this.toastState.add('Error creating AbstractAsset node', error as string, 'error');
 			this.deleteAbstractAssetNode(newNode.id);
-		}
-	}
-
-	// Create a new Connection node
-	async createConnectionNode(
-		nodeName: string,
-		description: string,
-		host: string,
-		port: number,
-		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp'
-	) {
-		const newNode = this.connectionNodeObject(nodeName, description, host, port, connectionType);
-		this.addConnection(newNode);
-		try {
-			await createConnectionNodeQuery(newNode.id, newNode.connectionName, newNode.description, host, port, connectionType);
-		} catch (error) {
-			this.toastState.add('Error creating Connection node', error as string, 'error');
-			// TODO: delete this.deleteConnection(newNode.id);
 		}
 	}
 
@@ -302,14 +230,14 @@ export class Nodes {
 }
 
 // Unique key to store the state in the Svelte context
-const NODES_KEY = Symbol('NODES');
+const KEY = Symbol('NODES');
 
 export function setNodesState() {
 	const nodeState = new Nodes();
-	setContext(NODES_KEY, nodeState);
+	setContext(KEY, nodeState);
 	return nodeState;
 }
 
 export function getNodesState() {
-	return getContext<ReturnType<typeof setNodesState>>(NODES_KEY);
+	return getContext<ReturnType<typeof setNodesState>>(KEY);
 }

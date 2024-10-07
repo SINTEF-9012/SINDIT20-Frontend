@@ -2,11 +2,11 @@
     import type { ModalSettings } from "@skeletonlabs/skeleton";
     import { getModalStore } from '@skeletonlabs/skeleton';
     import { getNodesState } from '$lib/components/states/nodes-state.svelte';
+    import { getConnectionsState } from '$lib/components/states/connections.svelte';
 	import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import {
         selectedWorkspace,
-        backendNodesData,
     } from '$lib/stores';
     import {
         getNodes as getNodesBackendQuery,
@@ -17,8 +17,7 @@
         getWorkspace,
     } from '$apis/sindit-backend/workspace';
     import {
-        getNodeClassTypeFromBackendClassUri,
-        getNodeIdFromBackendUri
+	    addNodesToStates,
     } from '$lib/utils';
 
     const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
@@ -33,6 +32,7 @@
 	let _selectedWorkspace = '';
 	let filteredWorkspaces: Workspace[] = [];
     const nodesState = getNodesState();
+    const connectionsState = getConnectionsState();
 	$: {
 		if (searchQuery === '') {
             filteredWorkspaces = workspaces.map(workspace => workspace);
@@ -51,24 +51,6 @@
         }
     };
 
-    function addNodesToNodesState(nodes: any[]) {
-        backendNodesData.set(nodes);
-        nodes.forEach(node => {
-            const class_uri = node.class_uri;
-            const uri = getNodeIdFromBackendUri(node.uri);
-            const class_type = getNodeClassTypeFromBackendClassUri(class_uri);
-            if (class_type === 'AbstractAsset') {
-                nodesState.addAbstractAssetNode(uri, node.label, node.assetDescription, node.assetProperties);
-            } else if (class_type === 'Connection') {
-                nodesState.addConnectionNode(uri, node.label, node.connectionDescription, node.host, node.port, node.connectionType);
-            } else if (class_type === 'AbstractAssetProperty') {
-                nodesState.addAbstractAssetPropertyNode(uri, node.label, node.propertyDescription, node.propertyDataType.uri, node.propertyUnit.uri);
-            } else {
-                throw new Error(`Unknown node type ${class_type}`);
-            }
-        });
-    }
-
 	async function selectWorkspace(workspace: Workspace) {
         // Set the selected workspace
         console.log("selected workspace:", workspace);
@@ -81,7 +63,7 @@
         // Get all nodes in the selected workspace and add them to the nodes state
         setTimeout(async () => {
             const nodes = await getNodesBackendQuery();
-            addNodesToNodesState(nodes);
+            addNodesToStates(nodes, nodesState, connectionsState);
             console.log("selected workspace:", _selectedWorkspace);
             goto(`/canvas`);
         }, 500);

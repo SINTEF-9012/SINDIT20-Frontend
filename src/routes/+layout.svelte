@@ -7,6 +7,7 @@
 	import Toaster from '$lib/components/toaster.svelte';
 	import { setToastState } from '$lib/components/states/toast-state.svelte';
 	import { setNodesState } from '$lib/components/states/nodes-state.svelte';
+	import { setConnectionsState } from '$lib/components/states/connections.svelte';
 	import { setLinksState } from '$lib/components/states/links-state.svelte';
 	import Navigation from '$lib/components/navigation.svelte';
 	import Toolbox from '$lib/components/toolbox.svelte';
@@ -23,6 +24,9 @@
 
 	// Initialize Nodes State
 	setNodesState();
+
+	// Initialize Connections State
+	setConnectionsState();
 
 	// Initialize Links State
 	setLinksState();
