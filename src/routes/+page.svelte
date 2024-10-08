@@ -3,6 +3,8 @@
     import { getNodes, createAbstractNode } from '$apis/sindit-backend/kg';
     import { onMount } from 'svelte';
     import { JSONEditor } from 'svelte-jsoneditor'
+    import { modeCurrent } from '@skeletonlabs/skeleton';
+
 
 	const nodeId = "#1234"
     const nodeName = "Node Name"
@@ -26,6 +28,8 @@
     }
     $: console.log(content)
 
+    let darkMode = "";
+    $: darkMode = $modeCurrent === false ? "jse-theme-dark" : "";
 
     async function handleSubmit() {
         try {
@@ -103,7 +107,7 @@
         </div>
         {#if showJSONEditor}
             <button class="resizer" on:mousedown={handleMouseDown} aria-label="resizer"></button>
-            <div class="json-editor jse-theme-dark">
+            <div class="json-editor {darkMode}">
                 <JSONEditor bind:content mode="text" />
             </div>
         {/if}
@@ -115,6 +119,7 @@
 <style>
     @import 'svelte-jsoneditor/themes/jse-theme-dark.css';
     .canvas-page {
+        position: fixed;
         display: flex;
         width: 100%;
         height: 90vh;
@@ -122,17 +127,20 @@
     .container {
         display: flex;
         height: 90vh;
-        width: 100%;
-        min-width: 100%;
-        max-width: 100%;
+        width: calc(100% - 10px);
+        min-width: 50%;
+        max-width: calc(100% - 10px);
+        margin-right: 2.5rem;
     }
     .json-editor {
         border: 1px solid white;
+        width: 380px;
         min-width: 380px;
     }
     .canvas-container {
         border: 1px solid white;
-        min-width:50%;
+        width: calc(100% - 385px);
+        min-width: 50%;
     }
     .resizer {
         width: 5px;
