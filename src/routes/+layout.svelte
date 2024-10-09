@@ -80,7 +80,7 @@
 
 <div class="grid grid-rows-[auto_1fr_auto]">
 	<!-- Header -->
-	<header class="variant-ghost">
+	<header class="variant-ghost h-16">
 		<AppBar
 			gridColumns="grid-cols-3"
 			slotDefault="place-self-center"
