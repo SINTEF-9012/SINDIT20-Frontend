@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { Workspace } from '$lib/types';
     import type { ModalSettings } from "@skeletonlabs/skeleton";
     import { getModalStore } from '@skeletonlabs/skeleton';
     import { getNodesState } from '$lib/components/states/nodes-state.svelte';
@@ -6,6 +7,7 @@
 	import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import {
+	    isWorkspaceSelected,
         selectedWorkspace,
     } from '$lib/stores';
     import {
@@ -14,19 +16,17 @@
     import {
         switchWorkspace,
         listWorkspaces,
-        getWorkspace,
     } from '$apis/sindit-backend/workspace';
     import {
 	    addNodesToStates,
+        getCurrentWorkspace,
+        getWorkspaceDictFromUri,
     } from '$lib/utils';
 
     const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
 
-    type Workspace = {
-        name: string;
-        uri: string;
-    };
 
+    let workspace: Workspace;
     let workspaces: Workspace[] = [];
 	let searchQuery = '';
 	let _selectedWorkspace = '';
@@ -57,7 +57,6 @@
         await switchWorkspace(workspace.uri);
 		_selectedWorkspace = workspace.name;
         selectedWorkspace.set(_selectedWorkspace);
-        console.log("selected workspace:", getCurrentWorkspace());
         // Delete all nodes in the current workspace
         nodesState.deleteAllNodes();
         // Get all nodes in the selected workspace and add them to the nodes state
@@ -71,17 +70,6 @@
 
     function onCreateWorkspace() {
         modalStore.trigger(modalCreateNewDashboard);
-    }
-
-    function getWorkspaceDictFromUri(workspaceUri: string): Workspace {
-        let workspaceName = workspaceUri.split('#')[1] as string
-        if (workspaceName === '' || workspaceName === undefined) {
-            workspaceName = workspaceUri;
-        }
-        return {
-            name: workspaceName,
-            uri: workspaceUri,
-        };
     }
 
     function createWorkspace(workspaceName: string) {
@@ -104,22 +92,13 @@
         workspaces = [...workspaces];
     }
 
-    async function getCurrentWorkspace(): Promise<void> {
-        const workspace = await getWorkspace();
-        console.log("getCurrentWorkspace:", workspace);
-        if (!workspace.workspace_uri) {
-            _selectedWorkspace = '';
-            selectedWorkspace.set(_selectedWorkspace);
-        } else {
-            const workspaceDict = getWorkspaceDictFromUri(workspace.workspace_uri);
-            _selectedWorkspace = workspaceDict.name;
-            selectedWorkspace.set(_selectedWorkspace);
-        }
-    }
 
     onMount(async () => {
         await getWorkspaces();
-        await getCurrentWorkspace();
+        workspace = await getCurrentWorkspace();
+        if (isWorkspaceSelected) {
+            _selectedWorkspace = workspace.name;
+        }
     });
 
     $: console.log('workspaces', workspaces);

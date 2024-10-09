@@ -6,15 +6,17 @@
 	import { initializeStores, Drawer, getDrawerStore, Modal } from '@skeletonlabs/skeleton';
 	import Toaster from '$lib/components/toaster.svelte';
 	import { setToastState } from '$lib/components/states/toast-state.svelte';
-	import { setNodesState } from '$lib/components/states/nodes-state.svelte';
-	import { setConnectionsState } from '$lib/components/states/connections.svelte';
+	import { setNodesState, getNodesState } from '$lib/components/states/nodes-state.svelte';
+	import { setConnectionsState, getConnectionsState } from '$lib/components/states/connections.svelte';
 	import { setLinksState } from '$lib/components/states/links-state.svelte';
 	import Navigation from '$lib/components/navigation.svelte';
 	import Toolbox from '$lib/components/toolbox.svelte';
 	import InfoDrawerNode from '$lib/components/info-drawer-node.svelte';
 	import InfoDrawerLink from '$lib/components/info-drawer-link.svelte';
 	import type { ModalComponent } from '@skeletonlabs/skeleton';
-	import { selectedWorkspace } from '$lib/stores';
+	import { selectedWorkspace, isWorkspaceSelected } from '$lib/stores';
+	import { getNodes as getNodesBackendQuery } from '$apis/sindit-backend/kg';
+	import { addNodesToStates, getCurrentWorkspace } from '$lib/utils';
 
 	// Initialize Stores
 	initializeStores();
@@ -24,12 +26,17 @@
 
 	// Initialize Nodes State
 	setNodesState();
+	const nodesState = getNodesState();
 
 	// Initialize Connections State
 	setConnectionsState();
+	const connectionsState = getConnectionsState();
 
 	// Initialize Links State
 	setLinksState();
+
+	// Load workspace
+	getCurrentWorkspace();
 
 	// Get Drawer Store
 	const drawerStore = getDrawerStore();
@@ -54,6 +61,15 @@
 		createNewLink: { ref: CreateNewLink },
 		createNew: { ref: CreateNew },
 	};
+
+	async function loadWorkspaceData() {
+		const nodes = await getNodesBackendQuery();
+		addNodesToStates(nodes, nodesState, connectionsState);
+	}
+
+	$: if ($isWorkspaceSelected) {
+		loadWorkspaceData();
+	}
 
 </script>
 

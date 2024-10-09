@@ -1,14 +1,15 @@
 
-import type { NodeType } from '$lib/types';
-import { backendNodesData } from '$lib/stores';
+import type { NodeType, Workspace } from '$lib/types';
+import { backendNodesData, selectedWorkspace, isWorkspaceSelected } from '$lib/stores';
 import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 import { getConnectionsState } from './components/states/connections.svelte';
+import { getWorkspace } from '$apis/sindit-backend/workspace';
+
 
 const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
 
-
-
 // const connectionsState = getConnectionsState();
+
 
 export function getBackendUri(nodeId: string): string {
     // Get the backend URI for a node. The backend URI is the base URI + the node ID
@@ -47,4 +48,28 @@ export function addNodesToStates(
             throw new Error(`Unknown node type ${class_type}`);
         }
     });
+}
+
+export function getWorkspaceDictFromUri(workspaceUri: string): Workspace {
+    let workspaceName = workspaceUri.split('#')[1] as string
+    if (workspaceName === '' || workspaceName === undefined) {
+        workspaceName = workspaceUri;
+    }
+    return {
+        name: workspaceName,
+        uri: workspaceUri,
+    };
+}
+
+export async function getCurrentWorkspace(): Promise<Workspace> {
+    const workspace = await getWorkspace();
+    if (!workspace.workspace_uri) {
+        selectedWorkspace.set('');
+        isWorkspaceSelected.set(false);
+    } else {
+        const workspaceDict = getWorkspaceDictFromUri(workspace.workspace_uri);
+        selectedWorkspace.set(workspaceDict.name);
+        isWorkspaceSelected.set(true);
+    }
+    return getWorkspaceDictFromUri(workspace.workspace_uri);
 }

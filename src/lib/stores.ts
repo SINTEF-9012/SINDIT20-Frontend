@@ -4,6 +4,7 @@ import type { NodeType, GLTFModel } from '$lib/types';
 
 // workspace
 export const selectedWorkspace = writable('');
+export const isWorkspaceSelected = writable(false);
 
 // node
 export const selectedNodes = writable<string[]>([]);

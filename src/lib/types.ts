@@ -1,5 +1,9 @@
 // Frontend specifics
 
+export type Workspace = {
+	name: string;
+	uri: string;
+};
 
 // Toast messages
 export type Toast = {
