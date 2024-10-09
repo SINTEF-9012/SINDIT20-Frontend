@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SvelteComponent } from 'svelte';
-	import type { LogLevel, NodeType, ConnectionType } from '$lib/types';
+	import type { LogLevel, NodeType } from '$lib/types';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
@@ -21,10 +21,7 @@
 	if (!metadata.mode) throw new Error('Metadata mode missing from modal settings.');
 
 	const mode = metadata.mode.toLowerCase().replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
-	const title = `${mode} new ${metadata.name}`;
-	const body = `${mode} a new ${metadata.name} in the knowledge graph.`;
 	const nodeTypes: NodeType[] = ['AbstractAsset'];
-	const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'SensApp'];
 
 	$: isBaseFormValid = false;
 	$: isFormValid = false;
@@ -34,22 +31,13 @@
 	$: abstractAsset = {
 		nodeName: '',
         nodeDescription: '',
-		nodeType: '',
+		nodeType: 'AbstractAsset',
 	};
-	$: connection = {
-		host: '',
-		port: '',
-		connectionType: ''
-	}
 
 	$: {
 		isBaseFormValid = ((abstractAsset.nodeName != '') && (isValidNodeType(abstractAsset.nodeType)));
 		if (abstractAsset.nodeType === 'AbstractAsset') {
 			isFormValid = isBaseFormValid;
-		} else if (abstractAsset.nodeType === 'Connection') {
-			isFormValid = (isBaseFormValid &&
-				(isValidHost(connection.host)) && (isValidPort(connection.port)) && (isValidConnectionType(connection.connectionType))
-			);
 		} else {
 			isFormValid = false;
 		}
@@ -59,24 +47,9 @@
 		return nodeTypes.includes(value);
 	}
 
-	function isValidHost(value: any): boolean {
-		return value.length > 0;
-	}
-
 	function isValidPort(value: any): boolean {
 		const port = parsePort(value);
 		return !isNaN(port) && port >= 999 && port <= 9999;
-	}
-
-	function isValidConnectionType(value: any): boolean {
-		return connectionTypes.includes(value);
-	}
-
-	function getValidConnectionType(value: any): ConnectionType {
-		if (!isValidConnectionType(value)) {
-			throw new Error(`Invalid connection type: ${value}`);
-		}
-		return value as ConnectionType;
 	}
 
 	function parsePort(value: string): number {
@@ -87,27 +60,27 @@
 	// Create a new node in the knowledge graph
 	function createNewNode(): void {
 		let position = {x: Math.random()*300, y: Math.random()*300};
+		let title = '';
+		let message = '';
+		let logLevel: LogLevel = 'info';
 		if (metadata.position) {
 			position = metadata.position;
 		}
 		if (abstractAsset.nodeType === 'AbstractAsset') {
-			nodes.createAbstractAssetNode(
-				abstractAsset.nodeName, abstractAsset.nodeDescription, position);
+			nodes.createAbstractAssetNode(abstractAsset.nodeName, abstractAsset.nodeDescription, position);
+			title = `Successfully Created`;
+			message = `Created new node '${abstractAsset.nodeName}'`;
 		} else {
-			const title = 'Error';
-			const message = `Node type '${abstractAsset.nodeType}' not supported.`;
-			const logLevel: LogLevel = 'error';
-			toastState.add(title, message, logLevel);
+			title = 'Error';
+			message = `Node type '${abstractAsset.nodeType}' not supported.`;
+			logLevel = 'error';
 		}
+		toastState.add(title, message, logLevel);
 	}
 
 	function onFormSubmit(): void {
 		// TODO: Create new item in the knowledge graph // this should be handled in separate func
 		if (metadata.mode === 'create' && metadata.name === 'node') createNewNode();
-		const title = `Successfully "${metadata.mode}d"`;
-		const message = `Successfully "${metadata.mode}d" '${abstractAsset.nodeName}'`;
-		const logLevel: LogLevel = 'info';
-		toastState.add(title, message, logLevel);
 		modalStore.close();
 	}
 
@@ -129,8 +102,8 @@
 
 {#if $modalStore[0]}
 	<div class="modal-example-form {cBase}">
-		<header class={cHeader}>{title}</header>
-		<article>{body}</article>
+		<header class={cHeader}>Create New Node</header>
+		<article>Create a new node in the knowledge graph</article>
 		<!-- Enable for debugging: -->
 		<form class="modal-form {cForm}">
 			<label class="label">
@@ -141,33 +114,11 @@
 			</label>
 			<label class="label">
 				<select class="input" bind:value={abstractAsset.nodeType}>
-					<option value="">Select a node type...</option>
 					{#each nodeTypes as nodeType}
 						<option value={nodeType}>{nodeType}</option>
 					{/each}
 				</select>
 			</label>
-			{#if (abstractAsset.nodeType === 'Connection')}
-				<div class="connection-properties {cForm} ml-4">
-					<label>
-						<input class="input" type="text" bind:value={connection.host} placeholder="Host..." />
-					</label>
-					<label>
-						{#if !isValidPort(connection.port) && connection.port !== ''}
-							<span class="error-symbol">⚠️</span>
-						{/if}
-						<input class="input" type="text" bind:value={connection.port} placeholder="Port..." />
-					</label>
-					<label>
-						<select class="input" bind:value={connection.connectionType}>
-							<option value="">Select a connection type...</option>
-							{#each connectionTypes as conn}
-								<option value={conn}>{conn}</option>
-							{/each}
-						</select>
-					</label>
-				</div>
-			{/if}
 		</form>
 		<!-- prettier-ignore -->
 		<footer class="modal-footer {parent.regionFooter}">
