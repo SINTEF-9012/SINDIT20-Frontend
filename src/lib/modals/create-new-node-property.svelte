@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount, type SvelteComponent } from 'svelte';
-	import type { LogLevel, ConnectionType, ReturnedDataTypeSearchUnits, ReturnedDataTypeAllDataTypes } from '$lib/types';
+	import type { LogLevel, ReturnedDataTypeSearchUnits, ReturnedDataTypeAllDataTypes } from '$lib/types';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
+	import { getPropertiesState } from '$lib/components/states/properties.svelte';
 	import {
 		getAllDataTypes as getAllDataTypesQuery,
 		searchUnits as searchUnitsQuery
@@ -15,14 +16,15 @@
 
 	const modalStore = getModalStore();
 	const toastState = getToastState();
-	const nodeState = getNodesState();
+	const nodesState = getNodesState();
+	const propertiesState = getPropertiesState();
 
     // Modal metadata - data input
     const metadata = $modalStore[0].meta;
 	if (!metadata) throw new Error('Metadata missing from modal settings.');
     if (!metadata.nodeId) throw new Error('Metadata nodeId missing from modal settings.');
 
-    const node = nodeState.getAbstractAssetNode(metadata.nodeId);
+    const node = nodesState.getAbstractAssetNode(metadata.nodeId);
 	if (!node) throw new Error('Node not found in nodes state.');
 	// TODO: Add connection to Asset Property
 	// const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'SensApp'];
@@ -57,8 +59,8 @@
 		const description = abstractAssetProperty.propertyDescription
 		const dataTypeUri = abstractAssetProperty.propertyDataType;
 		const unitUri = abstractAssetProperty.propertyUnit;
-		nodeState.createAbstractAssetPropertyNode(metadata.nodeId, propertyName, description, dataTypeUri, unitUri);
-		//toastState.add('Failed', `Not implemented! New Node Property NOT created`, 'warning');
+		propertiesState.createAbstractAssetPropertyNode(propertyName, description, dataTypeUri, unitUri);
+		nodesState.addPropertyToAbstractAssetNode(node.id, propertyName);
 		modalStore.close();
 	}
 

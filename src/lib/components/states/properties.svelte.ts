@@ -5,11 +5,14 @@ import type {
     Property,
     AbstractAssetProperty,
     DatabaseProperty,
+    StreamingProperty,
+    PropertyNodeType,
+    NodeUri
 } from '$lib/types';
-import crypto from 'crypto';
 import {
     createAbstractPropertyNode as createAbstractAssetPropertyQuery,
 } from '$apis/sindit-backend/kg';
+
 export class Properties {
     properties = writable<Property[]>([]); // PropertyNodes
 
@@ -18,7 +21,6 @@ export class Properties {
     constructor() {
         this.toastState = getToastState();
     }
-
 
     private propertyObject(
 		propertyName: string,
@@ -72,6 +74,7 @@ export class Properties {
     }
 
     private databasePropertyObject(
+        query: string,
         propertyName: string,
         description: string,
         propertyDataTypeURI: string,
@@ -92,7 +95,35 @@ export class Properties {
         return {
             ...property,
             nodeType: 'DatabaseProperty',
-            query: '',
+            query,
+        };
+    }
+
+    private streamingPropertyObject(
+        streamingTopic: string,
+        streamingPath: string,
+        propertyName: string,
+        description: string,
+        propertyDataTypeURI: string,
+        propertyUnitURI: string,
+        id?: string,
+        propertyValue?: string,
+        propertyValueTimestamp?: string,
+    ): StreamingProperty {
+        const property = this.propertyObject(
+            propertyName,
+            description,
+            propertyDataTypeURI,
+            propertyUnitURI,
+            id,
+            propertyValue,
+            propertyValueTimestamp,
+        );
+        return {
+            ...property,
+            nodeType: 'StreamingProperty',
+            streamingTopic,
+            streamingPath,
         };
     }
 
@@ -114,7 +145,14 @@ export class Properties {
         this.properties.update((properties) => [...properties, property]);
     }
 
+    addPropertyNode(class_type: PropertyNodeType, node: any) {
+        if (class_type === 'AbstractAssetProperty') {
+            this.addAbstractAssetPropertyNode(node.uri, node.propertyName, node.description, node.propertyDataType.uri, node.propertyUnit.uri, node.propertyValue, node.propertyValueTimestamp);
+        }
+    }
+
     addAbstractAssetPropertyNode(
+        id: string,
         propertyName: string,
         description: string,
         propertyDataTypeURI: string,
@@ -127,7 +165,7 @@ export class Properties {
             description,
             propertyDataTypeURI,
             propertyUnitURI,
-            undefined,
+            id,
             propertyValue,
             propertyValueTimestamp,
         );
@@ -158,6 +196,15 @@ export class Properties {
             this.deleteProperty(newProperty.id);
         }
     }
+
+    // Get properties by their IDs
+	getProperties(ids: NodeUri[]): Property[] {
+		const properties = get(this.properties);
+		//const uris = ids.map((id) => getNodeIdFromBackendUri(id.uri));
+        const uris = ids.map((id) => (id.uri));
+		return properties.filter((property) => uris.includes(property.id));
+	}
+
 }
 
 // Unique key to store the state in the Svelte context

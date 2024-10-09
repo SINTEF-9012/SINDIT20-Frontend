@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getNodesState } from './states/nodes-state.svelte';
+	import { getPropertiesState } from './states/properties.svelte';
 	import type { Node as NodeType } from '$lib/types';
 	import { selectedNodes, selectedNodeId, nodeSize } from '$lib/stores';
 	import { InfoIcon, SettingsIcon, PlusCircleIcon } from 'svelte-feather-icons';
@@ -11,6 +12,7 @@
 	export let zoomLevel = 1;
 
 	const nodesState = getNodesState();
+	const propertiesState = getPropertiesState();
 	const drawerStore = getDrawerStore();
 	const modalStore = getModalStore();
 
@@ -23,7 +25,7 @@
 	let showShortProperties = true;
 
 	const propertyUris = nodesState.getAbstractAssetNode(node.id)?.assetProperties;
-	const properties = nodesState.getAbstractAssetNodeProperties(propertyUris);
+	const properties = propertiesState.getProperties(propertyUris);
 
 	const fontSize = nodeSize * 0.15;
 	const fontSizeTitle = fontSize * 1.1 + 'px';
@@ -161,8 +163,8 @@
 							<div>{property.propertyName}</div>
 						{/if}
 						<div class="node-prop-value gap-1">
-							<div>Yolo</div>
-							<div>{property.propertyUnit}</div>
+							<div>{property.propertyValue}</div>
+							<div>{property.propertyUnit.uri}</div>
 						</div>
 					</div>
 				{/each}

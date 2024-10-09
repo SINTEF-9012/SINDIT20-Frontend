@@ -4,6 +4,7 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
     import { getNodesState } from '$lib/components/states/nodes-state.svelte';
     import { getConnectionsState } from '$lib/components/states/connections.svelte';
+    import { getPropertiesState } from '$lib/components/states/properties.svelte';
 	import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import {
@@ -33,6 +34,7 @@
 	let filteredWorkspaces: Workspace[] = [];
     const nodesState = getNodesState();
     const connectionsState = getConnectionsState();
+    const propertiesState = getPropertiesState();
 	$: {
 		if (searchQuery === '') {
             filteredWorkspaces = workspaces.map(workspace => workspace);
@@ -62,7 +64,7 @@
         // Get all nodes in the selected workspace and add them to the nodes state
         setTimeout(async () => {
             const nodes = await getNodesBackendQuery();
-            addNodesToStates(nodes, nodesState, connectionsState);
+            addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
             console.log("selected workspace:", _selectedWorkspace);
             goto(`/canvas`);
         }, 500);

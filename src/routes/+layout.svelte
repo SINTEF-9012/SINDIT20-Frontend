@@ -8,6 +8,7 @@
 	import { setToastState } from '$lib/components/states/toast-state.svelte';
 	import { setNodesState, getNodesState } from '$lib/components/states/nodes-state.svelte';
 	import { setConnectionsState, getConnectionsState } from '$lib/components/states/connections.svelte';
+	import { setPropertiesState, getPropertiesState } from '$lib/components/states/properties.svelte';
 	import { setLinksState } from '$lib/components/states/links-state.svelte';
 	import Navigation from '$lib/components/navigation.svelte';
 	import Toolbox from '$lib/components/toolbox.svelte';
@@ -31,6 +32,10 @@
 	// Initialize Connections State
 	setConnectionsState();
 	const connectionsState = getConnectionsState();
+
+	// Initialize Properties State
+	setPropertiesState();
+	const propertiesState = getPropertiesState();
 
 	// Initialize Links State
 	setLinksState();
@@ -64,7 +69,7 @@
 
 	async function loadWorkspaceData() {
 		const nodes = await getNodesBackendQuery();
-		addNodesToStates(nodes, nodesState, connectionsState);
+		addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
 	}
 
 	$: if ($isWorkspaceSelected) {

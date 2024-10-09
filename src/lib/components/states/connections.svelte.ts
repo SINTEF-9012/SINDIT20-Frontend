@@ -22,7 +22,7 @@ export class Connections {
 		description: string,
 		host: string,
 		port: number,
-		connectionType: 'MQTT' | 'InfluxDB' | 'SensApp',
+		connectionType: ConnectionType,
 		id?: string
 	): Connection {
 		if (!id) {
@@ -64,6 +64,18 @@ export class Connections {
         // TODO: check connection status
         return node;
     }
+
+	addConnectionNode(
+		id: string,
+		connectionName: string,
+		description: string,
+		host: string,
+		port: number,
+		connectionType: ConnectionType
+	) {
+		const newConnection = this.connectionNodeObject(connectionName, description, host, port, connectionType, id);
+		this.addConnection(newConnection);
+	}
 
 	// Create a new Connection node
 	async createConnectionNode(

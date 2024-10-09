@@ -22,9 +22,17 @@ export type GLTFModel = {name: string, path: string};
 
 
 // Backend node types
-export type NodeType = 'AbstractAsset' | 'Connection' | 'AbstractAssetProperty' | 'DatabaseProperty' | 'StreamingProperty' | 'TimeseriesProperty';
+export type AssetNodeType = 'AbstractAsset';
+export type ConnectionNodeType = 'Connection';
+export type PropertyNodeType = 'AbstractAssetProperty' | 'DatabaseProperty' | 'StreamingProperty' | 'TimeseriesProperty';
+export type AllBackendNodeTypes = AssetNodeType | ConnectionNodeType | PropertyNodeType;
+
+// Connection types
+export type ConnectionType = 'MQTT' | 'InfluxDB' | 'SensApp';
+
 // Backend node uris
 export type NodeUri = { uri: string }
+
 // Internal position type
 type Position = {
 	x: number;
@@ -69,6 +77,12 @@ export interface DatabaseProperty extends Property {
 	query?: string;
 }
 
+export interface StreamingProperty extends Property {
+	nodeType: 'StreamingProperty';
+	streamingTopic: string;
+  	streamingPath: string;
+}
+
 export interface Connection {
 	id: string;
 	nodeType: 'Connection'
@@ -78,9 +92,6 @@ export interface Connection {
 	port: number;
 	connectionType: ConnectionType;
 }
-
-export type ConnectionType = 'MQTT' | 'InfluxDB' | 'SensApp'
-
 
 // Links
 export interface Link {

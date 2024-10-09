@@ -1,9 +1,17 @@
 
-import type { NodeType, Workspace } from '$lib/types';
+import type {
+    Workspace, AllBackendNodeTypes, AssetNodeType, ConnectionNodeType, PropertyNodeType
+} from '$lib/types';
 import { backendNodesData, selectedWorkspace, isWorkspaceSelected } from '$lib/stores';
 import { getNodesState } from '$lib/components/states/nodes-state.svelte';
+import { getPropertiesState } from '$lib/components/states/properties.svelte';
 import { getConnectionsState } from './components/states/connections.svelte';
 import { getWorkspace } from '$apis/sindit-backend/workspace';
+import {
+    assetNodeTypes,
+    connectionNodeTypes,
+    propertyNodeTypes,
+} from '$lib/stores';
 
 
 const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
@@ -21,14 +29,15 @@ export function getNodeIdFromBackendUri(uri: string): string {
     return uri.split(API_BASE_URI)[1] as string;
 }
 
-export function getNodeClassTypeFromBackendClassUri(class_uri: string): NodeType {
+export function getNodeClassTypeFromBackendClassUri(class_uri: string): AllBackendNodeTypes {
     // Get the node class type from a backend class URI. The backend class comes after the # in the URI
-    return class_uri.split('#')[1] as NodeType;
+    return class_uri.split('#')[1] as AllBackendNodeTypes;
 }
 
 export function addNodesToStates(
     nodes: any,
     nodesState: ReturnType<typeof getNodesState>,
+    propertiesState: ReturnType<typeof getPropertiesState>,
     connectionsState: ReturnType<typeof getConnectionsState>
 ) {
     // TODO: make this function more reliable
@@ -37,13 +46,12 @@ export function addNodesToStates(
         const class_uri = node.class_uri;
         const uri = getNodeIdFromBackendUri(node.uri);
         const class_type = getNodeClassTypeFromBackendClassUri(class_uri);
-        if (class_type === 'AbstractAsset') {
+        if (assetNodeTypes.includes(class_type as AssetNodeType)) {
             nodesState.addAbstractAssetNode(uri, node.label, node.assetDescription, node.assetProperties);
-        } else if (class_type === 'Connection') {
-            console.log(node);
-            // nodesState.addConnectionNode(uri, node.label, node.connectionDescription, node.host, node.port, node.connectionType);
-        } else if (class_type === 'AbstractAssetProperty') {
-            nodesState.addAbstractAssetPropertyNode(uri, node.label, node.propertyDescription, node.propertyDataType.uri, node.propertyUnit.uri);
+        } else if (connectionNodeTypes.includes(class_type as ConnectionNodeType)) {
+            connectionsState.addConnectionNode(uri, node.label, node.connectionDescription, node.host, node.port, node.connectionType);
+        } else if (propertyNodeTypes.includes(class_type as PropertyNodeType)) {
+            propertiesState.addPropertyNode(class_type as PropertyNodeType, node)
         } else {
             throw new Error(`Unknown node type ${class_type}`);
         }

@@ -1,6 +1,5 @@
 import type {
 	AbstractAsset,
-	AbstractAssetProperty,
 	NodeUri,
 } from '$lib/types';
 import { getContext, setContext } from 'svelte';
@@ -8,19 +7,12 @@ import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { writable, get } from 'svelte/store';
 import {
 	createAbstractNode as createAbstractNodeQuery,
-	addAbstractPropertyToNode as addAbstractPropertyToNodeQuery,
-	createAbstractPropertyNode as createAbstractAssetPropertyQuery,
 } from '$apis/sindit-backend/kg';
-import {
-	getBackendUri,
-	getNodeIdFromBackendUri
-} from '$lib/utils';
 
 
-// TODO: Split class into AbstractAssets, AbstractAssetProperties, and Connections?
+
 export class Nodes {
 	assets = writable<AbstractAsset[]>([]); // AbstractAssetNodes
-	assetProperties = writable<AbstractAssetProperty[]>([]); // AbstractAssetPropertyNodes
 
 	private toastState: ReturnType<typeof getToastState>;
 
@@ -51,49 +43,16 @@ export class Nodes {
 		};
 	}
 
-	private abstractAssetPropertyNodeObject(
-		propertyName: string,
-		description: string,
-		propertyDataTypeURI: string,
-		propertyUnitURI: string,
-		id?: string
-	): AbstractAssetProperty {
-		if (!id) {
-			id = crypto.randomUUID();
-		}
-		return {
-			id,
-			propertyName,
-			description,
-			nodeType: 'AbstractAssetProperty',
-			propertyDataType: {
-				uri: propertyDataTypeURI,
-			},
-			propertyUnit: {
-				uri: propertyUnitURI,
-			},
-		};
-	}
-
 	getAllAbstractAssetNodes() {
 		return this.assets;
-	}
-
-	getAllAbstractAssetPropertyNodes() {
-		return this.assetProperties;
 	}
 
 	deleteAllAbstractAssets() {
 		this.assets.set([]);
 	}
 
-	deleteAllAbstractProperties() {
-		this.assetProperties.set([]);
-	}
-
 	deleteAllNodes() {
 		this.deleteAllAbstractAssets();
-		this.deleteAllAbstractProperties();
 	}
 
 	// Add a new asset node to the state
@@ -101,13 +60,6 @@ export class Nodes {
 		asset: T
 	) {
 		this.assets.update((assets) => [...assets, asset]);
-	}
-
-	// Add a new asset property node to the state
-	addAssetProperty<T extends AbstractAssetProperty>(
-		assetProperty: T
-	) {
-		this.assetProperties.update((assetProperties) => [...assetProperties, assetProperty]);
 	}
 
 	// Add a new AbstractAsset node
@@ -121,16 +73,20 @@ export class Nodes {
 		this.addAsset(newAsset);
 	}
 
-	// Add a new AbstractAssetProperty node
-	addAbstractAssetPropertyNode(
-		id: string,
-		propertyName: string,
-		description: string,
-		propertyDataTypeURI: string,
-		propertyUnitURI: string
-	) {
-		const newProperty = this.abstractAssetPropertyNodeObject(propertyName, description, propertyDataTypeURI, propertyUnitURI, id);
-		this.addAssetProperty(newProperty);
+	// Add a property to an AbstractAsset node
+	async addPropertyToAbstractAssetNode(id: string, property_uri: string) {
+		const asset = this.getAbstractAssetNode(id);
+		if (!asset) {
+			this.toastState.add('Node not found', `Node "${id}" not found`, 'error');
+			return;
+		}
+		if (!asset.assetProperties) {
+			asset.assetProperties = [{uri: property_uri}];
+		} else {
+			asset.assetProperties.push({uri: property_uri});
+		}
+		this.updateAbstractAssetNode(id, asset);
+		console.log("asset node updated:", asset)
 	}
 
 	// Create a new AbstractAsset node (frontend and backend)
@@ -150,51 +106,6 @@ export class Nodes {
 			this.toastState.add('Error creating AbstractAsset node', error as string, 'error');
 			this.deleteAbstractAssetNode(newNode.id);
 		}
-	}
-
-	// Create a new AbstractAssetProperty node
-	async createAbstractAssetPropertyNode(
-		nodeId: string,
-		propertyName: string,
-		description: string,
-		propertyDataTypeURI: string,
-		propertyUnitURI: string
-	) {
-		// let newPropertyNode;
-		const newProperty = this.abstractAssetPropertyNodeObject(propertyName, description, propertyDataTypeURI, propertyUnitURI);
-		this.addAssetProperty(newProperty);
-		try {
-			// API call to create a new AbstractAssetProperty in the backend
-			await createAbstractAssetPropertyQuery(newProperty.id, description, propertyName, propertyDataTypeURI, propertyUnitURI);
-			// TODO: Add property to AbstractAsset node
-			const asset = this.getAbstractAssetNode(nodeId) as AbstractAsset;
-			if (!asset) {
-				throw new Error('AbstractAsset node not found');
-			}
-			if (!asset.assetProperties) {
-				asset.assetProperties = [];
-			}
-			// Add the new property to the AbstractAsset node
-			asset.assetProperties.push({ uri: getBackendUri(newProperty.id) }); // (frontend)
-			await addAbstractPropertyToNodeQuery(nodeId, newProperty.id) // (backend)
-			console.log("node with new property:", this.getAbstractAssetNode(nodeId));
-
-		} catch (error) {
-			console.log("Error creating AbstractAssetProperty node", error);
-			this.toastState.add('Error creating AbstractAssetProperty node', error as string, 'error');
-			// TODO: revert all changes...
-		}
-	}
-
-	// Get an AbstractAssetProperty node by id
-	getAbstractAssetNodeProperties(ids: NodeUri[]) {
-		const properties = get(this.assetProperties);
-		// console.log("properties 1", properties);
-		const uris = ids.map((id) => getNodeIdFromBackendUri(id.uri));
-		// console.log("uris 2", uris);
-		const fp = properties.filter((property) => uris.includes(property.id));
-		// console.log("fp 3", fp);
-		return fp;
 	}
 
 	// Get an AbstractAsset node by id
