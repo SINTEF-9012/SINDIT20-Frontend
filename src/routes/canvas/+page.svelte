@@ -50,6 +50,19 @@
 	modalMetadata.subscribe((value) => createNodeModeMetadata = value);
 	selectedNodes.subscribe((value) => selectedNodesIds = value);
 
+	let isResizing = false;
+    let startX: number;
+    let pageWidth: number;
+    let canvasWidth: number;
+    let editorWidth: number;
+    let showJSONEditor = true;
+    $: content = {
+        text: undefined, // can be used to pass a stringified JSON document instead
+        json: $backendNodesData,
+    }
+    let darkMode = "";
+    $: darkMode = $modeCurrent === false ? "jse-theme-dark" : "";
+
     const modalCreateNewAssetNode: ModalSettings = {
         type: 'component',
         component: 'createNewNode',
@@ -264,20 +277,6 @@
 			node.position.y += deltaY / zoomLevel;
 		});
 	}
-
-    let isResizing = false;
-    let startX: number;
-    let pageWidth: number;
-    let canvasWidth: number;
-    let editorWidth: number;
-    let showJSONEditor = true;
-    let content = {
-        text: undefined, // can be used to pass a stringified JSON document instead
-        json: $backendNodesData,
-    }
-    let darkMode = "";
-    $: darkMode = $modeCurrent === false ? "jse-theme-dark" : "";
-
 
     function handleMouseDownEditorResize(event: MouseEvent) {
         isResizing = true;
