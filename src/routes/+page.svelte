@@ -4,6 +4,7 @@
     import { onMount } from 'svelte';
     import { JSONEditor } from 'svelte-jsoneditor'
     import { modeCurrent } from '@skeletonlabs/skeleton';
+    import { backendNodesData } from '$lib/stores'
 
 
 	const nodeId = "#1234"
@@ -16,29 +17,15 @@
     let canvasWidth: number;
     let editorWidth: number;
     let showJSONEditor = true;
-    let data: any;
-    let error: string;
     let content = {
         text: undefined, // can be used to pass a stringified JSON document instead
-        json: [
-            {a: 1},
-            {a: 2},
-            {a: 3},
-        ]
+        json: $backendNodesData,
     }
     $: console.log(content)
 
     let darkMode = "";
     $: darkMode = $modeCurrent === false ? "jse-theme-dark" : "";
 
-    async function handleSubmit() {
-        try {
-            const result = await createAbstractNode(nodeId, nodeName, nodeDescription);
-            console.log(result);
-        } catch (err) {
-            error = err.message;
-        }
-    }
 
     function handleMouseDown(event: MouseEvent) {
         isResizing = true;
@@ -70,26 +57,8 @@
             document.querySelector('.canvas-container').style.width = '100%';
         }
     }
-
-    onMount(async () => {
-        try {
-            data = await getNodes();
-        } catch (err) {
-            error = err.message;
-        }
-    });
 </script>
 
-{#if error}
-    <p>Error: {error}</p>
-{:else if data}
-    <p>Data: {JSON.stringify(data)}</p>
-{/if}
-
-<div class="mt-2">
-    <button class="btn variant-outline-success" on:click={handleSubmit}>Submit</button>
-    <button class="btn variant-outline-warning" on:click={toggleJSONEditor}>Toggle Editor</button>
-</div>
 
 
 <div class="canvas-page">
@@ -122,12 +91,14 @@
         position: fixed;
         display: flex;
         width: 100%;
-        height: 90vh;
+        height: calc(100% - 4rem - 20px);
+        margin-top: 10px;
     }
     .container {
         display: flex;
         height: 90vh;
         width: calc(100% - 10px);
+        height: 100%;
         min-width: 50%;
         max-width: calc(100% - 10px);
         margin-right: 2.5rem;
@@ -141,6 +112,9 @@
         border: 1px solid white;
         width: calc(100% - 385px);
         min-width: 50%;
+        position: relative;
+        overflow: hidden;
+        z-index: 0;
     }
     .resizer {
         width: 5px;

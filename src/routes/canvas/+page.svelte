@@ -10,6 +10,10 @@
 	import { createNodeMode, createLinkMode, createConnectionMode, selectedNodes, modalMetadata } from '$lib/stores';
 	import type { ModalSettings } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';
+	import { JSONEditor } from 'svelte-jsoneditor'
+	import { modeCurrent } from '@skeletonlabs/skeleton';
+	import { backendNodesData } from '$lib/stores'
+
 
 	const drawerStore = getDrawerStore();
 	const modalStore = getModalStore();
@@ -261,6 +265,52 @@
 		});
 	}
 
+    let isResizing = false;
+    let startX: number;
+    let pageWidth: number;
+    let canvasWidth: number;
+    let editorWidth: number;
+    let showJSONEditor = true;
+    let content = {
+        text: undefined, // can be used to pass a stringified JSON document instead
+        json: $backendNodesData,
+    }
+    let darkMode = "";
+    $: darkMode = $modeCurrent === false ? "jse-theme-dark" : "";
+
+
+    function handleMouseDownEditorResize(event: MouseEvent) {
+        isResizing = true;
+        startX = event.clientX;
+        editorWidth = document.querySelector('.json-editor').clientWidth;
+        canvasWidth = document.querySelector('.canvas-container').offsetWidth;
+        pageWidth = document.querySelector('.container').clientWidth;
+    }
+
+    function handleMouseMoveEditorResize(event: MouseEvent) {
+        if (!isResizing) return;
+        const dx = event.clientX - startX;
+        const canvasNewWidth = canvasWidth + dx;
+        const editorNewWidth = pageWidth - canvasNewWidth;
+        document.querySelector('.canvas-container').style.width = `${canvasNewWidth}px`;
+        document.querySelector('.json-editor').style.width = `${editorNewWidth}px`;
+
+    }
+
+    function handleMouseUpEditorResize() {
+        isResizing = false;
+        editorWidth = document.querySelector('.json-editor').clientWidth;
+        canvasWidth = document.querySelector('.canvas-container').offsetWidth;
+    }
+
+    function toggleJSONEditor() {
+        showJSONEditor = !showJSONEditor;
+        if (!showJSONEditor) {
+            document.querySelector('.canvas-container').style.width = '100%';
+        }
+    }
+
+
 	let interval: NodeJS.Timeout;
 	onMount(() => {
 
@@ -311,7 +361,7 @@
 	});
 </script>
 
-<div class="flex columns-2 h-5/6">
+<div class="canvas-page">
 	<div class="toolbox-button-container flex-none">
 		<button class="toolbox-button border border-black variant-glass-primary" on:click={openToolbox}>
 			<svg class="toolbox-icon" style="transform: rotate(90deg);" viewBox="0 0 24 24">
@@ -319,10 +369,11 @@
 			</svg>
 		</button>
 	</div>
-	<div class="canvas-container flex-1 border border-white h-full w-full">
-		<canvas bind:this={canvasRef} style="width: 100%; height: 100%;" on:wheel={handleMouseWheel}
-		></canvas>
-		<div class="canvas-content" bind:this={canvasContent} style="position: absolute; top: 50%; left: 50%">
+    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+    <div class="container" on:mouseup={handleMouseUpEditorResize} on:mousemove={handleMouseMoveEditorResize} role="application">
+		<div class="canvas-container">
+			<canvas class="canvas" bind:this={canvasRef} on:wheel={handleMouseWheel}></canvas>
+			<div class="canvas-content" bind:this={canvasContent}>
 				{#each $abstractAssetNodes as node (node.id)}
 					<Node
 						{node}
@@ -335,19 +386,71 @@
 						{zoomLevel}
 					/>
 				{/each}
+			</div>
 		</div>
+		{#if showJSONEditor}
+			<button class="resizer" on:mousedown={handleMouseDownEditorResize} aria-label="resizer"></button>
+			<div class="json-editor {darkMode}">
+				<JSONEditor bind:content mode="text" />
+			</div>
+		{/if}
 	</div>
 </div>
 
+
 <style>
+    @import 'svelte-jsoneditor/themes/jse-theme-dark.css';
+    .canvas-page {
+        position: fixed;
+        display: flex;
+        width: 100%;
+        height: calc(100% - 4rem - 20px);
+        margin-top: 10px;
+    }
+    .container {
+        display: flex;
+        height: 90vh;
+        width: calc(100% - 10px);
+        height: 100%;
+        min-width: 50%;
+        max-width: calc(100% - 10px);
+        margin-right: 2.5rem;
+    }
 	.canvas-container {
 		position: relative;
 		overflow: hidden;
+		width: 100%;
+		height: 100%;
+		border: 1px solid white;
+	}
+    .resizer {
+        width: 5px;
+        cursor: col-resize;
+        background-color: gray;
+    }
+	.json-editor {
+        border: 1px solid white;
+        width: 380px;
+        min-width: 380px;
+    }
+	.canvas {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		top: 0;
+		left: 0;
+		z-index: 0;
+	}
+	.canvas-content {
+		position: absolute;
+		top: 50%;
+		left: 50%;
 		z-index: 0;
 	}
 	.toolbox-button-container {
 		display: flex;
 		align-items: stretch;
+		width: 10px;
 	}
 	.toolbox-button {
 		right: 0;
