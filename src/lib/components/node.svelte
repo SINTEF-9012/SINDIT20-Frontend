@@ -24,8 +24,9 @@
 	let showProperties = false;
 	let showShortProperties = true;
 
-	const propertyUris = nodesState.getAbstractAssetNode(node.id)?.assetProperties;
-	const properties = propertiesState.getProperties(propertyUris);
+	$: assets = nodesState.assets;
+	$: propertyUris = nodesState.getAbstractAssetNode(node.id)?.assetProperties;
+	$: properties = propertiesState.getProperties(propertyUris);
 
 	const fontSize = nodeSize * 0.15;
 	const fontSizeTitle = fontSize * 1.1 + 'px';

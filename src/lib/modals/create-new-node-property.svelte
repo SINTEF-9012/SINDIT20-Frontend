@@ -54,13 +54,16 @@
 	}
 
 	// We've created a custom submit function to pass the response and close the modal.
-	function onFormSubmit(): void {
+	async function onFormSubmit(): Promise<void> {
 		const propertyName = abstractAssetProperty.propertyName;
 		const description = abstractAssetProperty.propertyDescription
 		const dataTypeUri = abstractAssetProperty.propertyDataType;
 		const unitUri = abstractAssetProperty.propertyUnit;
-		propertiesState.createAbstractAssetPropertyNode(propertyName, description, dataTypeUri, unitUri);
-		nodesState.addPropertyToAbstractAssetNode(node.id, propertyName);
+		const assetNodeId = node?.id as string;
+		const property_uri = await propertiesState.createAbstractAssetProperty(assetNodeId, propertyName, description, dataTypeUri, unitUri);
+		// TODO: Is there a better way to update the AbstractAssetNode properties that only relies on the backend?
+		console.log(property_uri);
+		nodesState.addPropertyToAbstractAssetNode(assetNodeId, property_uri);
 		modalStore.close();
 	}
 

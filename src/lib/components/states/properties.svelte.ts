@@ -11,6 +11,7 @@ import type {
 } from '$lib/types';
 import {
     createAbstractPropertyNode as createAbstractAssetPropertyQuery,
+    addAbstractPropertyToNode as addAbstractAssetPropertyQuery
 } from '$apis/sindit-backend/kg';
 
 export class Properties {
@@ -147,11 +148,11 @@ export class Properties {
 
     addPropertyNode(class_type: PropertyNodeType, node: any) {
         if (class_type === 'AbstractAssetProperty') {
-            this.addAbstractAssetPropertyNode(node.uri, node.propertyName, node.description, node.propertyDataType.uri, node.propertyUnit.uri, node.propertyValue, node.propertyValueTimestamp);
+            this.addAbstractAssetProperty(node.uri, node.propertyName, node.description, node.propertyDataType.uri, node.propertyUnit.uri, node.propertyValue, node.propertyValueTimestamp);
         }
     }
 
-    addAbstractAssetPropertyNode(
+    addAbstractAssetProperty(
         id: string,
         propertyName: string,
         description: string,
@@ -172,7 +173,8 @@ export class Properties {
         this.addProperty(newProperty);
     }
 
-    async createAbstractAssetPropertyNode(
+    async createAbstractAssetProperty(
+        assetNodeId: string,
         propertyName: string,
         description: string,
         propertyDataTypeURI: string,
@@ -191,10 +193,12 @@ export class Properties {
         );
         try {
             await createAbstractAssetPropertyQuery(newProperty.id, newProperty.propertyName, newProperty.description, newProperty.propertyDataType.uri, newProperty.propertyUnit.uri);
+            await addAbstractAssetPropertyQuery(assetNodeId, newProperty.id);
         } catch (error) {
             this.toastState.add('Failed to create property node', error as string, 'error');
             this.deleteProperty(newProperty.id);
         }
+        return newProperty.id;
     }
 
     // Get properties by their IDs
