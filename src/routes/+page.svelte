@@ -1,10 +1,10 @@
 <!-- src/routes/index.svelte -->
 <script lang="ts">
-    import { getNodes, createAbstractNode } from '$apis/sindit-backend/kg';
-    import { onMount } from 'svelte';
     import { JSONEditor } from 'svelte-jsoneditor'
     import { modeCurrent } from '@skeletonlabs/skeleton';
     import { backendNodesData } from '$lib/stores'
+    import { streamData } from '$apis/sindit-backend/kg';
+    import { onMount } from 'svelte';
 
 
 	const nodeId = "#1234"
@@ -57,6 +57,14 @@
             document.querySelector('.canvas-container').style.width = '100%';
         }
     }
+
+    function handleData(data: any) {
+        console.log(data);
+    }
+
+    onMount(() => {
+        streamData("streamingproperty2tilt", handleData);
+    });
 </script>
 
 

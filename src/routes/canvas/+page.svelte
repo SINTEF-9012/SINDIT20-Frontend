@@ -34,7 +34,6 @@
 
 	let nodesState = getNodesState();
 	$: abstractAssetNodes = nodesState.assets;
-	$: console.log('abstractAssetNodes:', abstractAssetNodes);
 
 	let linksState = getLinksState();
 	$: links = linksState.links;

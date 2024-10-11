@@ -137,3 +137,32 @@ export async function createConnectionNode(
     }
     return response.json();
 }
+
+
+export async function streamData(
+    id: string,
+    handleChunk: (chunk: string) => void,
+) {
+    const endpoint = 'stream';
+    const uri = getBackendUri(id);
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}`;
+    console.log("streamData", `${url}`)
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+
+    let done = false;
+    while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        const chunk = decoder.decode(value, { stream: true });
+
+        // Handle the incoming chunk of data here
+        handleChunk(chunk);
+    }
+}
