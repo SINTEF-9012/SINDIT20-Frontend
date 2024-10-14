@@ -29,6 +29,29 @@ export async function getNode(
     return response.json();
 }
 
+export async function updateNode(node: any, overwrite: boolean = false) {
+    const endpoint = 'node';
+    let doOverwrite = 'false';
+    if (overwrite) {
+        doOverwrite = 'true';
+    } else {
+        doOverwrite = 'false';
+    }
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?overwrite=${doOverwrite}`;
+    const response = await fetch(`${url}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(node)
+    });
+    if (!response.ok) {
+        throw new Error(`Error performing POST request ${response.statusText}`);
+    }
+    return response.json();
+}
+
+
 
 export async function createAbstractNode(
     nodeId: string, nodeName: string, description: string,
@@ -55,7 +78,7 @@ export async function createAbstractNode(
     return response.json();
 }
 
-export async function addAbstractPropertyToNode(
+export async function addPropertyToAssetNode(
     nodeId: string, propertyURI: string
 ) {
     const endpoint = 'asset';
@@ -68,7 +91,7 @@ export async function addAbstractPropertyToNode(
         asset.assetProperties = [];
     }
     asset.assetProperties.push({ uri: getBackendUri(propertyURI) });
-    console.log("asset", asset)
+    console.log("addPropertyToNode", asset)
     const response = await fetch(`${url}`, {
         method: 'POST',
         headers: {
@@ -86,6 +109,8 @@ export async function createAbstractPropertyNode(
     id: string, description: string,
     propertyName: string, propertyDataTypeURI: string, propertyUnitURI: string,
 ) {
+    const endpoint = 'asset_property';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}`;
     const data = {
         uri: getBackendUri(id),
         label: propertyName,
@@ -98,8 +123,46 @@ export async function createAbstractPropertyNode(
             uri: propertyUnitURI,
         },
     }
-    console.log("createAbstractPropertyNode", data)
-    const response = await fetch(`${API_BASE_URL}/kg/asset_property`, {
+    console.log("createAbstractPropertyNode", url, data)
+    const response = await fetch(`${url}`, {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+    },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+        throw new Error(`Error performing POST request ${response.statusText}`);
+    }
+    return response.json();
+}
+
+export async function createStreamingPropertyNode(
+    id: string, description: string,
+    propertyName: string, propertyDataTypeURI: string, propertyUnitURI: string,
+    streamingTopic: string, streamingPath: string, connectionId: string,
+) {
+    const endpoint = 'streaming_property';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}`;
+    const data = {
+        uri: getBackendUri(id),
+        label: propertyName,
+        propertyName,
+        propertyDescription: description,
+        propertyDataType: {
+            uri: propertyDataTypeURI,
+        },
+        propertyUnit: {
+            uri: propertyUnitURI,
+        },
+        propertyConnection: {
+            uri: getBackendUri(connectionId),
+        },
+        streamingTopic,
+        streamingPath,
+    }
+    console.log("createStreamingPropertyNode", url, data)
+    const response = await fetch(`${url}`, {
         method: 'POST',
         headers: {
         'Content-Type': 'application/json'

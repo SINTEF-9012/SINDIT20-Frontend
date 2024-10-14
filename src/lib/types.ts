@@ -57,12 +57,8 @@ export interface Property {
 	id: string;
 	propertyName: string;
 	description: string;
-	propertyDataType: {
-		uri: string;
-	};
-	propertyUnit: {
-		uri: string;
-	};
+	propertyDataType?: NodeUri;
+	propertyUnit?: NodeUri;
 	propertyValue?: string;
 	propertyValueTimestamp?: string;
 	propertyConnection?: NodeUri;
@@ -74,6 +70,7 @@ export interface AbstractAssetProperty extends Property {
 
 export interface DatabaseProperty extends Property {
 	nodeType: 'DatabaseProperty';
+	propertyConnection: NodeUri;
 	query?: string;
 }
 
@@ -81,6 +78,7 @@ export interface StreamingProperty extends Property {
 	nodeType: 'StreamingProperty';
 	streamingTopic: string;
   	streamingPath: string;
+	propertyConnection: NodeUri;
 }
 
 export interface Connection {

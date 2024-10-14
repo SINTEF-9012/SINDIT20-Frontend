@@ -45,7 +45,7 @@ export class Connections {
     }
 
     getAllConnectionNodes() {
-		return this.connections;
+		return get(this.connections);
 	}
 
     deleteConnection(id: string) {

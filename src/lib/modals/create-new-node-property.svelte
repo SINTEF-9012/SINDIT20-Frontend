@@ -1,23 +1,25 @@
 <script lang="ts">
+	import type { LogLevel, ReturnedDataTypeSearchUnits, ReturnedDataTypeAllDataTypes, PropertyNodeType } from '$lib/types';
 	import { onMount, type SvelteComponent } from 'svelte';
-	import type { LogLevel, ReturnedDataTypeSearchUnits, ReturnedDataTypeAllDataTypes } from '$lib/types';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 	import { getPropertiesState } from '$lib/components/states/properties.svelte';
+	import { getConnectionsState } from '$lib/components/states/connections.svelte';
+	import { propertyNodeTypes } from '$lib/stores';
 	import {
 		getAllDataTypes as getAllDataTypesQuery,
 		searchUnits as searchUnitsQuery
 	} from '$apis/sindit-backend/metamodel'
 
-	// Props
-	/** Exposes parent props to this component. */
+	// Props /** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
 
 	const modalStore = getModalStore();
 	const toastState = getToastState();
 	const nodesState = getNodesState();
 	const propertiesState = getPropertiesState();
+	const connectionsState = getConnectionsState();
 
     // Modal metadata - data input
     const metadata = $modalStore[0].meta;
@@ -26,48 +28,135 @@
 
     const node = nodesState.getAbstractAssetNode(metadata.nodeId);
 	if (!node) throw new Error('Node not found in nodes state.');
-	// TODO: Add connection to Asset Property
-	// const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'SensApp'];
+
+	const connections = connectionsState.getAllConnectionNodes();
+
 
 	$: isFormValid = false;
-	$: searchQuery = ''
+	$: isBaseFormValid = false;
+	$: isStreamingFormValid = false;
+
+	let isFirstSubmit = true;
+	let propertyNodeUri: string;
+
+	$: searchQueryPropertyUnits = ''
 	let propertyUnits: ReturnedDataTypeSearchUnits[] = [];
 	$: propertyUnits;
 	let propertyDataTypes: ReturnedDataTypeAllDataTypes[];
 	$: propertyDataTypes;
 
-
 	// Form Data - to be submitted
-	$: abstractAssetProperty = {
+	$: propertyData = {
 		propertyName: '',
 		propertyDescription: '',
-		propertyDataType: '',
-		propertyUnit: '',
-        connectionNodeId: '',
+		propertyDataTypeUri: '',
+		propertyUnitUri: '',
+        connectionNodeUri: '',
+		nodeType: propertyNodeTypes[0],
+		streamingTopic: '',
+		streamingPath: ''
 	};
 
 	$: {
-        isFormValid = (
-            (abstractAssetProperty.propertyName != '') && (abstractAssetProperty.propertyDataType != '') &&
-            (abstractAssetProperty.propertyUnit != '')
+        isBaseFormValid = (
+            (propertyData.propertyName != '') && (propertyData.propertyDataTypeUri != '') &&
+            (propertyData.propertyUnitUri != '') && (isValidPropertyNodeType(propertyData.nodeType))
         );
+		if (propertyData.nodeType === 'AbstractAssetProperty') {
+			isFormValid = isBaseFormValid;
+		} else if (propertyData.nodeType === 'StreamingProperty') {
+			isStreamingFormValid = (
+				(propertyData.streamingTopic != '') && (propertyData.streamingPath != '') &&
+				(propertyData.connectionNodeUri != '')
+			);
+			isFormValid = isBaseFormValid && isStreamingFormValid;
+		} else {
+			isFormValid = false;
+		}
+	}
+
+	function isValidPropertyNodeType(nodeType: string): boolean {
+		return propertyNodeTypes.includes(nodeType as PropertyNodeType);
 	}
 
 	// We've created a custom submit function to pass the response and close the modal.
 	async function onFormSubmit(): Promise<void> {
-		const propertyName = abstractAssetProperty.propertyName;
-		const description = abstractAssetProperty.propertyDescription
-		const dataTypeUri = abstractAssetProperty.propertyDataType;
-		const unitUri = abstractAssetProperty.propertyUnit;
 		const assetNodeId = node?.id as string;
-		const property_uri = await propertiesState.createAbstractAssetProperty(assetNodeId, propertyName, description, dataTypeUri, unitUri);
-		// TODO: Is there a better way to update the AbstractAssetNode properties that only relies on the backend?
-		console.log(property_uri);
-		nodesState.addPropertyToAbstractAssetNode(assetNodeId, property_uri);
+		const propertyNodeType = propertyData.nodeType as PropertyNodeType;
+		const propertyNode: any = {
+			propertyName: propertyData.propertyName,
+			description: propertyData.propertyDescription,
+			propertyDataType: {
+				uri: propertyData.propertyDataTypeUri
+			},
+			propertyUnit: {
+				uri: propertyData.propertyUnitUri
+			},
+			propertyConnection: {
+				uri: propertyData.connectionNodeUri
+			},
+			streamingTopic: propertyData.streamingTopic,
+			streamingPath: propertyData.streamingPath
+		}
+		if (isFirstSubmit) {
+			await createNewProperty(propertyNodeType, assetNodeId, propertyNode);
+			isFirstSubmit = false;
+		} else {
+			await updateProperty(propertyNodeType, assetNodeId, propertyNode);
+		}
+	}
+
+	async function createNewProperty(propertyNodeType: PropertyNodeType, assetNodeId: string, propertyNode: any) {
+		// Only invoke on first form submit
+		console.log("createNewProperty", propertyNode);
+
+		const property_uri = await propertiesState.createProperty(propertyData.nodeType, assetNodeId, propertyNode);
+
+		if (!property_uri) {
+			const title = 'Error';
+			const message = `Failed to create new Node Property`;
+			const logLevel: LogLevel = 'error';
+			toastState.add(title, message, logLevel);
+			return;
+		} else {
+			const title = 'Success';
+			const message = `New Node Property created`;
+			const logLevel: LogLevel = 'info';
+			toastState.add(title, message, logLevel);
+			propertyNodeUri = property_uri;
+			nodesState.addPropertyToAbstractAssetNode(assetNodeId, propertyNodeUri);
+		}
+	}
+
+	async function updateProperty(propertyNodeType: PropertyNodeType, assetNodeId: string, propertyNode: any) {
+		console.log("updateProperty", propertyNode);
+		let property_node = propertiesState.getProperty(propertyNodeUri);
+		if (property_node) {
+			try {
+				property_node.propertyName = propertyNode.propertyName;
+				property_node.description = propertyNode.description;
+				property_node.propertyDataType.uri = propertyNode.propertyDataType.uri;
+				property_node.propertyUnit.uri = propertyNode.propertyUnit.uri;
+				property_node.propertyConnection.uri = propertyNode.connection.uri;
+				property_node.streamingTopic = propertyNode.streamingTopic;
+				property_node.streamingPath = propertyNode.streamingPath;
+				await propertiesState.updateProperty(property_node);
+
+			} catch (error) {
+				const title = 'Error';
+				const message = `Failed to update Node Property ${error}`;
+				const logLevel: LogLevel = 'error';
+				toastState.add(title, message, logLevel);
+				return;
+			}
+		}
+	}
+
+	function onFinish(): void {
 		modalStore.close();
 	}
 
-	function onClose(): void {
+	function handleCancel(): void {
 		const title = 'Canceled';
 		const message = `Add new Node Property canceled`;
 		const logLevel: LogLevel = 'warning';
@@ -75,15 +164,23 @@
 		modalStore.close();
 	}
 
+	function onClose(): void {
+		if (isFirstSubmit) {
+			handleCancel();
+		} else {
+			onFinish();
+		}
+	}
 
-	async function handleSearch() {
-		propertyUnits = await searchUnitsQuery(searchQuery)
-		abstractAssetProperty.propertyUnit = propertyUnits[0]?.uri
+
+	async function handleSearchPropertyUnits() {
+		propertyUnits = await searchUnitsQuery(searchQueryPropertyUnits)
+		propertyData.propertyUnitUri = propertyUnits[0]?.uri
 	}
 
 	onMount(async () => {
 		propertyDataTypes = await getAllDataTypesQuery();
-		abstractAssetProperty.propertyDataType = propertyDataTypes[0]?.uri;
+		propertyData.propertyDataTypeUri = propertyDataTypes[0]?.uri;
 	});
 
 	// Base Classes
@@ -106,10 +203,10 @@
 					<div>Property value data type</div>
 				</div>
 				<div class="double-column">
-					<input class="input" type="text" bind:value={abstractAssetProperty.propertyName} placeholder="Temperature..."/>
+					<input class="input" type="text" bind:value={propertyData.propertyName} placeholder="Temperature..."/>
 					<div>
 						<label class="label">
-							<select class="input" bind:value={abstractAssetProperty.propertyDataType}>
+							<select class="input" bind:value={propertyData.propertyDataTypeUri}>
 								{#if propertyDataTypes}
 									{#each propertyDataTypes as dataType}
 										<option value={dataType.uri}>{dataType.label}</option>
@@ -122,16 +219,16 @@
 			</label>
 			<label class="label">
 				<div>Property description</div>
-				<input class="input" type="text" bind:value={abstractAssetProperty.propertyDescription} placeholder="Temperature at floor 2..." />
+				<input class="input" type="text" bind:value={propertyData.propertyDescription} placeholder="Temperature at floor 2..." />
 			</label>
 			<label class="label">
 				<div>Property units</div>
 				<div class="search-then-dropdown">
 					<div class="input-container w-1/3">
-						<input class="input" type="text" bind:value={searchQuery} placeholder="Search units..." on:input={handleSearch}>
+						<input class="input" type="text" bind:value={searchQueryPropertyUnits} placeholder="Search units..." on:input={handleSearchPropertyUnits}>
 					</div>
 					<div class="dropdown-container w-2/3">
-						<select class="input" bind:value={abstractAssetProperty.propertyUnit}>
+						<select class="input" bind:value={propertyData.propertyUnitUri}>
 							{#if propertyUnits.length > 0}
 								{#each propertyUnits as unit}
 									<option value={unit.uri}>{unit.prefName}</option>
@@ -141,6 +238,35 @@
 					</div>
 				</div>
 			</label>
+			<label class="label">
+				<div>Property node type</div>
+				<select class="input" bind:value={propertyData.nodeType}>
+					{#each propertyNodeTypes as nodeType}
+						<option value={nodeType}>{nodeType}</option>
+					{/each}
+				</select>
+			</label>
+			{#if (propertyNodeTypes.includes(propertyData.nodeType) && propertyData.nodeType !== propertyNodeTypes[0])}
+				<div class="property-type-container">
+					{#if (propertyData.nodeType === 'StreamingProperty')}
+						<label class="label">
+							<div>Streaming topic</div>
+							<input class="input" type="text" bind:value={propertyData.streamingTopic} placeholder="#"/>
+						</label>
+						<label class="label">
+							<div>Streaming path</div>
+							<input class="input" type="text" bind:value={propertyData.streamingPath} placeholder="json/path/to/key"/>
+						</label>
+					{/if}
+				</div>
+				<div class="connection-container">
+					<div>Connection</div>
+					<select class="input" bind:value={propertyData.connectionNodeUri}>
+						{#each connections as connection}
+							<option value={connection.id}>{connection.connectionName}</option>
+						{/each}
+				</div>
+			{/if}
 		</form>
 		<!-- prettier-ignore -->
 		<footer class="modal-footer {parent.regionFooter}">
@@ -175,5 +301,11 @@
 	  flex-direction: row;
 	  justify-content: space-between;
 	  gap: 5px;
+	}
+	.property-type-container {
+		margin-left: 50px;
+	}
+	.connection-container {
+		margin-top: 20px;
 	}
 </style>
