@@ -8,8 +8,8 @@ const API_BASE_ENDPOINT = `${API_BASE_URL}/kg`
 export async function getNodes() {
     const endpoint = 'nodes';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    console.log("getNodes", `${url}`)
-    const response = await fetch(`${url}`);
+    console.log("getNodes GET:", url)
+    const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -22,7 +22,8 @@ export async function getNode(
     const endpoint = 'node';
     const uri = getBackendUri(nodeId);
     const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}&depth=${depth}`;
-    const response = await fetch(`${url}`);
+    console.log("getNode GET:", url)
+    const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -38,7 +39,8 @@ export async function updateNode(node: any, overwrite: boolean = false) {
         doOverwrite = 'false';
     }
     const url = `${API_BASE_ENDPOINT}/${endpoint}?overwrite=${doOverwrite}`;
-    const response = await fetch(`${url}`, {
+    console.log("updateNode POST:", url)
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -64,8 +66,8 @@ export async function createAbstractNode(
         assetDescription: description,
         assetProperties: []
     }
-    console.log("create node:", data, url)
-    const response = await fetch(`${url}`, {
+    console.log("createAbstractNode POST:", url, data)
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -91,8 +93,8 @@ export async function addPropertyToAssetNode(
         asset.assetProperties = [];
     }
     asset.assetProperties.push({ uri: getBackendUri(propertyURI) });
-    console.log("addPropertyToNode", asset)
-    const response = await fetch(`${url}`, {
+    console.log("addPropertyToAssetNode POST:", url, asset)
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -123,8 +125,8 @@ export async function createAbstractPropertyNode(
             uri: propertyUnitURI,
         },
     }
-    console.log("createAbstractPropertyNode", url, data)
-    const response = await fetch(`${url}`, {
+    console.log("createAbstractPropertyNode POST:", url, data)
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
         'Content-Type': 'application/json'
@@ -161,8 +163,8 @@ export async function createStreamingPropertyNode(
         streamingTopic,
         streamingPath,
     }
-    console.log("createStreamingPropertyNode", url, data)
-    const response = await fetch(`${url}`, {
+    console.log("createStreamingPropertyNode POST:", url, data)
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
         'Content-Type': 'application/json'
@@ -180,6 +182,8 @@ export async function createConnectionNode(
     host: string, port: number,
     connectionType: ConnectionType,
 ) {
+    const endpoint = 'connection';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}`;
     const data = {
         uri: getBackendUri(id),
         label: connectionName,
@@ -188,7 +192,8 @@ export async function createConnectionNode(
         port: port,
         type: connectionType
     }
-    const response = await fetch(`${API_BASE_URL}/kg/connection`, {
+    console.log("createConnectionNode POST:", url, data)
+    const response = await fetch(url, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
@@ -209,7 +214,7 @@ export async function streamData(
     const endpoint = 'stream';
     const uri = getBackendUri(id);
     const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}`;
-    console.log("streamData", `${url}`)
+    console.log("streamData GET:", url)
     const response = await fetch(url, {
         method: 'GET',
         headers: {

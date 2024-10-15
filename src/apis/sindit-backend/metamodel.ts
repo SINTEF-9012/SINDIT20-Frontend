@@ -14,8 +14,8 @@ export async function getAllDataTypes(): Promise<ReturnedDataTypeAllDataTypes[]>
     // Get all data types
     const endpoint = 'get_data_type';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    console.log("Get all data types", `${url}`)
-    const response = await fetch(`${url}`);
+    console.log("getAllDataTypes GET:", url)
+    const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -26,8 +26,8 @@ export async function getAllUnits(): Promise<ReturnedDataTypeAllUnits[]> {
     // Get all units
     const endpoint = 'get_all_units';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    console.log("Get all units", `${url}`)
-    const response = await fetch(`${url}`);
+    console.log("getAllUnits GET:", url)
+    const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -40,7 +40,8 @@ export async function searchUnits(
     // Search for units
     const endpoint = 'search_unit';
     const url = `${API_BASE_ENDPOINT}/${endpoint}?search_term=${query}`;
-    const response = await fetch(`${url}`, {
+    console.log("searchUnits POST:", url)
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

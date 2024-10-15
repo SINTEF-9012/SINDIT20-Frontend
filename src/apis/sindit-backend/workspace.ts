@@ -6,8 +6,8 @@ const API_BASE_ENDPOINT = `${API_BASE_URL}/ws`
 export async function getWorkspace(): Promise<{workspace_uri: string}> {
     const endpoint = 'get';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    console.log("getCurrentWorkspace", `${url}`)
-    const response = await fetch(`${url}`);
+    console.log("getCurrentWorkspace GET:", url)
+    const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -17,8 +17,8 @@ export async function getWorkspace(): Promise<{workspace_uri: string}> {
 export async function listWorkspaces() {
     const endpoint = 'list';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    console.log("listWorkspaces", `${url}`)
-    const response = await fetch(`${url}`);
+    console.log("listWorkspaces GET:", url)
+    const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -30,8 +30,8 @@ export async function switchWorkspace(
 ) {
     const endpoint = 'switch';
     const base_url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    console.log("switchWorkspace", `${base_url}`)
     const url = `${base_url}?workspace_uri=${encodeURIComponent(workspaceUri)}`
+    console.log("switchWorkspace POST:", url)
     const response = await fetch(url, {
         method: 'POST',
         headers: {
