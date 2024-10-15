@@ -63,7 +63,7 @@
     }
 
     onMount(() => {
-        streamData("streamingproperty2tilt", handleData);
+        // streamData("streamingproperty2tilt", handleData);
     });
 </script>
 
