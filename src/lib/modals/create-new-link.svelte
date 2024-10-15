@@ -81,8 +81,8 @@
 	onMount(() => {
 		// console.log('source:', source);
 		// console.log('target:', target);
-		const sourceNode = nodes.getNode($selectedNodes[0]);
-		const targetNode = nodes.getNode($selectedNodes[1]);
+		const sourceNode = nodes.getAbstractAssetNode($selectedNodes[0]);
+		const targetNode = nodes.getAbstractAssetNode($selectedNodes[1]);
 		if (!sourceNode || !targetNode) {
 			const title = 'Error';
 			const message = 'Please select two nodes to create a link between.';
