@@ -243,7 +243,7 @@ export async function streamData(
     handleChunk: (chunk: string) => void,
 ) {
     const endpoint = 'stream';
-    const uri = getBackendUri(id);
+    const uri = id; // getBackendUri(id);
     const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}`;
     console.log("streamData GET:", url)
     const response = await fetch(url, {

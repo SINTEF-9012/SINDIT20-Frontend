@@ -39,6 +39,7 @@ export class Properties {
 		}
 		return {
 			id,
+            nodeType: 'Property',
 			propertyName,
 			description,
 			propertyDataType: {

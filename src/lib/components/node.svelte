@@ -1,12 +1,17 @@
 <script lang="ts">
+	import type {
+		Node as NodeType,
+		StreamingProperty,
+	} from '$lib/types';
 	import { getNodesState } from './states/nodes-state.svelte';
 	import { getPropertiesState } from './states/properties.svelte';
-	import type { Node as NodeType } from '$lib/types';
 	import { selectedNodes, selectedNodeId, nodeSize } from '$lib/stores';
 	import { InfoIcon, SettingsIcon, PlusCircleIcon } from 'svelte-feather-icons';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import type { ModalSettings } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';
+	import { onMount } from 'svelte';
+	import { streamData } from '$apis/sindit-backend/kg';
 
 	export let node: NodeType;
 	export let zoomLevel = 1;
@@ -24,7 +29,7 @@
 	let showProperties = false;
 	let showShortProperties = true;
 
-	$: assets = nodesState.assets;
+	// $: assets = nodesState.assets;
 	$: propertyUris = nodesState.getAbstractAssetNode(node.id)?.assetProperties;
 	$: properties = propertiesState.getProperties(propertyUris);
 
@@ -117,6 +122,29 @@
 		return name[0] + '.';
 	}
 
+	function handleData(data: any) {
+        console.log(data);
+		if (data.propertyValue) {
+			const property = properties.find((property) => property.id === data.id);
+			if (property) {
+				property.propertyValue = data.propertyValue;
+				property.propertyValueTimestamp = data.propertyValueTimestamp;
+				propertiesState.updateProperty(property);
+				properties = propertiesState.getProperties(propertyUris);
+			}
+		}
+    }
+
+	let streams: StreamingProperty[] = [];
+
+    onMount(() => {
+		// stream streaming data properties
+		streams = properties.filter((property) => property.nodeType === 'StreamingProperty') as StreamingProperty[];
+		streams.forEach((stream) => {
+			console.log(stream.id);
+			streamData(stream.id, handleData);
+		});
+    });
 </script>
 
 <svelte:window on:mouseup={stopMoving} />
@@ -165,7 +193,7 @@
 						{/if}
 						<div class="node-prop-value gap-1">
 							<div>{property.propertyValue}</div>
-							<div>{property.propertyUnit.uri}</div>
+							<div>{property.propertyValueTimestamp}</div>
 						</div>
 					</div>
 				{/each}

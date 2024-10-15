@@ -24,7 +24,7 @@ export type GLTFModel = {name: string, path: string};
 // Backend node types
 export type AssetNodeType = 'AbstractAsset';
 export type ConnectionNodeType = 'Connection';
-export type PropertyNodeType = 'AbstractAssetProperty' | 'DatabaseProperty' | 'StreamingProperty' | 'TimeseriesProperty';
+export type PropertyNodeType = 'Property' | 'AbstractAssetProperty' | 'DatabaseProperty' | 'StreamingProperty' | 'TimeseriesProperty';
 export type AllBackendNodeTypes = AssetNodeType | ConnectionNodeType | PropertyNodeType;
 
 // Connection types
@@ -55,6 +55,7 @@ export interface AbstractAsset extends Node {
 
 export interface Property {
 	id: string;
+	nodeType: PropertyNodeType;
 	propertyName: string;
 	description: string;
 	propertyDataType?: NodeUri;
