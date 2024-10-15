@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { LogLevel, ReturnedDataTypeSearchUnits, ReturnedDataTypeAllDataTypes, PropertyNodeType } from '$lib/types';
+	import type { LogLevel, ReturnedDataTypeSearchUnits, ReturnedDataTypeAllDataTypes, PropertyNodeType, StreamingProperty } from '$lib/types';
 	import { onMount, type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
@@ -54,7 +54,8 @@
         connectionNodeUri: '',
 		nodeType: propertyNodeTypes[0],
 		streamingTopic: '',
-		streamingPath: ''
+		streamingPath: '',
+		propertyValue: ''
 	};
 
 	$: {
@@ -63,7 +64,7 @@
             (propertyData.propertyUnitUri != '') && (isValidPropertyNodeType(propertyData.nodeType))
         );
 		if (propertyData.nodeType === 'AbstractAssetProperty') {
-			isFormValid = isBaseFormValid;
+			isFormValid = isBaseFormValid && (propertyData.propertyValue != '');
 		} else if (propertyData.nodeType === 'StreamingProperty') {
 			isStreamingFormValid = (
 				(propertyData.streamingTopic != '') && (propertyData.streamingPath != '') &&
@@ -96,7 +97,8 @@
 				uri: propertyData.connectionNodeUri
 			},
 			streamingTopic: propertyData.streamingTopic,
-			streamingPath: propertyData.streamingPath
+			streamingPath: propertyData.streamingPath,
+			propertyValue: propertyData.propertyValue
 		}
 		if (isFirstSubmit) {
 			await createNewProperty(propertyNodeType, assetNodeId, propertyNode);
@@ -108,9 +110,8 @@
 
 	async function createNewProperty(propertyNodeType: PropertyNodeType, assetNodeId: string, propertyNode: any) {
 		// Only invoke on first form submit
-		console.log("createNewProperty", propertyNode);
-
-		const property_uri = await propertiesState.createProperty(propertyData.nodeType, assetNodeId, propertyNode);
+		console.log("onFormSubmit createNewProperty", propertyNode);
+		const property_uri = await propertiesState.createProperty(propertyNodeType, assetNodeId, propertyNode);
 
 		if (!property_uri) {
 			const title = 'Error';
@@ -129,19 +130,41 @@
 	}
 
 	async function updateProperty(propertyNodeType: PropertyNodeType, assetNodeId: string, propertyNode: any) {
-		console.log("updateProperty", propertyNode);
-		let property_node = propertiesState.getProperty(propertyNodeUri);
-		if (property_node) {
-			try {
-				property_node.propertyName = propertyNode.propertyName;
-				property_node.description = propertyNode.description;
-				property_node.propertyDataType.uri = propertyNode.propertyDataType.uri;
-				property_node.propertyUnit.uri = propertyNode.propertyUnit.uri;
-				property_node.propertyConnection.uri = propertyNode.connection.uri;
-				property_node.streamingTopic = propertyNode.streamingTopic;
-				property_node.streamingPath = propertyNode.streamingPath;
-				await propertiesState.updateProperty(property_node);
+		const property = propertiesState.getProperty(propertyNodeUri);
+		let new_property = Object.assign({}, property);
 
+		if (property) {
+			try {
+				new_property.propertyName = propertyNode.propertyName;
+				new_property.description = propertyNode.description;
+				if (propertyNode.propertyDataType.uri != '') {
+					if (!new_property.propertyDataType) {
+						new_property.propertyDataType = {uri: propertyNode.propertyDataType.uri};
+					} else {
+						new_property.propertyDataType.uri = propertyNode.propertyDataType.uri;
+					}
+				}
+				if (propertyNode.propertyUnit.uri != '') {
+					if (!new_property.propertyUnit) {
+						new_property.propertyUnit = {uri: propertyNode.propertyUnit.uri};
+					} else {
+						new_property.propertyUnit.uri = propertyNode.propertyUnit.uri;
+					}
+				}
+				if (propertyNode.propertyConnection.uri != '') {
+					if (!new_property.propertyConnection) {
+						new_property.propertyConnection = {uri: propertyNode.propertyConnection.uri};
+					} else {
+						new_property.propertyConnection.uri = propertyNode.propertyConnection.uri;
+					}
+				}
+				if (propertyNodeType === 'StreamingProperty') {
+					const streamingProperty = property as StreamingProperty;
+					streamingProperty.streamingTopic = propertyNode.streamingTopic;
+					streamingProperty.streamingPath = propertyNode.streamingPath;
+					new_property = streamingProperty;
+				}
+				propertiesState.updateProperty(new_property);
 			} catch (error) {
 				const title = 'Error';
 				const message = `Failed to update Node Property ${error}`;
@@ -152,7 +175,7 @@
 		}
 	}
 
-	function onFinish(): void {
+	function onFormFinish(): void {
 		modalStore.close();
 	}
 
@@ -168,7 +191,7 @@
 		if (isFirstSubmit) {
 			handleCancel();
 		} else {
-			onFinish();
+			onFormFinish();
 		}
 	}
 
@@ -246,7 +269,14 @@
 					{/each}
 				</select>
 			</label>
-			{#if (propertyNodeTypes.includes(propertyData.nodeType) && propertyData.nodeType !== propertyNodeTypes[0])}
+			{#if (propertyData.nodeType === 'AbstractAssetProperty')}
+				<div class="property-type-container">
+					<label class="label">
+						<div>Property value</div>
+						<input class="input" type="text" bind:value={propertyData.propertyValue} placeholder="Enter some property value..."/>
+					</label>
+				</div>
+			{:else if (propertyNodeTypes.includes(propertyData.nodeType) && propertyData.nodeType !== propertyNodeTypes[0])}
 				<div class="property-type-container">
 					{#if (propertyData.nodeType === 'StreamingProperty')}
 						<label class="label">
@@ -270,8 +300,17 @@
 		</form>
 		<!-- prettier-ignore -->
 		<footer class="modal-footer {parent.regionFooter}">
-			<button class="btn {parent.buttonNeutral}" on:click={onClose}>{parent.buttonTextCancel}</button>
-			<button class="btn {parent.buttonPositive}" on:click={onFormSubmit} disabled={!isFormValid}>{parent.buttonTextSubmit}</button>
+			<div class="button-container">
+				<div class="button-row">
+					<button class="btn {parent.buttonNeutral}" on:click={onClose}>{parent.buttonTextCancel}</button>
+					<button class="btn {parent.buttonPositive}" on:click={onFormSubmit} disabled={!isFormValid}>{parent.buttonTextSubmit}</button>
+				</div>
+				{#if !isFirstSubmit}
+					<div class="button-row col-span-2 place-self-end">
+						<button class="btn {parent.buttonSuccess}" on:click={onFormFinish} disabled={!isFormValid}>Finish</button>
+					</div>
+				{/if}
+			</div>
 		</footer>
 	</div>
 {/if}
@@ -307,5 +346,14 @@
 	}
 	.connection-container {
 		margin-top: 20px;
+	}
+	.button-container {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.button-row {
+	  display: flex;
+	  gap: 5px;
 	}
 </style>

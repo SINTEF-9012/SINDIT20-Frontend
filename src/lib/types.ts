@@ -66,6 +66,7 @@ export interface Property {
 
 export interface AbstractAssetProperty extends Property {
 	nodeType: 'AbstractAssetProperty';
+	propertyValue: string;
 }
 
 export interface DatabaseProperty extends Property {

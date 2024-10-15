@@ -11,6 +11,7 @@ import type {
 } from '$lib/types';
 import {
     createAbstractPropertyNode as createAbstractAssetPropertyQuery,
+    createStreamingPropertyNode as createStreamingPropertyQuery,
     addPropertyToAssetNode as addPropertyToAssetNodeQuery,
     updateNode as updateNodeQuery
 } from '$apis/sindit-backend/kg';
@@ -72,6 +73,7 @@ export class Properties {
         return {
             ...property,
             nodeType: 'AbstractAssetProperty',
+            propertyValue: propertyValue ?? '',
         };
     }
 
@@ -141,7 +143,7 @@ export class Properties {
         return get(this.properties);
     }
 
-    getProperty(id: string) {
+    getProperty(id: string): Property | AbstractAssetProperty | DatabaseProperty | StreamingProperty | undefined {
         const properties = get(this.properties);
         return properties.find((node) => node.id === id);
     }
@@ -195,11 +197,11 @@ export class Properties {
     }
 
     createProperty(class_type: PropertyNodeType, assetNodeId: string, node: any) {
+        console.log("createProperty", class_type, node)
         if (class_type === 'AbstractAssetProperty') {
-            return this.createAbstractAssetProperty(assetNodeId, node.propertyName, node.description, node.propertyDataType.uri, node.propertyUnit.uri);
+            return this.createAbstractAssetProperty(assetNodeId, node.propertyName, node.description, node.propertyDataType.uri, node.propertyUnit.uri, node.propertyValue);
         } else if (class_type === 'StreamingProperty') {
-            console.log("createProperty", node)
-            return this.createStreamingProperty(node.streamingTopic, node.streamingPath, node.propertyName, node.description, node.propertyDataType.uri, node.propertyUnit.uri, node.propertyConnection.uri);
+            return this.createStreamingProperty(assetNodeId, node.streamingTopic, node.streamingPath, node.propertyName, node.description, node.propertyDataType.uri, node.propertyUnit.uri, node.propertyConnection.uri);
         } else {
             throw new Error(`Invalid property node type '${class_type}'`);
         }
@@ -273,7 +275,8 @@ export class Properties {
         );
         let ok = true;
         try {
-            await createAbstractAssetPropertyQuery(newProperty.id, newProperty.propertyName, newProperty.description, newProperty.propertyDataType.uri, newProperty.propertyUnit.uri);
+            this.addProperty(newProperty);
+            await createAbstractAssetPropertyQuery(newProperty);
             await addPropertyToAssetNodeQuery(assetNodeId, newProperty.id);
             // Property needs to be added to the asset node outside this function! (See create-new-node-property.svelte)
         } catch (error) {
@@ -288,6 +291,7 @@ export class Properties {
     }
 
     async createStreamingProperty(
+        assetNodeId: string,
         streamingTopic: string,
         streamingPath: string,
         propertyName: string,
@@ -310,7 +314,21 @@ export class Properties {
             propertyValue,
             propertyValueTimestamp,
         );
-        this.addProperty(newProperty);
+        let ok = true;
+        try {
+            this.addProperty(newProperty);
+            await createStreamingPropertyQuery(newProperty);
+            await addPropertyToAssetNodeQuery(assetNodeId, newProperty.id);
+            // Property needs to be added to the asset node outside this function! (See create-new-node-property.svelte)
+        } catch (error) {
+            this.toastState.add('Failed to create property node', error as string, 'error');
+            this.deleteProperty(newProperty.id);
+            ok = false;
+        }
+        if (ok)
+            return newProperty.id;
+        else
+            return undefined;
     }
 
     // Get properties by their IDs

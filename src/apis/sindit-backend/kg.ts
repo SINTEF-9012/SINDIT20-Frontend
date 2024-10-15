@@ -1,4 +1,4 @@
-import type { ConnectionType } from '$lib/types';
+import type { ConnectionType, AbstractAssetProperty, StreamingProperty } from '$lib/types';
 import { getBackendUri } from '$lib/utils';
 
 const API_BASE_URL = import.meta.env.VITE_SINDIT_BACKEND_API
@@ -108,22 +108,40 @@ export async function addPropertyToAssetNode(
 }
 
 export async function createAbstractPropertyNode(
-    id: string, description: string,
-    propertyName: string, propertyDataTypeURI: string, propertyUnitURI: string,
+    newProperty: AbstractAssetProperty
 ) {
     const endpoint = 'asset_property';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    const data = {
-        uri: getBackendUri(id),
-        label: propertyName,
-        propertyName,
-        propertyDescription: description,
-        propertyDataType: {
-            uri: propertyDataTypeURI,
-        },
-        propertyUnit: {
-            uri: propertyUnitURI,
-        },
+    const data: {
+        uri: string;
+        label: string;
+        propertyName: string;
+        propertyDescription: string;
+        propertyValue?: string;
+        propertyValueTimestamp?: string;
+        propertyDataType?: { uri: string };
+        propertyUnit?: { uri: string };
+    } = {
+        uri: getBackendUri(newProperty.id),
+        label: newProperty.propertyName,
+        propertyName: newProperty.propertyName,
+        propertyDescription: newProperty.description,
+    }
+    if (newProperty.propertyValue) {
+        data.propertyValue = newProperty.propertyValue;
+    }
+    if (newProperty.propertyValueTimestamp) {
+        data.propertyValueTimestamp = newProperty.propertyValueTimestamp;
+    }
+    if (newProperty.propertyDataType) {
+        data.propertyDataType = {
+            uri: newProperty.propertyDataType.uri
+        };
+    }
+    if (newProperty.propertyUnit) {
+        data.propertyUnit = {
+            uri: newProperty.propertyUnit.uri
+        };
     }
     console.log("createAbstractPropertyNode POST:", url, data)
     const response = await fetch(url, {
@@ -140,28 +158,40 @@ export async function createAbstractPropertyNode(
 }
 
 export async function createStreamingPropertyNode(
-    id: string, description: string,
-    propertyName: string, propertyDataTypeURI: string, propertyUnitURI: string,
-    streamingTopic: string, streamingPath: string, connectionId: string,
+    newProperty: StreamingProperty
 ) {
     const endpoint = 'streaming_property';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    const data = {
-        uri: getBackendUri(id),
-        label: propertyName,
-        propertyName,
-        propertyDescription: description,
-        propertyDataType: {
-            uri: propertyDataTypeURI,
-        },
-        propertyUnit: {
-            uri: propertyUnitURI,
-        },
-        propertyConnection: {
-            uri: getBackendUri(connectionId),
-        },
-        streamingTopic,
-        streamingPath,
+    const data: {
+        uri: string;
+        label: string;
+        propertyName: string;
+        propertyDescription: string;
+        propertyConnection: { uri: string };
+        streamingPath: string;
+        streamingTopic: string;
+        propertyValue?: string;
+        propertyValueTimestamp?: string;
+        propertyDataType?: { uri: string };
+        propertyUnit?: { uri: string };
+    } = {
+        uri: getBackendUri(newProperty.id),
+        label: newProperty.propertyName,
+        propertyName: newProperty.propertyName,
+        propertyDescription: newProperty.description,
+        propertyConnection: { uri: getBackendUri(newProperty.propertyConnection.uri) },
+        streamingPath: newProperty.streamingPath,
+        streamingTopic: newProperty.streamingTopic,
+    }
+    if (newProperty.propertyDataType) {
+        data.propertyDataType = {
+            uri: newProperty.propertyDataType.uri
+        };
+    }
+    if (newProperty.propertyUnit) {
+        data.propertyUnit = {
+            uri: newProperty.propertyUnit.uri
+        };
     }
     console.log("createStreamingPropertyNode POST:", url, data)
     const response = await fetch(url, {
