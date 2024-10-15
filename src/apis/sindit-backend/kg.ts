@@ -39,7 +39,8 @@ export async function updateNode(node: any, overwrite: boolean = false) {
         doOverwrite = 'false';
     }
     const url = `${API_BASE_ENDPOINT}/${endpoint}?overwrite=${doOverwrite}`;
-    console.log("updateNode POST:", url)
+    node.id = getBackendUri(node.id);
+    console.log("updateNode POST:", url, node)
     const response = await fetch(url, {
         method: 'POST',
         headers: {

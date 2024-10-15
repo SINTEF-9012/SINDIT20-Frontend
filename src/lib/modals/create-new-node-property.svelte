@@ -37,6 +37,7 @@
 	$: isStreamingFormValid = false;
 
 	let isFirstSubmit = true;
+	let buttonTextSubmit = 'Submit';
 	let propertyNodeUri: string;
 
 	$: searchQueryPropertyUnits = ''
@@ -126,6 +127,7 @@
 			toastState.add(title, message, logLevel);
 			propertyNodeUri = property_uri;
 			nodesState.addPropertyToAbstractAssetNode(assetNodeId, propertyNodeUri);
+			buttonTextSubmit = 'Update';
 		}
 	}
 
@@ -303,11 +305,11 @@
 			<div class="button-container">
 				<div class="button-row">
 					<button class="btn {parent.buttonNeutral}" on:click={onClose}>{parent.buttonTextCancel}</button>
-					<button class="btn {parent.buttonPositive}" on:click={onFormSubmit} disabled={!isFormValid}>{parent.buttonTextSubmit}</button>
+					<button class="btn {parent.buttonPositive}" on:click={onFormSubmit} disabled={!isFormValid}>{buttonTextSubmit}</button>
 				</div>
 				{#if !isFirstSubmit}
 					<div class="button-row col-span-2 place-self-end">
-						<button class="btn {parent.buttonSuccess}" on:click={onFormFinish} disabled={!isFormValid}>Finish</button>
+						<button class="btn variant-ghost-success" on:click={onFormFinish} disabled={!isFormValid}>Finish</button>
 					</div>
 				{/if}
 			</div>
