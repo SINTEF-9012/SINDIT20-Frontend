@@ -2,7 +2,6 @@
 import type {
     Workspace, AllBackendNodeTypes, AssetNodeType, ConnectionNodeType, PropertyNodeType
 } from '$lib/types';
-import { backendNodesData, selectedWorkspace, isWorkspaceSelected } from '$lib/stores';
 import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 import { getPropertiesState } from '$lib/components/states/properties.svelte';
 import { getConnectionsState } from './components/states/connections.svelte';
@@ -11,6 +10,9 @@ import {
     assetNodeTypes,
     connectionNodeTypes,
     propertyNodeTypes,
+    selectedWorkspace,
+    isWorkspaceSelected,
+    backendNodesData
 } from '$lib/stores';
 
 
@@ -80,4 +82,19 @@ export async function getCurrentWorkspace(): Promise<Workspace> {
         isWorkspaceSelected.set(true);
     }
     return getWorkspaceDictFromUri(workspace.workspace_uri);
+}
+
+
+export async function updateBackendNodesData(node2update: any) {
+    backendNodesData.update((nodes) => {
+        const updatedNodes = nodes.map((node) => {
+            if (node.uri === node2update.uri) {
+                return node2update;
+            } else {
+                return node;
+            }
+        });
+        //console.log("Updated nodes:", updatedNodes);
+        return updatedNodes;
+    });
 }
