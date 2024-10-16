@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import type { Toast, LogLevel } from '$lib/types';
-import { onDestroy, setContext, getContext } from 'svelte';
+import { setContext, getContext } from 'svelte';
 
 type Timeout = ReturnType<typeof setTimeout>;
 
@@ -12,13 +12,15 @@ export class ToastState {
 	toastToTimoutMap = new Map<string, Timeout>();
 
 	constructor() {
-		onDestroy(() => {
-			console.log('ToastState destroyed');
-			for (const timeout of this.toastToTimoutMap.values()) {
-				clearTimeout(timeout);
-			}
-			this.toastToTimoutMap.clear();
-		});
+		console.log("ToastState initialized");
+	}
+
+	destroy() {
+		console.log('ToastState destroyed');
+		for (const timeout of this.toastToTimoutMap.values()) {
+			clearTimeout(timeout);
+		}
+		this.toastToTimoutMap.clear();
 	}
 
 	add(title: string, message: string, logLevel: LogLevel = 'info', durationMs: number = 15000) {

@@ -14,6 +14,11 @@ export class Links {
         this.nodesState = getNodesState();
 	}
 
+	destroy() {
+        // this.deleteAllLinks();
+		this.links.set([]);
+    }
+
 	// Create a new link
 	async createLink(
         linkDescription: string,

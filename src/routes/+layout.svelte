@@ -5,11 +5,11 @@
 	import { LightSwitch } from '@skeletonlabs/skeleton';
 	import { initializeStores, Drawer, getDrawerStore, Modal } from '@skeletonlabs/skeleton';
 	import Toaster from '$lib/components/toaster.svelte';
-	import { setToastState } from '$lib/components/states/toast-state.svelte';
+	import { setToastState, getToastState } from '$lib/components/states/toast-state.svelte';
 	import { setNodesState, getNodesState } from '$lib/components/states/nodes-state.svelte';
 	import { setConnectionsState, getConnectionsState } from '$lib/components/states/connections.svelte';
 	import { setPropertiesState, getPropertiesState } from '$lib/components/states/properties.svelte';
-	import { setLinksState } from '$lib/components/states/links-state.svelte';
+	import { setLinksState, getLinksState } from '$lib/components/states/links-state.svelte';
 	import Navigation from '$lib/components/navigation.svelte';
 	import Toolbox from '$lib/components/toolbox.svelte';
 	import InfoDrawerNode from '$lib/components/info-drawer-node.svelte';
@@ -18,12 +18,15 @@
 	import { selectedWorkspace, isWorkspaceSelected } from '$lib/stores';
 	import { getNodes as getNodesBackendQuery } from '$apis/sindit-backend/kg';
 	import { addNodesToStates, getCurrentWorkspace } from '$lib/utils';
+	import { onDestroy } from 'svelte';
+
 
 	// Initialize Stores
 	initializeStores();
 
 	// Initialize Toast State
 	setToastState();
+	const toastState = getToastState();
 
 	// Initialize Nodes State
 	setNodesState();
@@ -39,6 +42,7 @@
 
 	// Initialize Links State
 	setLinksState();
+	const linksState = getLinksState();
 
 	// Load workspace
 	getCurrentWorkspace();
@@ -76,6 +80,13 @@
 		loadWorkspaceData();
 	}
 
+	onDestroy(() => {
+		toastState.destroy();
+		nodesState.destroy();
+		connectionsState.destroy();
+		propertiesState.destroy();
+		linksState.destroy();
+	});
 </script>
 
 <!-- Toaster for messages-->

@@ -17,6 +17,11 @@ export class Connections {
         this.toastState = getToastState();
     }
 
+	destroy() {
+        // this.deleteAllConnections();
+		this.connections.set([]);
+    }
+
     private connectionNodeObject(
 		connectionName: string,
 		description: string,

@@ -20,6 +20,10 @@ export class Nodes {
 		this.toastState = getToastState();
 	}
 
+    destroy() {
+        this.deleteAllNodes();
+    }
+
 	private abstractAssetNodeObject(
 		nodeName: string,
 		description: string,
