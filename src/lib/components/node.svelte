@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type {
 		Node as NodeType,
+		NodeUri,
+		Property,
 		StreamingProperty,
 	} from '$lib/types';
 	import { getNodesState } from './states/nodes-state.svelte';
@@ -12,6 +14,7 @@
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { onMount } from 'svelte';
 	import { streamData } from '$apis/sindit-backend/kg';
+	import { getBackendUri } from '$lib/utils';
 
 	export let node: NodeType;
 	export let zoomLevel = 1;
@@ -29,9 +32,9 @@
 	let showProperties = false;
 	let showShortProperties = true;
 
-	// $: assets = nodesState.assets;
-	$: propertyUris = nodesState.getAbstractAssetNode(node.id)?.assetProperties;
-	$: properties = propertiesState.getProperties(propertyUris);
+	let propertyUris: NodeUri[] = [];
+	let properties: Property[] = [];
+	$: properties = properties;
 
 	const fontSize = nodeSize * 0.15;
 	const fontSizeTitle = fontSize * 1.1 + 'px';
@@ -122,28 +125,18 @@
 		return name[0] + '.';
 	}
 
-	function handleData(data: any) {
-        console.log(data);
-		if (data.propertyValue) {
-			const property = properties.find((property) => property.id === data.id);
-			if (property) {
-				property.propertyValue = data.propertyValue;
-				property.propertyValueTimestamp = data.propertyValueTimestamp;
-				propertiesState.updateProperty(property);
-				properties = propertiesState.getProperties(propertyUris);
-			}
-		}
-    }
-
-	let streams: StreamingProperty[] = [];
 
     onMount(() => {
-		// stream streaming data properties
-		streams = properties.filter((property) => property.nodeType === 'StreamingProperty') as StreamingProperty[];
-		streams.forEach((stream) => {
-			console.log(stream.id);
-			streamData(stream.id, handleData);
-		});
+		const property_uris = nodesState.getAbstractAssetNode(node.id)?.assetProperties;
+		const unsubscribe = propertiesState.properties.subscribe((updatedProperties) => {
+            properties = propertiesState.getProperties(property_uris);
+            // console.log('Properties updated:', properties);
+        });
+
+        // Cleanup subscription on component destroy
+        return () => {
+            unsubscribe();
+        };
     });
 </script>
 

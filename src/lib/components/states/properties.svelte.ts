@@ -13,16 +13,79 @@ import {
     createAbstractPropertyNode as createAbstractAssetPropertyQuery,
     createStreamingPropertyNode as createStreamingPropertyQuery,
     addPropertyToAssetNode as addPropertyToAssetNodeQuery,
-    updateNode as updateNodeQuery
+    updateNode as updateNodeQuery,
+    streamDataReader as streamDataReaderQuery
 } from '$apis/sindit-backend/kg';
 
 export class Properties {
     properties = writable<Property[]>([]); // PropertyNodes
-
+    private streamingObjects: Set<StreamingProperty> = new Set();
+    private readers: Map<string, ReadableStreamDefaultReader<Uint8Array>> = new Map();
     private toastState: ReturnType<typeof getToastState>;
 
     constructor() {
         this.toastState = getToastState();
+    }
+
+    destroy() {
+        this.properties.set([]);
+        this.streamingObjects.forEach(obj => this.stopStreamingData(obj));
+        this.streamingObjects.clear();
+        this.toastState.destroy();
+    }
+
+    addStreamingObject(streamingObject: StreamingProperty) {
+        if (!this.streamingObjects.has(streamingObject)) {
+            this.streamingObjects.add(streamingObject);
+            this.startStreamingData(streamingObject);
+        }
+    }
+
+    removeStreamingObject(streamingObject: StreamingProperty) {
+        if (this.streamingObjects.has(streamingObject)) {
+            this.streamingObjects.delete(streamingObject);
+            this.stopStreamingData(streamingObject);
+        }
+    }
+
+    private handleDataSteam(data: any) {
+        const jsondata = JSON.parse(data);
+        if (jsondata.propertyValue) {
+            const property = this.getProperty(jsondata.uri);
+            if (property) {
+                property.propertyValue = jsondata.propertyValue;
+                property.propertyValueTimestamp = jsondata.propertyValueTimestamp;
+                this.updateProperty(property);
+            }
+        }
+    }
+
+    private async streamData(reader: ReadableStreamDefaultReader<Uint8Array>) {
+        const decoder = new TextDecoder();
+        let done = false;
+        while (!done) {
+            const { value, done: readerDone } = await reader.read();
+            done = readerDone;
+            const chunk = decoder.decode(value, { stream: true });
+            this.handleDataSteam(chunk);
+        }
+    }
+
+    private startStreamingData(streamingObject: StreamingProperty) {
+        streamDataReaderQuery(streamingObject.id).then((reader) => {
+            this.readers.set(streamingObject.id, reader);
+            this.streamData(reader);
+        }).catch((error) => {
+            this.toastState.add('Failed to stream data', error as string, 'error');
+        });
+    }
+
+    private stopStreamingData(streamingObject: StreamingProperty) {
+        const reader = this.readers.get(streamingObject.id);
+        if (reader) {
+            reader.cancel();
+            this.readers.delete(streamingObject.id);
+        }
     }
 
     private propertyObject(
@@ -156,13 +219,14 @@ export class Properties {
             throw new Error(`Property with ID '${new_property.id}' not found`);
         } else {
             this.properties.update((properties) => properties.map((node) => (node.id === new_property.id ? new_property : node)));
-            try {
-                updateNodeQuery(new_property);
-            } catch (error) {
-                // revert the change
-                this.toastState.add('Failed to update property node', error as string, 'error');
-                this.properties.update((properties) => properties.map((node) => (node.id === new_property.id ? property : node)));
-            }
+        }
+    }
+
+    updatePropertyBackend(new_property: Property) {
+        try {
+            updateNodeQuery(new_property);
+        } catch (error) {
+            this.toastState.add('Failed to update property node', error as string, 'error');
         }
     }
 
@@ -254,6 +318,7 @@ export class Properties {
             propertyValueTimestamp,
         );
         this.addProperty(newProperty);
+        this.addStreamingObject(newProperty);
     }
 
     async createAbstractAssetProperty(

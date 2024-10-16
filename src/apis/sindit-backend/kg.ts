@@ -30,7 +30,7 @@ export async function getNode(
     return response.json();
 }
 
-export async function updateNode(node: any, overwrite: boolean = false) {
+export async function updateNode(node: any, overwrite: boolean = true) {
     const endpoint = 'node';
     let doOverwrite = 'false';
     if (overwrite) {
@@ -264,4 +264,26 @@ export async function streamData(
         // Handle the incoming chunk of data here
         handleChunk(chunk);
     }
+}
+
+export async function streamDataReader(
+    id: string
+): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+    const endpoint = 'stream';
+    const uri = id; // getBackendUri(id);
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}`;
+    console.log("streamData GET:", url)
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    if (!response.ok) {
+        throw new Error(`Error performing GET request ${url}`);
+    }
+    if (!response.body) {
+        throw new Error('Response body is empty');
+    }
+    return response.body.getReader();
 }
