@@ -1,10 +1,11 @@
 import { purgeCss } from 'vite-plugin-tailwind-purgecss';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import {svelteTesting} from '@testing-library/svelte/vite'
 import path from 'path';
 
 export default defineConfig({
-	plugins: [sveltekit(), purgeCss()],
+	plugins: [sveltekit(), purgeCss(), svelteTesting()],
 	server: {
 		host: true,
 		strictPort: true,
@@ -16,5 +17,9 @@ export default defineConfig({
 			$lib: path.resolve(__dirname, 'src/lib'),
 			$apis: path.resolve(__dirname, 'src/apis')
 		}
-	  }
+	  },
+	test: {
+		environment: 'jsdom',
+		setupFiles: ['./vitest-setup.js'],
+	},
 });

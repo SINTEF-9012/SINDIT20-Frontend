@@ -11,11 +11,6 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler",
-		"baseUrl": "./",
-		"paths": {
-			"$app/*": ["src/$app/*"],
-			"$apis/*": ["src/apis/*"],
-			"$lib/*": ["src/lib/*"]
-		}
+		"types": ["jest", "@testing-library/jest-dom"]
 	}
 }
