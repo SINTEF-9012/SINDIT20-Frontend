@@ -12,7 +12,7 @@
 
     const settingsInfoDrawer: DrawerSettings = {
         id: "info-drawer-node",
-        width: "w-60",
+        width: "w-120",
         position: 'right',
         border: "border-gray-50",
         bgDrawer: "bg-gray-300",
