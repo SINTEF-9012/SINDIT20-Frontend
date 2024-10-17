@@ -21,7 +21,6 @@
         text: undefined, // can be used to pass a stringified JSON document instead
         json: $backendNodesData,
     }
-    // $: console.log(content)
 
     let darkMode = "";
     $: darkMode = $modeCurrent === false ? "jse-theme-dark" : "";
