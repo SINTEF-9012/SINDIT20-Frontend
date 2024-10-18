@@ -13,7 +13,7 @@
 	import Navigation from '$lib/components/navigation.svelte';
 	import Toolbox from '$lib/components/toolbox.svelte';
 	//import InfoDrawerNode from '$lib/components/info-drawer-node.svelte';
-	import InfoDrawerNode from '$lib/components/info-drawer-node2.svelte';
+	import InfoDrawerNode from '$lib/components/info-drawer-node.svelte';
 	import InfoDrawerLink from '$lib/components/info-drawer-link.svelte';
 	import type { ModalComponent } from '@skeletonlabs/skeleton';
 	import { selectedWorkspace, isWorkspaceSelected } from '$lib/stores';
