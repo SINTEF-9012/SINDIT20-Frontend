@@ -1,20 +1,16 @@
 <script lang="ts">
 	import type {
 		Node as NodeType,
-		NodeUri,
 		Property,
-		StreamingProperty,
 	} from '$lib/types';
 	import { getNodesState } from './states/nodes-state.svelte';
 	import { getPropertiesState } from './states/properties.svelte';
 	import { selectedNodes, selectedNodeId, nodeSize } from '$lib/stores';
 	import { InfoIcon, SettingsIcon, PlusCircleIcon } from 'svelte-feather-icons';
 	import { getDrawerStore } from '@skeletonlabs/skeleton';
-	import type { ModalSettings } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { onMount } from 'svelte';
-	import { streamData } from '$apis/sindit-backend/kg';
-	import { getBackendUri } from '$lib/utils';
+	import { createNewNodeProperty } from '$lib/modals/modal-settings';
 
 	export let node: NodeType;
 	export let zoomLevel = 1;
@@ -32,7 +28,6 @@
 	let showProperties = false;
 	let showShortProperties = true;
 
-	let propertyUris: NodeUri[] = [];
 	let properties: Property[] = [];
 	$: properties = properties;
 
@@ -54,12 +49,6 @@
 			nodeSelected = false;
 		}
 	}
-
-	const nodePropertyModalSettings: ModalSettings = {
-        type: 'component',
-        component: 'createNewNodeProperty',
-        meta: {nodeId: 'new-node-id'},
-	};
 
 	function startMoving(event: MouseEvent) {
 		moving = true;
@@ -115,16 +104,14 @@
 		showProperties = !showProperties;
 	}
 
-	function handleAddPropertyToNode() {
-		nodePropertyModalSettings.meta.nodeId = node.id;
-		modalStore.trigger(nodePropertyModalSettings);
-		console.log('node', nodesState.getAbstractAssetNode(node.id));
-	}
-
 	function shortPropertyName(name: string) {
 		return name[0] + '.';
 	}
 
+	function handleAddPropertyToNode() {
+		createNewNodeProperty.meta.nodeId = node.id;
+		modalStore.trigger(createNewNodeProperty);
+	}
 
     onMount(() => {
 		const property_uris = nodesState.getAbstractAssetNode(node.id)?.assetProperties;

@@ -5,25 +5,29 @@
     export let streamingValue: string;
     export let streamingTimestamp: string;
 
+    const inputForm = {
+        propertyName: property.propertyName,
+        description: property.description,
+    };
 </script>
 
 
 <div class="abstract-properties border variant-ghost-tertiary">
     <div class="prop">
-        <label for="name">Propety Name:</label>
-        <input type="text" id="name" value={property.propertyName} class="flex-grow">
+        <label for="name">PropetyName:</label>
+        <input type="input" id="name" bind:value={inputForm.propertyName} class="input text-white">
     </div>
     <div class="prop">
         <label for="name">Description:</label>
-        <input type="text" id="description" value={property.description} class="flex-grow">
+        <input type="input" id="description" bind:value={inputForm.description} class="input text-white">
     </div>
     <div class="prop">
         <label for="name">Value:</label>
-        <input type="text" id="value" value={streamingValue} class="flex-grow" disabled>
+        <input type="input" id="value" value={streamingValue} class="input text-white" disabled>
     </div>
     <div class="prop">
-        <label for="name">Value:</label>
-        <input type="text" id="value" value={streamingTimestamp} class="flex-grow" disabled>
+        <label for="name">Time:</label>
+        <input type="input" id="value" value={streamingTimestamp} class="input text-white" disabled>
     </div>
 </div>
 
@@ -38,5 +42,10 @@
         align-items: center;
         gap: 5px;
         margin-top: 10px;
+        width: 100%;
+    }
+    .input {
+        flex-grow: 1;
+        padding-left: 10px;
     }
 </style>

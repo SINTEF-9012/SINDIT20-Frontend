@@ -3,21 +3,26 @@
 
     export let property: AbstractAssetProperty;
 
+    const inputForm = {
+        propertyName: property.propertyName,
+        description: property.description,
+        propertyValue: property.propertyValue,
+    };
 </script>
 
 
 <div class="abstract-properties border variant-ghost-tertiary">
     <div class="prop">
-        <label for="name">Propety Name:</label>
-        <input type="text" id="name" value={property.propertyName} class="flex-grow">
+        <label for="name">PropetyName:</label>
+        <input type="input" id="name" bind:value={inputForm.propertyName} class="input text-white">
     </div>
     <div class="prop">
         <label for="name">Description:</label>
-        <input type="text" id="description" value={property.description} class="flex-grow">
+        <input type="input" id="description" bind:value={inputForm.description} class="input text-white">
     </div>
     <div class="prop">
         <label for="name">Value:</label>
-        <input type="text" id="value" value={property.propertyValue} class="flex-grow">
+        <input type="input" id="value" bind:value={inputForm.propertyValue} class="input text-white">
     </div>
 </div>
 
@@ -32,5 +37,10 @@
         align-items: center;
         gap: 5px;
         margin-top: 10px;
+        width: 100%;
+    }
+    .input {
+        flex-grow: 1;
+        padding-left: 10px;
     }
 </style>
