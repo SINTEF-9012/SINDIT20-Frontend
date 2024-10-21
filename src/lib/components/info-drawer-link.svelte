@@ -1,7 +1,6 @@
 <script lang="ts">
     import { getDrawerStore } from "@skeletonlabs/skeleton";
     import { getLinksState } from './states/links-state.svelte';
-    import PropertyDisplay from "./property-display.svelte";
     import type { DrawerSettings } from '@skeletonlabs/skeleton';
     import type { Link as LinkType } from '$lib/types';
     import { selectedLinkId } from "$lib/stores";
@@ -29,8 +28,11 @@
     </header>
     <br />
     <main class="grid grid-cols-1 gap-4">
-        {#each Object.keys(link) as key}
-            <PropertyDisplay {key} value={link[key]} />
+        {#each Object.entries(link) as [key, value]}
+            <div class="flex flex-col gap-1">
+                <label>{key}</label>
+                <input type="text" value={value} />
+            </div>
         {/each}
     </main>
     <footer class="flex justify-center">

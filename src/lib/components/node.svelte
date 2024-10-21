@@ -11,6 +11,7 @@
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { onMount } from 'svelte';
 	import { createNewNodeProperty } from '$lib/modals/modal-settings';
+	import NodeProperties from './node-properties.svelte';
 
 	export let node: NodeType;
 	export let zoomLevel = 1;
@@ -163,26 +164,9 @@
 	</div>
 	{#if showProperties}
 		<div class="node-properties-box">
-			{#if properties.length > 0}
-				{#each properties as property}
-					<div class="node-property variant-soft-primary gap-2">
-						{#if showShortProperties}
-							<div>{shortPropertyName(property.propertyName)}</div>
-						{:else}
-							<div>{property.propertyName}</div>
-						{/if}
-						<div class="node-prop-value gap-1">
-							<div>{property.propertyValue}</div>
-							<div>{property.propertyValueTimestamp}</div>
-						</div>
-					</div>
-				{/each}
-			{/if}
-			<button class="add-node-property variant-soft-secondary text-sm"
-					on:click={handleAddPropertyToNode}>
-				<PlusCircleIcon size="10"/>
-				<span>New property...</span>
-			</button>
+			{#each properties as property}
+				<NodeProperties {property} propertyValue={property.propertyValue} />
+			{/each}
 		</div>
 	{/if}
 </div>
@@ -227,26 +211,13 @@
 		max-height: 200px;
 		overflow-y: scroll;
 	}
-	.node-property {
-		display:flex;
-		flex-direction: row;
-		justify-content: space-between;
-		border-radius: 5px;
-		padding: 5px;
-		margin: 5px;
-		overflow-x: hidden;
-	}
 	.add-node-property {
 		display: flex;
 		flex-direction: row;
 		justify-content: left;
+        align-items: center;
 		border-radius: 5px;
 		padding: 5px;
 		margin: 5px;
-	}
-	.node-prop-value {
-		display: flex;
-		flex-direction: row;
-		justify-content: right;
 	}
 </style>
