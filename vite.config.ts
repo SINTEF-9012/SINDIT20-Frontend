@@ -7,7 +7,7 @@ import path from 'path';
 export default defineConfig({
 	plugins: [sveltekit(), purgeCss(), svelteTesting()],
 	server: {
-		host: true,
+		host: 'localhost',
 		strictPort: true,
 		port: 5173
 	},
