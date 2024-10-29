@@ -167,6 +167,11 @@
 			{#each properties as property}
 				<NodeProperties {property} propertyValue={property.propertyValue} />
 			{/each}
+			<div>
+				<button class="add-node-property variant-soft-primary" on:click={handleAddPropertyToNode}>
+					<PlusCircleIcon /> <span>New property</span>
+				</button>
+			</div>
 		</div>
 	{/if}
 </div>
@@ -219,5 +224,6 @@
 		border-radius: 5px;
 		padding: 5px;
 		margin: 5px;
+		gap: 5px;
 	}
 </style>
