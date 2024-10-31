@@ -48,6 +48,7 @@ npm-test:
   script:
     - npm install
     - npm run coverage
+    - ls -la ./coverage
   artifacts:
     when: always
     expire_in: 1 weeks
