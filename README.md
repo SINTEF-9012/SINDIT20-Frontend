@@ -28,6 +28,15 @@ Run tests:
 npm run test
 ```
 
+## Run frontend in docker
+
+Build and run the sindit frontend:
+```bash
+docker build -t sindit-frontend .
+docker run -d -p 5173:5173 --name sindit-frontend sindit-frontend
+```
+The frontend should be exposed at `localhost:5173`
+
 
 ## Run docker image from Container registry
 
