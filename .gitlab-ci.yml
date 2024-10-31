@@ -63,7 +63,7 @@ sonarqube:
   stage: analysis
   extends: .base-rules
   dependencies:
-    - test
+    - npm-test
   before_script:
     - cd projects/$PROJECT_NAME
   image:
