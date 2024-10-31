@@ -42,6 +42,16 @@ docker run -p 5173:5173 gitlab.sintef.no:5050/sct/sd/monorepo/sindit-frontend:la
 ```
 
 ## Run the backend
-Details about the SINDIT backend is found in the project directory [monorepo/projects/sindit](https://gitlab.sintef.no/sct/sd/monorepo/-/blob/sindit/projects/sindit/README.md?ref_type=heads)
+Details about how to run the SINDIT backend is found in the project directory [monorepo/projects/sindit](https://gitlab.sintef.no/sct/sd/monorepo/-/blob/sindit/projects/sindit/README.md?ref_type=heads)
 
 Or in the documentation: [sct.pages.sintef.no/sd/monorepo/sindit/sindit-backend](https://sct.pages.sintef.no/sd/monorepo/sindit/sindit-backend/)
+
+The frontend assumes the backend is exposing the REST API at `http://0.0.0.0:9017`.
+This can be configured by creating a `.env` file in the root folder of the frontend `sindit-frontend/`, by setting the following variables:
+```bash
+VITE_SINDIT_BACKEND_API=http://0.0.0.0:9017
+VITE_SINDIT_BACKEND_API_BASE_URI=http://
+```
+
+The backend base uri, is the uri prefix of the nodes in the backend.
+It is currently, at time of writing, assumed by the backend that this prefix is `http://`, according to rdf standards.
