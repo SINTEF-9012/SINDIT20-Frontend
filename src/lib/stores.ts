@@ -6,6 +6,8 @@ import type {
     PropertyNodeType,
 } from '$lib/types';
 
+// Backend running status
+export const isBackendRunning = writable(false);
 
 // workspace
 export const selectedWorkspace = writable('');

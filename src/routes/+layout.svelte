@@ -3,6 +3,7 @@
 	import { MenuIcon } from 'svelte-feather-icons';
 	import { AppBar, Avatar } from '@skeletonlabs/skeleton';
 	import { LightSwitch } from '@skeletonlabs/skeleton';
+	import { AlertTriangleIcon } from 'svelte-feather-icons';
 	import { initializeStores, Drawer, getDrawerStore, Modal } from '@skeletonlabs/skeleton';
 	import Toaster from '$lib/components/toaster.svelte';
 	import { setToastState, getToastState } from '$lib/components/states/toast-state.svelte';
@@ -16,11 +17,13 @@
 	import InfoDrawerNode from '$lib/components/info-drawer-node.svelte';
 	import InfoDrawerLink from '$lib/components/info-drawer-link.svelte';
 	import type { ModalComponent } from '@skeletonlabs/skeleton';
-	import { selectedWorkspace, isWorkspaceSelected } from '$lib/stores';
+	import { isBackendRunning, selectedWorkspace, isWorkspaceSelected } from '$lib/stores';
 	import { getNodes as getNodesBackendQuery } from '$apis/sindit-backend/kg';
-	import { addNodesToStates, getCurrentWorkspace } from '$lib/utils';
+	import { addNodesToStates, getCurrentWorkspace, checkBackendRunningStatus } from '$lib/utils';
 	import { onDestroy } from 'svelte';
 
+	// Check if backend is running
+	checkBackendRunningStatus();
 
 	// Initialize Stores
 	initializeStores();
@@ -44,9 +47,6 @@
 	// Initialize Links State
 	setLinksState();
 	const linksState = getLinksState();
-
-	// Load workspace
-	getCurrentWorkspace();
 
 	// Get Drawer Store
 	const drawerStore = getDrawerStore();
@@ -77,7 +77,13 @@
 		addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
 	}
 
-	$: if ($isWorkspaceSelected) {
+	// Get current workspace if backend is running
+	$: if ($isBackendRunning) {
+		getCurrentWorkspace();
+	}
+
+	// Load workspace data if workspace is selected and backend is running
+	$: if ($isWorkspaceSelected && $isBackendRunning) {
 		loadWorkspaceData();
 	}
 
@@ -130,6 +136,16 @@
 						<strong class="text-lg uppercase bg-gradient-to-br from-blue-500 to-cyan-300 bg-clip-text text-transparent box-decoration-clone"
 						>{$selectedWorkspace}
 						</strong>
+					</div>
+					<div class="flex-grow">
+						{#if $isBackendRunning}
+							<span class="text-sm text-green-500">Backend is healthy</span>
+						{:else}
+							<div class="flex items-center space-x-2">
+								<AlertTriangleIcon class="w-6 h-6 text-red-500" />
+								<span class="text-sm text-red-500">Backend Not Running</span>
+							</div>
+						{/if}
 					</div>
 				</div>
 			</svelte:fragment>

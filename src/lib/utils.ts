@@ -12,8 +12,12 @@ import {
     propertyNodeTypes,
     selectedWorkspace,
     isWorkspaceSelected,
-    backendNodesData
+    backendNodesData,
+    isBackendRunning
 } from '$lib/stores';
+import {
+    backendHealthCheck as backendHealthCheckQuery,
+} from '$apis/sindit-backend/connection';
 
 
 const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
@@ -97,4 +101,16 @@ export async function updateBackendNodesData(node2update: any) {
         //console.log("Updated nodes:", updatedNodes);
         return updatedNodes;
     });
+}
+
+export function checkBackendRunningStatus() {
+    try {
+        backendHealthCheckQuery().then((isRunning) => {
+            isBackendRunning.set(isRunning);
+        });
+    } catch (error) {
+        console.error("Error checking backend running status:", error);
+        console.error("Setting isBackendRunning=false");
+        isBackendRunning.set(false);
+    }
 }
