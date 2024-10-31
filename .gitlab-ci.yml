@@ -42,7 +42,7 @@ before_script:
 npm-test:
   stage: test
   extends: .base-rules
-  image: node:10
+  image: node:23
   before_script:
     - cd projects/$PROJECT_NAME
   script:
