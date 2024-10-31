@@ -97,10 +97,28 @@ docker-build:
   allow_failure: false
   before_script:
     - cd projects/$PROJECT_NAME
+    - docker run --privileged --rm tonistiigi/binfmt --install arm64,amd46
+    - docker buildx create --use
     - |
       echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
       -u $CI_REGISTRY_USER --password-stdin
   script:
+    - docker buildx build
+      --platform linux/arm64
+      --label "git-commit-sha=$CI_COMMIT_SHA"
+      --label "git-commit-branch=$CI_COMMIT_BRANCH"
+      --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
+      --label "git-commit-title=$CI_COMMIT_TITLE"
+      -t $IMAGE_PATH/$IMAGE_NAME-arm64:$CI_COMMIT_SHORT_SHA
+      -t $IMAGE_PATH/$IMAGE_NAME-arm64:latest .
+    - docker buildx build
+      --platform linux/amd64
+      --label "git-commit-sha=$CI_COMMIT_SHA"
+      --label "git-commit-branch=$CI_COMMIT_BRANCH"
+      --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
+      --label "git-commit-title=$CI_COMMIT_TITLE"
+      -t $IMAGE_PATH/$IMAGE_NAME-amd64:$CI_COMMIT_SHORT_SHA
+      -t $IMAGE_PATH/$IMAGE_NAME-amd64:latest .
     - docker build
       --label "git-commit-sha=$CI_COMMIT_SHA"
       --label "git-commit-branch=$CI_COMMIT_BRANCH"
@@ -109,6 +127,10 @@ docker-build:
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
       -t $IMAGE_PATH/$IMAGE_NAME:latest .
   after_script:
+    - docker push $IMAGE_PATH/$IMAGE_NAME-arm64:$CI_COMMIT_SHORT_SHA
+    - docker push $IMAGE_PATH/$IMAGE_NAME-arm64:latest
+    - docker push $IMAGE_PATH/$IMAGE_NAME-amd64:$CI_COMMIT_SHORT_SHA
+    - docker push $IMAGE_PATH/$IMAGE_NAME-amd64:latest
     - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
     - docker push $IMAGE_PATH/$IMAGE_NAME:latest
   rules:

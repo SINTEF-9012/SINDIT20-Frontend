@@ -38,7 +38,7 @@ npm run test
 
 
 ```BASH
-docker run -p 5173:5173 gitlab.sintef.no:5050/sct/sd/monorepo/sindit-frontend:latest
+docker run -p 5173:5173 --name sindit-frontend gitlab.sintef.no:5050/sct/sd/monorepo/sindit-frontend:latest
 ```
 
 ## Run the backend
