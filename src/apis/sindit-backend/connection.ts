@@ -4,7 +4,7 @@ const API_BASE_ENDPOINT = `${API_BASE_URL}/connection`
 
 
 export async function backendHealthCheck(): Promise<boolean> {
-    const url = `${API_BASE_URL}`;
+    const url = `${API_BASE_URL}/docs`;
     console.log("backendHealthCheck GET:", url);
     try {
         const response = await fetch(url);
