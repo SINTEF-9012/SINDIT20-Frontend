@@ -1,4 +1,5 @@
 stages:
+  - test
   - analysis
   - build
 
@@ -38,9 +39,31 @@ before_script:
     - if: $CI_COMMIT_BRANCH
 
 
+npm-test:
+  stage: test
+  extends: .base-rules
+  image: node:10
+  before_script:
+    - cd projects/$PROJECT_NAME
+  script:
+    - npm install
+    - npm run coverage
+  artifacts:
+    when: always
+    expire_in: 1 weeks
+    paths:
+      - $ROOTDIR/coverage
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: $ROOTDIR/coverage/cobertura-coverage.xml
+
+
 sonarqube:
   stage: analysis
   extends: .base-rules
+  dependencies:
+    - test
   before_script:
     - cd projects/$PROJECT_NAME
   image:
