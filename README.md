@@ -1,4 +1,6 @@
 [![Quality Gate Status](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?branch=sindit&project=SINDIT-Frontend&metric=alert_status&token=sqb_da2a79b20ba8379cfa3492a1a8bb59674a2cda0d)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT-Frontend&branch=sindit)
+[![Coverage](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?branch=sindit-frontend&project=SINDIT-Frontend&metric=coverage&token=sqb_da2a79b20ba8379cfa3492a1a8bb59674a2cda0d)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT-Frontend&branch=sindit-frontend)
+[![Vulnerabilities](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?branch=sindit-frontend&project=SINDIT-Frontend&metric=vulnerabilities&token=sqb_da2a79b20ba8379cfa3492a1a8bb59674a2cda0d)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT-Frontend&branch=sindit-frontend)
 
 ![Static Badge](https://img.shields.io/badge/4.1-blue?style=flat&logo=svelte&label=svelte)
 ![Static Badge](https://img.shields.io/badge/2.10-blue?style=flat&label=skeletonlabs)
