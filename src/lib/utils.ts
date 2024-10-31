@@ -24,14 +24,22 @@ const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
 
 // const connectionsState = getConnectionsState();
 
+function checkAPIBaseUri(): void {
+    if (API_BASE_URI === undefined) {
+        throw new Error("API_BASE_URI is undefined. Add API_BASE_URI variable to '.env': API_BASE_URI=http://");
+    }
+}
+
 
 export function getBackendUri(nodeId: string): string {
     // Get the backend URI for a node. The backend URI is the base URI + the node ID
+    checkAPIBaseUri();
     return `${API_BASE_URI}${nodeId}`
 }
 
 export function getNodeIdFromBackendUri(uri: string): string {
     // Get the node ID from a backend URI. Backend URI is the base URI + the node ID
+    checkAPIBaseUri();
     return uri.split(API_BASE_URI)[1] as string;
 }
 

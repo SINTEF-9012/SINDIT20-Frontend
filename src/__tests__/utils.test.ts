@@ -6,7 +6,7 @@ import {
   getWorkspaceDictFromUri,
 } from '$lib/utils';
 
-const API_BASE_URI = 'http://'
+const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI;
 
 it('getBackendUri', () => {
   const id = 'test';
