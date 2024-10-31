@@ -12,25 +12,21 @@
 # SINDIT Frontend
 This is the frontend of SINDIT (Work in progress!)
 
+## Documentation
+The SINDIT 2.0 documentation is hosted on GitLab Pages: [sct.pages.sintef.no/sd/monorepo/sindit](https://sct.pages.sintef.no/sd/monorepo/sindit/overview/)
+
 ## Developing
 
-Installed dependencies with `npm install`, and start a development server:
-
+Install dependencies with `npm install`, and start a development server:
 ```bash
+npm install
 npm run dev
 ```
 
-## Building
-
-To create a production version of your app:
-
+Run tests:
 ```bash
-npm run build
+npm run test
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
 
 
 ## Run docker image from Container registry
@@ -44,3 +40,8 @@ You can preview the production build with `npm run preview`.
 ```BASH
 docker run -p 5173:5173 gitlab.sintef.no:5050/sct/sd/monorepo/sindit-frontend:latest
 ```
+
+## Run the backend
+Details about the SINDIT backend is found in the project directory [monorepo/projects/sindit](https://gitlab.sintef.no/sct/sd/monorepo/-/blob/sindit/projects/sindit/README.md?ref_type=heads)
+
+Or in the documentation: [sct.pages.sintef.no/sd/monorepo/sindit/sindit-backend](https://sct.pages.sintef.no/sd/monorepo/sindit/sindit-backend/)
