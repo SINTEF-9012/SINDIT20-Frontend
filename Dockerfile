@@ -1,6 +1,9 @@
 # Use an official Node.js image as the base
 FROM node:22-alpine
 
+ENV VITE_SINDIT_BACKEND_API=http://0.0.0.0:9017 \
+    VITE_SINDIT_BACKEND_API_BASE_URI=http://
+
 # Set the working directory inside the container
 WORKDIR /app
 
@@ -20,4 +23,4 @@ RUN npm run build
 EXPOSE 5173
 
 # Command to run your application
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "preview"]
