@@ -86,7 +86,7 @@ sonarqube:
   allow_failure: true
 
 
-docker-build:
+docker-build-arm64:
   stage: build
   extends: .base-rules
   image: docker:latest
@@ -97,7 +97,7 @@ docker-build:
   allow_failure: false
   before_script:
     - cd projects/$PROJECT_NAME
-    - docker run --privileged --rm tonistiigi/binfmt --install arm64,amd46
+    - docker run --privileged --rm tonistiigi/binfmt --install arm64
     - docker buildx create --use
     - |
       echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
@@ -111,7 +111,31 @@ docker-build:
       --label "git-commit-title=$CI_COMMIT_TITLE"
       --label "architecture=arm64"
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-arm64
-      -t $IMAGE_PATH/$IMAGE_NAME:latest-arm64 .
+      -t $IMAGE_PATH/$IMAGE_NAME:arm64 .
+  after_script:
+    - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-arm64
+    - docker push $IMAGE_PATH/$IMAGE_NAME:arm64
+  rules:
+    - if: $CI_COMMIT_BRANCH == "sindit"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+docker-build-amd64:
+  stage: build
+  extends: .base-rules
+  image: docker:latest
+  tags:
+    - dind
+  services:
+    - docker:dind
+  allow_failure: false
+  before_script:
+    - cd projects/$PROJECT_NAME
+    - docker run --privileged --rm tonistiigi/binfmt --install amd64
+    - docker buildx create --use
+    - |
+      echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
+      -u $CI_REGISTRY_USER --password-stdin
+  script:
     - docker buildx build
       --platform linux/amd64
       --label "git-commit-sha=$CI_COMMIT_SHA"
@@ -120,7 +144,29 @@ docker-build:
       --label "git-commit-title=$CI_COMMIT_TITLE"
       --label "architecture=amd64"
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-amd64
-      -t $IMAGE_PATH/$IMAGE_NAME:latest-amd64 .
+      -t $IMAGE_PATH/$IMAGE_NAME:amd64 .
+  after_script:
+    - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-amd64
+    - docker push $IMAGE_PATH/$IMAGE_NAME:amd64
+  rules:
+    - if: $CI_COMMIT_BRANCH == "sindit"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+docker-build:
+  stage: build
+  extends: .base-rules
+  image: docker:latest
+  tags:
+    - dind
+  services:
+    - docker:dind
+  allow_failure: false
+  before_script:
+    - cd projects/$PROJECT_NAME
+    - |
+      echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
+      -u $CI_REGISTRY_USER --password-stdin
+  script:
     - docker build
       --label "git-commit-sha=$CI_COMMIT_SHA"
       --label "git-commit-branch=$CI_COMMIT_BRANCH"
@@ -129,11 +175,8 @@ docker-build:
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
       -t $IMAGE_PATH/$IMAGE_NAME:latest .
   after_script:
-    - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-arm64
-    - docker push $IMAGE_PATH/$IMAGE_NAME:latest-arm64
-    - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-amd64
-    - docker push $IMAGE_PATH/$IMAGE_NAME:latest-amd64
     - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
     - docker push $IMAGE_PATH/$IMAGE_NAME:latest
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
+    - if: $CI_COMMIT_BRANCH == "main"
