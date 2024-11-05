@@ -41,9 +41,9 @@ The frontend should be exposed at `localhost:5173`
 ## Run docker image from Container registry
 
 1. Create a [Private Access Token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html) with `read_registry` scope.
-    - Docker login username: your gitlab username (email address) `$USERNAME`
+    - Docker login username: your gitlab username (email address) `$DOCKER_USERNAME`
     - Docker login password: your Personal Access Token `$CONTAINER_REGITRY_READ`
-2. Login to gitlab container registry `docker login gitlab.sintef.no:5050 -u $USERNAME -p $CONTAINER_REGISTRY_READ`
+2. Login to gitlab container registry `docker login gitlab.sintef.no:5050 -u $DOCKER_USERNAME -p $CONTAINER_REGISTRY_READ`
 
 
 ```BASH
