@@ -85,77 +85,15 @@ sonarqube:
     - sonar-scanner
   allow_failure: true
 
-
-docker-build-arm64:
-  stage: build
-  extends: .base-rules
-  image: docker:latest
-  tags:
-    - dind
-  services:
-    - docker:dind
-  allow_failure: false
-  before_script:
-    - cd projects/$PROJECT_NAME
-    - docker run --privileged --rm tonistiigi/binfmt --install arm64
-    - docker buildx create --use
-    - |
-      echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
-      -u $CI_REGISTRY_USER --password-stdin
-  script:
-    - docker buildx build --push
-      --platform linux/arm64
-      --provenance=false
-      --label "git-commit-sha=$CI_COMMIT_SHA"
-      --label "git-commit-branch=$CI_COMMIT_BRANCH"
-      --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
-      --label "git-commit-title=$CI_COMMIT_TITLE"
-      --label "architecture=arm64"
-      -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-arm64
-      -t $IMAGE_PATH/$IMAGE_NAME:arm64 .
-  rules:
-    - if: $CI_COMMIT_BRANCH == "sindit"
-    - if: $CI_COMMIT_BRANCH == "main"
-
-docker-build-amd64:
-  stage: build
-  extends: .base-rules
-  image: docker:latest
-  tags:
-    - dind
-  services:
-    - docker:dind
-  allow_failure: false
-  before_script:
-    - cd projects/$PROJECT_NAME
-    - docker run --privileged --rm tonistiigi/binfmt --install amd64
-    - docker buildx create --use
-    - |
-      echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
-      -u $CI_REGISTRY_USER --password-stdin
-  script:
-    - docker buildx build --push
-      --platform linux/amd64
-      --provenance=false
-      --label "git-commit-sha=$CI_COMMIT_SHA"
-      --label "git-commit-branch=$CI_COMMIT_BRANCH"
-      --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
-      --label "git-commit-title=$CI_COMMIT_TITLE"
-      --label "architecture=amd64"
-      -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-amd64
-      -t $IMAGE_PATH/$IMAGE_NAME:amd64 .
-  rules:
-    - if: $CI_COMMIT_BRANCH == "sindit"
-    - if: $CI_COMMIT_BRANCH == "main"
-
 docker-build:
   stage: build
   extends: .base-rules
-  image: docker:latest
-  tags:
-    - dind
+  image: jdrouet/docker-with-buildx:stable
   services:
     - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
   allow_failure: false
   before_script:
     - cd projects/$PROJECT_NAME
@@ -163,7 +101,7 @@ docker-build:
       echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
       -u $CI_REGISTRY_USER --password-stdin
   script:
-    - docker buildx build --push
+    docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64
       --label "git-commit-sha=$CI_COMMIT_SHA"
       --label "git-commit-branch=$CI_COMMIT_BRANCH"
       --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
