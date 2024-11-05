@@ -1,10 +1,11 @@
 <script lang="ts">
 	import type { SvelteComponent } from 'svelte';
-	import type { LogLevel, NodeType, ConnectionType } from '$lib/types';
+	import type { LogLevel, ConnectionType } from '$lib/types';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
-
+	import { getConnectionsState } from '$lib/components/states/connections.svelte';
+	import { connectionTypes } from '$lib/stores';
 
 	// Props
 	/** Exposes parent props to this component. */
@@ -12,10 +13,7 @@
 
 	const modalStore = getModalStore();
 	const toastState = getToastState();
-	const nodesState = getNodesState();
-
-	const nodeTypes: NodeType[] = ['Connection'];
-	const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'SensApp'];
+	const connectionsState = getConnectionsState();
 
 	$: isFormValid = false;
 	$: console.log("isFormValid", isFormValid);
@@ -66,30 +64,27 @@
 	}
 
 	// Create a new node in the knowledge graph
-	function createNewConnectionNode(): void {
+	function handleCreateNewConnection(): void {
         const port = parsePort(connection.port);
-		nodesState.createConnectionNode(
-            connection.connectionName,
-            connection.description,
-            connection.host,
-            port,
-            getValidConnectionType(connection.connectionType)
-        );
+		try {
+			connectionsState.createConnectionNode(
+				connection.connectionName,
+				connection.description,
+				connection.host,
+				port,
+				getValidConnectionType(connection.connectionType)
+			);
+		} catch (error) {
+			const title = 'Error';
+			const message = `Failed to create connection: ${error.message}`;
+			const logLevel: LogLevel = 'error';
+			toastState.add(title, message, logLevel);
+		}
 	}
 
 	// We've created a custom submit function to pass the response and close the modal.
 	function onFormSubmit(): void {
-        let title = `Successfully created"`;
-		let message = `Connection '${connection.connectionName}' created successfully`;
-		let logLevel: LogLevel = 'info';
-        try {
-		    createNewConnectionNode();
-        } catch (error) {
-            title = 'Error';
-            message = `Failed to create connection: ${error.message}`;
-            logLevel = 'error';
-        }
-		toastState.add(title, message, logLevel);
+        handleCreateNewConnection();
 		modalStore.close();
 	}
 

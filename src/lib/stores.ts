@@ -4,6 +4,7 @@ import type {
     AssetNodeType,
     ConnectionNodeType,
     PropertyNodeType,
+    ConnectionType
 } from '$lib/types';
 
 // Backend running status
@@ -31,6 +32,7 @@ export const createLinkMode = writable(false);
 
 // connections
 export const createConnectionMode = writable(false);
+export const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'SensApp']
 
 // modals
 export const modalMetadata = writable({toolName: '', operationMode: ''});

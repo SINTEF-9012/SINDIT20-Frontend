@@ -54,6 +54,22 @@ export async function updateNode(node: any, overwrite: boolean = true) {
     return response.json();
 }
 
+export async function deleteNode(nodeId: string) {
+    const endpoint = 'node';
+    const uri = getBackendUri(nodeId);
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}`;
+    console.log("deleteNode DELETE:", url)
+    const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    if (!response.ok) {
+        throw new Error(`Error performing DELETE request ${response.statusText}`);
+    }
+    return response.json();
+}
 
 
 export async function createAbstractNode(
