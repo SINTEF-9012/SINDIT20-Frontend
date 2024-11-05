@@ -40,15 +40,15 @@ export async function searchUnits(
     // Search for units
     const endpoint = 'search_unit';
     const url = `${API_BASE_ENDPOINT}/${endpoint}?search_term=${query}`;
-    console.log("searchUnits POST:", url)
+    console.log("searchUnits GET:", url)
     const response = await fetch(url, {
-        method: 'POST',
+        method: 'GET',
         headers: {
             'Content-Type': 'application/json'
         }
     });
     if (!response.ok) {
-        throw new Error(`Error performing POST request ${url} ${response.statusText}`);
+        throw new Error(`Error performing GET request ${url} ${response.statusText}`);
     }
     return response.json();
 }
