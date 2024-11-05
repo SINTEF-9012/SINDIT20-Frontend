@@ -2,8 +2,9 @@
     import { getConnectionsState } from "$lib/components/states/connections.svelte";
     import type { Connection } from "$lib/types";
     import { deleteNode as deleteNodeQuery } from "$apis/sindit-backend/kg";
-    import type { Modal, ModalSettings } from "@skeletonlabs/skeleton";
+    import { refreshConnections as refreshConnectionsQuery } from "$apis/sindit-backend/connection";
     import { getModalStore } from "@skeletonlabs/skeleton";
+    import { RefreshCwIcon } from "svelte-feather-icons";
 
     const modalStore = getModalStore();
     const connectionsState = getConnectionsState();
@@ -23,6 +24,12 @@
     function handleDeleteConnection(event: MouseEvent, connection: Connection) {
         event.preventDefault();
         onDeleteConnection(connection);
+    }
+
+
+    function onRefreshConnections() {
+        refreshConnectionsQuery();
+        // TODO: reload connections from backend into state
     }
 
     function onCreateConnection() {
@@ -46,9 +53,16 @@
     <div class="flex grid-flow-row columns-3 gap-2 pt-2 pb-2">
         <input type="text" bind:value={searchQuery} placeholder="Search connections..." />
         <button class="btn variant-ghost-primary"
+                title="Create new connection"
                 on:click={onCreateConnection}
         >
             Create new
+        </button>
+        <button class="btn variant-ghost-tertiary"
+            on:click={onRefreshConnections}
+            title="Refresh Connections"
+        >
+            <RefreshCwIcon size="24" />
         </button>
     </div>
 </header>
