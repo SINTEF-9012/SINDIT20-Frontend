@@ -139,7 +139,7 @@
 					</div>
 					<div class="flex-grow">
 						{#if $isBackendRunning}
-							<span class="text-sm text-green-500">Backend is healthy</span>
+							<span class="text-sm text-green-500 ml-10">Backend is healthy</span>
 						{:else}
 							<div class="flex items-center space-x-2">
 								<AlertTriangleIcon class="w-6 h-6 text-red-500" />
