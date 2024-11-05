@@ -103,7 +103,7 @@ docker-build-arm64:
       echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
       -u $CI_REGISTRY_USER --password-stdin
   script:
-    - docker buildx build
+    - docker buildx build --push
       --platform linux/arm64
       --label "git-commit-sha=$CI_COMMIT_SHA"
       --label "git-commit-branch=$CI_COMMIT_BRANCH"
@@ -112,9 +112,6 @@ docker-build-arm64:
       --label "architecture=arm64"
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-arm64
       -t $IMAGE_PATH/$IMAGE_NAME:arm64 .
-  after_script:
-    - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-arm64
-    - docker push $IMAGE_PATH/$IMAGE_NAME:arm64
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
     - if: $CI_COMMIT_BRANCH == "main"
@@ -136,7 +133,7 @@ docker-build-amd64:
       echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
       -u $CI_REGISTRY_USER --password-stdin
   script:
-    - docker buildx build
+    - docker buildx build --push
       --platform linux/amd64
       --label "git-commit-sha=$CI_COMMIT_SHA"
       --label "git-commit-branch=$CI_COMMIT_BRANCH"
@@ -145,9 +142,6 @@ docker-build-amd64:
       --label "architecture=amd64"
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-amd64
       -t $IMAGE_PATH/$IMAGE_NAME:amd64 .
-  after_script:
-    - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-amd64
-    - docker push $IMAGE_PATH/$IMAGE_NAME:amd64
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
     - if: $CI_COMMIT_BRANCH == "main"
@@ -167,16 +161,14 @@ docker-build:
       echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
       -u $CI_REGISTRY_USER --password-stdin
   script:
-    - docker build
+    - docker buildx build --push
       --label "git-commit-sha=$CI_COMMIT_SHA"
       --label "git-commit-branch=$CI_COMMIT_BRANCH"
       --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
       --label "git-commit-title=$CI_COMMIT_TITLE"
+      --platform linux/amd64,linux/arm64
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
       -t $IMAGE_PATH/$IMAGE_NAME:latest .
-  after_script:
-    - docker push $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-    - docker push $IMAGE_PATH/$IMAGE_NAME:latest
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
     - if: $CI_COMMIT_BRANCH == "main"
