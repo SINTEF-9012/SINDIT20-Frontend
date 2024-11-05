@@ -132,21 +132,19 @@
 							<MenuIcon class="w-6 h-6" />
 						</button>
 					</div>
-					<div class="flex-grow">
-						<strong class="text-lg uppercase bg-gradient-to-br from-blue-500 to-cyan-300 bg-clip-text text-transparent box-decoration-clone"
+				<div>
+				<div class="flex flex-row items-center">
+					<strong class="text-lg uppercase bg-gradient-to-br from-blue-500 to-cyan-300 bg-clip-text text-transparent box-decoration-clone mr-5"
 						>{$selectedWorkspace}
-						</strong>
-					</div>
-					<div class="flex-grow">
-						{#if $isBackendRunning}
-							<span class="text-sm text-green-500 ml-10">Backend is healthy</span>
-						{:else}
-							<div class="flex items-center space-x-2">
-								<AlertTriangleIcon class="w-6 h-6 text-red-500" />
-								<span class="text-sm text-red-500">Backend Not Running</span>
-							</div>
-						{/if}
-					</div>
+					</strong>
+					{#if $isBackendRunning}
+						<span class="text-sm text-green-500">Backend is healthy</span>
+					{:else}
+						<div class="flex items-center space-x-2">
+							<AlertTriangleIcon class="w-6 h-6 text-red-500" />
+							<span class="text-sm text-red-500">Backend Not Running</span>
+						</div>
+					{/if}
 				</div>
 			</svelte:fragment>
 			<svelte:fragment slot="trail">
