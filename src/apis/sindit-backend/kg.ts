@@ -54,7 +54,7 @@ export async function updateNode(node: any, overwrite: boolean = true) {
     return response.json();
 }
 
-export async function deleteNode(nodeId: string) {
+export async function deleteNode(nodeId: string): Promise<Response> {
     const endpoint = 'node';
     const uri = getBackendUri(nodeId);
     const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}`;
@@ -68,7 +68,7 @@ export async function deleteNode(nodeId: string) {
     if (!response.ok) {
         throw new Error(`Error performing DELETE request ${response.statusText}`);
     }
-    return response.json();
+    return response;
 }
 
 
