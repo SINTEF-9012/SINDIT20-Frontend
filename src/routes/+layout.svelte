@@ -21,6 +21,7 @@
 	import { getNodes as getNodesBackendQuery } from '$apis/sindit-backend/kg';
 	import { addNodesToStates, getCurrentWorkspace, checkBackendRunningStatus } from '$lib/utils';
 	import { onDestroy } from 'svelte';
+	import { goto } from '$app/navigation';
 
 	// Check if backend is running
 	checkBackendRunningStatus();
@@ -134,9 +135,11 @@
 					</div>
 				<div>
 				<div class="flex flex-row items-center">
-					<strong class="text-lg uppercase bg-gradient-to-br from-blue-500 to-cyan-300 bg-clip-text text-transparent box-decoration-clone mr-5"
-						>{$selectedWorkspace}
-					</strong>
+					<button on:click={() => goto('/canvas')}>
+						<strong class="text-lg uppercase bg-gradient-to-br from-blue-500 to-cyan-300 bg-clip-text text-transparent box-decoration-clone mr-5"
+							>{$selectedWorkspace}
+						</strong>
+					</button>
 					{#if $isBackendRunning}
 						<span class="text-sm text-green-500">Backend is healthy</span>
 					{:else}
