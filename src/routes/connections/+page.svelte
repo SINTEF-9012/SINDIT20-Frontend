@@ -30,7 +30,7 @@
     function onRefreshConnections() {
         refreshConnectionsQuery();
         // Reload connections from backend into state
-        connectionsState.updateConnections();
+        connectionsState.updateConnectionsFromBackend();
         connections = connectionsState.connections;
     }
 
