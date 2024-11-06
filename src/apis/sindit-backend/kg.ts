@@ -71,6 +71,17 @@ export async function deleteNode(nodeId: string): Promise<Response> {
     return response;
 }
 
+export async function getNodesByClass(nodeClass: string) {
+    const endpoint = 'nodes_by_class';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_class=${nodeClass}`;
+    console.log("getNodesByClass GET:", url)
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Error performing GET request ${url}`);
+    }
+    return response.json();
+}
+
 
 export async function createAbstractNode(
     nodeId: string, nodeName: string, description: string,
