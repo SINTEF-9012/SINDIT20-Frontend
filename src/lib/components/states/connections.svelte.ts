@@ -65,7 +65,7 @@ export class Connections {
 		this.connections.update((connections) => [...connections, connection]);
 	}
 
-	updateConnections() {
+	updateConnectionsFromBackend() {
 		const connections_node_class = nodeClasses['Connection'];
 		getNodesByClassQuery(connections_node_class).then((connections) => {
 			// update all connections by id
@@ -83,6 +83,18 @@ export class Connections {
 		});
 	}
 
+	updateConnection(id: string, updatedConnection: Connection) {
+		const connections = get(this.connections);
+		const connId = connections.findIndex((conn) => conn.id === id);
+		updatedConnection.id = id;
+		this.connections.update((conn) => [
+			...conn.slice(0, connId),
+			updatedConnection,
+			...conn.slice(connId + 1)
+		]);
+		this.toastState.add('Connection updated', `Connection Node "${id}" updated`, 'info');
+	}
+
 	addConnectionNode(
 		id: string,
 		connectionName: string,
@@ -94,6 +106,7 @@ export class Connections {
 	) {
 		const newConnection = this.connectionNodeObject(connectionName, description, host, port, connectionType, isConnected, id);
 		this.addConnection(newConnection);
+		return newConnection;
 	}
 
 	// Create a new Connection node
