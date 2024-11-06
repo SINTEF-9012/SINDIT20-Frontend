@@ -4,7 +4,7 @@
     import { deleteNode as deleteNodeQuery } from "$apis/sindit-backend/kg";
     import { refreshConnections as refreshConnectionsQuery } from "$apis/sindit-backend/connection";
     import { getModalStore } from "@skeletonlabs/skeleton";
-    import { RefreshCwIcon } from "svelte-feather-icons";
+    import { RefreshCwIcon, CheckCircleIcon, XCircleIcon } from "svelte-feather-icons";
 
     const modalStore = getModalStore();
     const connectionsState = getConnectionsState();
@@ -29,7 +29,9 @@
 
     function onRefreshConnections() {
         refreshConnectionsQuery();
-        // TODO: reload connections from backend into state
+        // Reload connections from backend into state
+        connectionsState.updateConnections();
+        connections = connectionsState.connections;
     }
 
     function onCreateConnection() {
@@ -78,7 +80,14 @@
                     <p>Host: {connection.host}</p>
                     <p>Port: {connection.port}</p>
                     <p>Type: {connection.connectionType}</p>
-                    <p>isConnected: ?</p>
+                    <div class="flex flex-row items-center justify-between">
+                        <p>isConnected:</p>
+                        {#if connection.isConnected}
+                            <CheckCircleIcon size="16" class="text-green-500"/>
+                        {:else}
+                            <XCircleIcon size="16" class="text-red-500"/>
+                        {/if}
+                    </div>
                 </div>
             </div>
             <div class="card-footer flex-row">

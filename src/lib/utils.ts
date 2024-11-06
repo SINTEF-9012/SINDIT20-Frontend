@@ -30,7 +30,6 @@ function checkAPIBaseUri(): void {
     }
 }
 
-
 export function getBackendUri(nodeId: string): string {
     // Get the backend URI for a node. The backend URI is the base URI + the node ID
     checkAPIBaseUri();
@@ -63,7 +62,7 @@ export function addNodesToStates(
         if (assetNodeTypes.includes(class_type as AssetNodeType)) {
             nodesState.addAbstractAssetNode(uri, node.label, node.assetDescription, node.assetProperties);
         } else if (connectionNodeTypes.includes(class_type as ConnectionNodeType)) {
-            connectionsState.addConnectionNode(uri, node.label, node.connectionDescription, node.host, node.port, node.connectionType);
+            connectionsState.addConnectionNode(uri, node.label, node.connectionDescription, node.host, node.port, node.type, node.isConnected);
         } else if (propertyNodeTypes.includes(class_type as PropertyNodeType)) {
             propertiesState.addPropertyNode(class_type as PropertyNodeType, node)
         } else {

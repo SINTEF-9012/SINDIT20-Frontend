@@ -18,14 +18,14 @@ export const isWorkspaceSelected = writable(false);
 export const assetNodeTypes: AssetNodeType[] = ['AbstractAsset'];
 export const connectionNodeTypes: ConnectionNodeType[] = ['Connection'];
 export const propertyNodeTypes: PropertyNodeType[] = ['AbstractAssetProperty', 'DatabaseProperty', 'StreamingProperty', 'TimeseriesProperty'];
-export const nodeClasses = [
-    'urn:samm:sindit.sintef.no:1.0.0#AbstractAsset',
-    'urn:samm:sindit.sintef.no:1.0.0#Connection',
-    'urn:samm:sindit.sintef.no:1.0.0#AbstractAssetProperty',
-    'urn:samm:sindit.sintef.no:1.0.0#DatabaseProperty',
-    'urn:samm:sindit.sintef.no:1.0.0#StreamingProperty',
-    'urn:samm:sindit.sintef.no:1.0.0#TimeseriesProperty'
-]
+export const nodeClasses = {
+    'AbstractAsset': 'urn:samm:sindit.sintef.no:1.0.0#AbstractAsset',
+    'Connection': 'urn:samm:sindit.sintef.no:1.0.0#Connection',
+    'AbstractAssetProperty': 'urn:samm:sindit.sintef.no:1.0.0#AbstractAssetProperty',
+    'DatabaseProperty': 'urn:samm:sindit.sintef.no:1.0.0#DatabaseProperty',
+    'StreamingProperty': 'urn:samm:sindit.sintef.no:1.0.0#StreamingProperty',
+    'TimeseriesProperty': 'urn:samm:sindit.sintef.no:1.0.0#TimeseriesProperty'
+}
 
 // node
 export const selectedNodes = writable<string[]>([]);

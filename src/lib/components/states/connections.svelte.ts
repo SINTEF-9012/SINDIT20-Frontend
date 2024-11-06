@@ -2,8 +2,9 @@ import type { Connection, ConnectionType } from '$lib/types';
 import { writable, get } from 'svelte/store';
 import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
+import { nodeClasses } from '$lib/stores';
 import {
-    getNode as getNodeQuery,
+    getNodesByClass as getNodesByClassQuery,
     createConnectionNode as createConnectionNodeQuery
 } from '$apis/sindit-backend/kg';
 
@@ -27,6 +28,7 @@ export class Connections {
 		host: string,
 		port: number,
 		connectionType: ConnectionType,
+		isConnected: boolean,
 		id?: string
 	): Connection {
 		if (!id) {
@@ -39,7 +41,8 @@ export class Connections {
 			nodeType: 'Connection',
 			host,
 			port,
-			connectionType
+			connectionType,
+			isConnected
 		};
 	}
 
@@ -62,12 +65,23 @@ export class Connections {
 		this.connections.update((connections) => [...connections, connection]);
 	}
 
-    isConnectionConnected(id: string) {
-        // const conn = this.getConnection(id);
-        const node = getNodeQuery(id);
-        // TODO: check connection status
-        return node;
-    }
+	updateConnections() {
+		const connections_node_class = nodeClasses['Connection'];
+		getNodesByClassQuery(connections_node_class).then((connections) => {
+			// update all connections by id
+			this.connections.update((oldConnections) => {
+				const updatedConnections = oldConnections.map((oldConnection) => {
+					const newConnection = connections.find((connection) => connection.id === oldConnection.id);
+					if (newConnection) {
+						return newConnection; // update connection
+					} else {
+						return oldConnection; // keep old connection
+					}
+				});
+				return updatedConnections;
+			});
+		});
+	}
 
 	addConnectionNode(
 		id: string,
@@ -75,9 +89,10 @@ export class Connections {
 		description: string,
 		host: string,
 		port: number,
-		connectionType: ConnectionType
+		connectionType: ConnectionType,
+		isConnected: boolean
 	) {
-		const newConnection = this.connectionNodeObject(connectionName, description, host, port, connectionType, id);
+		const newConnection = this.connectionNodeObject(connectionName, description, host, port, connectionType, isConnected, id);
 		this.addConnection(newConnection);
 	}
 
@@ -89,7 +104,7 @@ export class Connections {
 		port: number,
 		connectionType: ConnectionType
 	) {
-		const newNode = this.connectionNodeObject(nodeName, description, host, port, connectionType);
+		const newNode = this.connectionNodeObject(nodeName, description, host, port, connectionType, false);
         this.addConnection(newNode);
 		try {
 			await createConnectionNodeQuery(newNode.id, newNode.connectionName, newNode.description, host, port, connectionType);

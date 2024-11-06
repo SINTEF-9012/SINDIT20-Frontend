@@ -91,6 +91,7 @@ export interface Connection {
 	host: string;
 	port: number;
 	connectionType: ConnectionType;
+	isConnected: boolean;
 }
 
 // Links
