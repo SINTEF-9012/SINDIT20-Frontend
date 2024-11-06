@@ -48,7 +48,7 @@ export class Nodes {
 	}
 
 	getAllAbstractAssetNodes() {
-		return this.assets;
+		return get(this.assets);
 	}
 
 	deleteAllAbstractAssets() {
@@ -72,9 +72,10 @@ export class Nodes {
 		nodeName: string,
 		description: string,
 		assetProperties: NodeUri[],
-	) {
+	): AbstractAsset {
 		const newAsset = this.abstractAssetNodeObject(nodeName, description, assetProperties, undefined, id);
 		this.addAsset(newAsset);
+		return newAsset;
 	}
 
 	// Add a property to an AbstractAsset node
