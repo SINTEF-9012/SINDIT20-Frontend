@@ -15,6 +15,18 @@ This is the frontend of SINDIT (Work in progress!)
 ## Documentation
 The SINDIT 2.0 documentation is hosted on GitLab Pages: [sct.pages.sintef.no/sd/monorepo/sindit](https://sct.pages.sintef.no/sd/monorepo/sindit/overview/)
 
+## Environment
+
+There are environment variables you need for the frontend to run -- the URL to the backend API and the base URI of the backend. The simplest way is to create a `.env` file in the present directory.
+
+```sh
+$ cat .env
+PUBLIC_SINDIT_BACKEND_API=http://192.168.1.222:9017
+PUBLIC_SINDIT_BACKEND_API_BASE_URI=http://
+```
+
+Where `192.168.1.222` is the IP address of the machine running the backend. If the backend runs on the same machine as the frontend, that's fine. If the backend runs in a Docker container, you must specificy the IP address of the host. **You cannot use `0.0.0.0` or `127.0.0.1`!**
+
 ## Developing
 
 Install dependencies with `npm install`, and start a development server:
@@ -28,15 +40,17 @@ Run tests:
 npm run test
 ```
 
+In development mode, the frontend is available at http://localhost:5173.
+
 ## Run frontend in docker
 
 Build and run the sindit frontend:
 ```bash
 docker build -t sindit-frontend .
-docker run -d -p 5173:5173 --name sindit-frontend sindit-frontend
+docker run --env-file .env -d -p 3000:3000 --name sindit-frontend sindit-frontend
 ```
-The frontend should be exposed at `localhost:5173`
 
+In this mode, the frontend is available at http://localhost:3000.
 
 ## Run docker image from Container registry
 
@@ -47,7 +61,7 @@ The frontend should be exposed at `localhost:5173`
 
 
 ```BASH
-docker run -p 5173:5173 --name sindit-frontend gitlab.sintef.no:5050/sct/sd/monorepo/sindit-frontend:latest
+docker run -p 3000:3000 --name sindit-frontend gitlab.sintef.no:5050/sct/sd/monorepo/sindit-frontend:latest
 ```
 
 ## Run the backend
@@ -55,12 +69,4 @@ Details about how to run the SINDIT backend is found in the project directory [m
 
 Or in the documentation: [sct.pages.sintef.no/sd/monorepo/sindit/sindit-backend](https://sct.pages.sintef.no/sd/monorepo/sindit/sindit-backend/)
 
-The frontend assumes the backend is exposing the REST API at `http://0.0.0.0:9017`.
-This can be configured by creating a `.env` file in the root folder of the frontend `sindit-frontend/`, by setting the following variables:
-```bash
-VITE_SINDIT_BACKEND_API=http://0.0.0.0:9017
-VITE_SINDIT_BACKEND_API_BASE_URI=http://
-```
-
-The backend base uri, is the uri prefix of the nodes in the backend.
-It is currently, at time of writing, assumed by the backend that this prefix is `http://`, according to rdf standards.
+The URL and the URI-prefix of the backend are defined as environment variables (`PUBLIC_SINDIT_BACKEND_API` and `PUBLIC_SINDIT_BACKEND_API_BASE_URI`), see also the subsection *Environment* above.

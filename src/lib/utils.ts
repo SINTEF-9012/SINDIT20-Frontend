@@ -1,4 +1,4 @@
-
+import { env } from '$env/dynamic/public';
 import type {
     Workspace, AllBackendNodeTypes, AssetNodeType, ConnectionNodeType, PropertyNodeType
 } from '$lib/types';
@@ -20,7 +20,7 @@ import {
 } from '$apis/sindit-backend/connection';
 
 
-const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
+const API_BASE_URI = env.PUBLIC_SINDIT_BACKEND_API_BASE_URI
 
 // const connectionsState = getConnectionsState();
 

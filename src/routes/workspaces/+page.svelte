@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { env } from '$env/dynamic/public';
     import type { Workspace } from '$lib/types';
     import type { ModalSettings } from "@skeletonlabs/skeleton";
     import { getModalStore } from '@skeletonlabs/skeleton';
@@ -24,7 +25,7 @@
         getWorkspaceDictFromUri,
     } from '$lib/utils';
 
-    const API_BASE_URI = import.meta.env.VITE_SINDIT_BACKEND_API_BASE_URI
+    const API_BASE_URI = env.PUBLIC_SINDIT_BACKEND_API_BASE_URI
 
 
     let workspace: Workspace;

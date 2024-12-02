@@ -4,8 +4,6 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
-ENV VITE_SINDIT_BACKEND_API=http://0.0.0.0:9017 \
-    VITE_SINDIT_BACKEND_API_BASE_URI=http://
 COPY . .
 RUN npm run build
 RUN npm prune --production

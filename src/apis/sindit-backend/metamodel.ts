@@ -1,3 +1,4 @@
+import { env } from '$env/dynamic/public';
 import type {
     ReturnedDataTypeAllDataTypes,
     ReturnedDataTypeAllUnits,
@@ -5,7 +6,7 @@ import type {
 } from "$lib/types";
 
 // Metamodel - SINDIT API endpoints
-const API_BASE_URL = import.meta.env.VITE_SINDIT_BACKEND_API
+const API_BASE_URL = env.PUBLIC_SINDIT_BACKEND_API
 const API_BASE_ENDPOINT = `${API_BASE_URL}/metamodel`
 
 
