@@ -13,7 +13,8 @@
 		"test": "vitest run",
 		"test:ui": "vitest --ui",
 		"test:watch": "vitest",
-		"coverage": "vitest run --coverage"
+		"coverage": "vitest run --coverage",
+		"start": "export PORT=5173 && node ./build"
 	},
 	"devDependencies": {
 		"@skeletonlabs/skeleton": "^2.10.2",
@@ -52,6 +53,7 @@
 	"type": "module",
 	"dependencies": {
 		"@floating-ui/dom": "1.6.10",
+		"@sveltejs/adapter-node": "^5.2.9",
 		"@threlte/core": "^7.3.1",
 		"@threlte/extras": "^8.11.5",
 		"@types/three": "^0.168.0",
