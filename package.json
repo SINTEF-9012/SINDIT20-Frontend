@@ -53,7 +53,6 @@
 	"type": "module",
 	"dependencies": {
 		"@floating-ui/dom": "1.6.10",
-		"@sveltejs/adapter-node": "^5.2.9",
 		"@threlte/core": "^7.3.1",
 		"@threlte/extras": "^8.11.5",
 		"@types/three": "^0.168.0",
