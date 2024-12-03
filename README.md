@@ -47,10 +47,10 @@ In development mode, the frontend is available at http://localhost:5173.
 Build and run the sindit frontend:
 ```bash
 docker build -t sindit-frontend .
-docker run --env-file .env -d -p 3000:3000 --name sindit-frontend sindit-frontend
+docker run --env-file .env -d -p 5173:3000 --name sindit-frontend sindit-frontend
 ```
 
-In this mode, the frontend is available at http://localhost:3000.
+In this mode, the frontend is also available at http://localhost:5173.
 
 ## Run docker image from Container registry
 
@@ -61,7 +61,7 @@ In this mode, the frontend is available at http://localhost:3000.
 
 
 ```BASH
-docker run -p 3000:3000 --name sindit-frontend gitlab.sintef.no:5050/sct/sd/monorepo/sindit-frontend:latest
+docker run -p 5173:3000 --name sindit-frontend gitlab.sintef.no:5050/sct/sd/monorepo/sindit-frontend:latest
 ```
 
 ## Run the backend
