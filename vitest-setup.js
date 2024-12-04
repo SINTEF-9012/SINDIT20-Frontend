@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 // console.log(import.meta.env);
 vi.mock('$env/dynamic/public', () => ({
-    env: { 
+    env: {
         PUBLIC_SINDIT_BACKEND_API: import.meta.env.PUBLIC_SINDIT_BACKEND_API,
         PUBLIC_SINDIT_BACKEND_API_BASE_URI: import.meta.env.PUBLIC_SINDIT_BACKEND_API_BASE_URI
     },
