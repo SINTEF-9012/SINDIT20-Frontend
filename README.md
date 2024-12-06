@@ -40,6 +40,20 @@ Run tests:
 npm run test
 ```
 
+### Run using vscode Run & Debug launcher
+
+This configuration can be applied to launch the application:
+```bash
+    "configurations": [
+        {
+            "command": "npm run dev",
+            "name": "Run npm dev",
+            "request": "launch",
+            "type": "node-terminal"
+        }
+    ]
+```
+
 In development mode, the frontend is available at http://localhost:5173.
 
 ## Run frontend in docker
