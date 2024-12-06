@@ -87,7 +87,7 @@ sonarqube:
 docker-build:
   stage: build
   extends: .base-rules
-  image: jdrouet/docker-with-buildx:stable
+  image: docker:latest
   tags:
     - dind
   services:
