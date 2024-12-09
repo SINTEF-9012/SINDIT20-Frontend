@@ -49,7 +49,12 @@ This configuration can be applied to launch the application:
             "command": "npm run dev",
             "name": "Run npm dev",
             "request": "launch",
-            "type": "node-terminal"
+            "type": "node-terminal",
+            "env": {
+                "NODE_ENV": "development",
+                "PUBLIC_SINDIT_BACKEND_API": "http://0.0.0.0:9017",
+                "PUBLIC_SINDIT_BACKEND_API_BASE_URI": "http://"
+            }
         }
     ]
 ```
