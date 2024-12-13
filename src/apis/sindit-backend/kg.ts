@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/public';
-import type { ConnectionType, AbstractAssetProperty, StreamingProperty } from '$lib/types';
+import type { ConnectionType, AbstractAssetProperty, StreamingProperty, S3Property } from '$lib/types';
 import { getBackendUri } from '$lib/utils';
 
 const API_BASE_URL = env.PUBLIC_SINDIT_BACKEND_API
@@ -223,6 +223,40 @@ export async function createStreamingPropertyNode(
         };
     }
     console.log("createStreamingPropertyNode POST:", url, data)
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+    },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+        throw new Error(`Error performing POST request ${response.statusText}`);
+    }
+    return response.json();
+}
+
+export async function createS3PropertyNode(
+    newProperty: S3Property
+) {
+    const endpoint = 's3_property';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}`;
+    const data: {
+        uri: string;
+        label: string;
+        propertyName: string;
+        propertyDescription: string;
+        bucket: string;
+        key: string;
+    } = {
+        uri: getBackendUri(newProperty.id),
+        label: newProperty.propertyName,
+        propertyName: newProperty.propertyName,
+        propertyDescription: newProperty.description,
+        bucket: newProperty.bucket,
+        key: newProperty.key,
+    }
+    console.log("createS3PropertyNode POST:", url, data)
     const response = await fetch(url, {
         method: 'POST',
         headers: {

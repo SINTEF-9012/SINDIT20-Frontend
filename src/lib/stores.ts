@@ -17,14 +17,15 @@ export const isWorkspaceSelected = writable(false);
 // node types
 export const assetNodeTypes: AssetNodeType[] = ['AbstractAsset'];
 export const connectionNodeTypes: ConnectionNodeType[] = ['Connection'];
-export const propertyNodeTypes: PropertyNodeType[] = ['AbstractAssetProperty', 'DatabaseProperty', 'StreamingProperty', 'TimeseriesProperty'];
+export const propertyNodeTypes: PropertyNodeType[] = ['AbstractAssetProperty', 'DatabaseProperty', 'StreamingProperty', 'TimeseriesProperty', 'S3ObjectProperty'];
 export const nodeClasses = {
     'AbstractAsset': 'urn:samm:sindit.sintef.no:1.0.0#AbstractAsset',
     'Connection': 'urn:samm:sindit.sintef.no:1.0.0#Connection',
     'AbstractAssetProperty': 'urn:samm:sindit.sintef.no:1.0.0#AbstractAssetProperty',
     'DatabaseProperty': 'urn:samm:sindit.sintef.no:1.0.0#DatabaseProperty',
     'StreamingProperty': 'urn:samm:sindit.sintef.no:1.0.0#StreamingProperty',
-    'TimeseriesProperty': 'urn:samm:sindit.sintef.no:1.0.0#TimeseriesProperty'
+    'TimeseriesProperty': 'urn:samm:sindit.sintef.no:1.0.0#TimeseriesProperty',
+    'S3Property': 'urn:samm:sindit.sintef.no:1.0.0#S3Property'
 }
 
 // node
@@ -40,7 +41,7 @@ export const createLinkMode = writable(false);
 
 // connections
 export const createConnectionMode = writable(false);
-export const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'SensApp']
+export const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'S3']
 
 // modals
 export const modalMetadata = writable({toolName: '', operationMode: ''});

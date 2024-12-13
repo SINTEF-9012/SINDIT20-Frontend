@@ -24,11 +24,11 @@ export type GLTFModel = {name: string, path: string};
 // Backend node types
 export type AssetNodeType = 'AbstractAsset';
 export type ConnectionNodeType = 'Connection';
-export type PropertyNodeType = 'Property' | 'AbstractAssetProperty' | 'DatabaseProperty' | 'StreamingProperty' | 'TimeseriesProperty';
+export type PropertyNodeType = 'Property' | 'AbstractAssetProperty' | 'DatabaseProperty' | 'StreamingProperty' | 'TimeseriesProperty' | 'S3ObjectProperty';
 export type AllBackendNodeTypes = AssetNodeType | ConnectionNodeType | PropertyNodeType;
 
 // Connection types
-export type ConnectionType = 'MQTT' | 'InfluxDB' | 'SensApp';
+export type ConnectionType = 'MQTT' | 'InfluxDB' | 'S3';
 
 // Backend node uris
 export type NodeUri = { uri: string }
@@ -81,6 +81,13 @@ export interface StreamingProperty extends Property {
 	streamingTopic: string;
   	streamingPath: string;
 	propertyConnection: NodeUri;
+}
+
+export interface S3ObjectProperty extends Property {
+	nodeType: 'S3ObjectProperty';
+	propertyConnection: NodeUri;
+	bucket: string;
+	key: string;
 }
 
 export interface Connection {

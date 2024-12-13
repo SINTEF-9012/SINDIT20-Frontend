@@ -6,12 +6,14 @@ import type {
     AbstractAssetProperty,
     DatabaseProperty,
     StreamingProperty,
+    S3ObjectProperty,
     PropertyNodeType,
     NodeUri
 } from '$lib/types';
 import {
     createAbstractPropertyNode as createAbstractAssetPropertyQuery,
     createStreamingPropertyNode as createStreamingPropertyQuery,
+    createS3PropertyNode as createS3PropertyQuery,
     addPropertyToAssetNode as addPropertyToAssetNodeQuery,
     updateNode as updateNodeQuery,
     streamDataReader as streamDataReaderQuery
@@ -203,11 +205,41 @@ export class Properties {
         };
     }
 
+    private s3PropertyObject(
+        bucket: string,
+        key: string,
+        connectionURI: string,
+        propertyName: string,
+        description: string,
+        id?: string,
+        propertyValue?: string,
+        propertyValueTimestamp?: string,
+    ): S3ObjectProperty {
+        const property = this.propertyObject(
+            propertyName,
+            description,
+            undefined,
+            undefined,
+            id,
+            propertyValue,
+            propertyValueTimestamp,
+        );
+        return {
+            ...property,
+            nodeType: 'S3ObjectProperty',
+            propertyConnection: {
+                uri: connectionURI,
+            },
+            bucket,
+            key,
+        };
+    }
+
     getAllProperties() {
         return get(this.properties);
     }
 
-    getProperty(id: string): Property | AbstractAssetProperty | DatabaseProperty | StreamingProperty | undefined {
+    getProperty(id: string): Property | AbstractAssetProperty | DatabaseProperty | StreamingProperty | S3ObjectProperty | undefined {
         const properties = get(this.properties);
         return properties.find((node) => node.id === id);
     }
@@ -256,6 +288,9 @@ export class Properties {
         } else if (class_type === 'StreamingProperty') {
             // console.log("addPropertyNode", node)
             this.addStreamingProperty(node.uri, node.streamingTopic, node.streamingPath, propertyName, node.propertyDescription, node.propertyDataType?.uri, node.propertyUnit?.uri, node.propertyConnection.uri, node.propertyValue, node.propertyValueTimestamp);
+        } else if ( class_type === 'S3ObjectProperty' ) {
+            console.log(node);
+            this.addS3Property(node.uri, node.bucket, node.key, propertyName, node.description, node.propertyConnection.uri, node.propertyValue, node.propertyValueTimestamp);
         } else {
             throw new Error(`Invalid property node type '${class_type}'`);
         }
@@ -321,6 +356,30 @@ export class Properties {
         this.addStreamingObject(newProperty);
     }
 
+    async addS3Property(
+        id: string,
+        bucket: string,
+        key: string,
+        propertyName: string,
+        description: string,
+        connectionURI: string,
+        propertyValue?: string,
+        propertyValueTimestamp?: string,
+    ) {
+        const newProperty = this.s3PropertyObject(
+            bucket,
+            key,
+            connectionURI,
+            propertyName,
+            description,
+            id,
+            propertyValue,
+            propertyValueTimestamp,
+        );
+        this.addProperty(newProperty);
+        console.log(get(this.properties));
+    }
+
     async createAbstractAssetProperty(
         assetNodeId: string,
         propertyName: string,
@@ -384,6 +443,43 @@ export class Properties {
         try {
             this.addProperty(newProperty);
             await createStreamingPropertyQuery(newProperty);
+            await addPropertyToAssetNodeQuery(assetNodeId, newProperty.id);
+            // Property needs to be added to the asset node outside this function! (See create-new-node-property.svelte)
+        } catch (error) {
+            this.toastState.add('Failed to create property node', error as string, 'error');
+            this.deleteProperty(newProperty.id);
+            ok = false;
+        }
+        if (ok)
+            return newProperty.id;
+        else
+            return undefined;
+    }
+
+    async createS3Property(
+        assetNodeId: string,
+        bucket: string,
+        key: string,
+        propertyName: string,
+        description: string,
+        connectionURI: string,
+        propertyValue?: string,
+        propertyValueTimestamp?: string,
+    ) {
+        const newProperty = this.s3PropertyObject(
+            bucket,
+            key,
+            connectionURI,
+            propertyName,
+            description,
+            undefined,
+            propertyValue,
+            propertyValueTimestamp,
+        );
+        let ok = true;
+        try {
+            this.addProperty(newProperty);
+            await createS3PropertyQuery(newProperty);
             await addPropertyToAssetNodeQuery(assetNodeId, newProperty.id);
             // Property needs to be added to the asset node outside this function! (See create-new-node-property.svelte)
         } catch (error) {
