@@ -19,6 +19,7 @@
 
     import DisplayAbstractAssetProperty from "./display-abstract-asset-property.svelte";
     import DisplayStreamingProperty from "./display-streaming-property.svelte";
+    import DisplayS3Property from "./display-s3-property.svelte";
 
     const modalStore = getModalStore();
     const drawerStore = getDrawerStore();
@@ -31,6 +32,7 @@
 
     $: isAbstractAssetPropertiesClosed = true;
     $: isStreamingPropertiesClosed = true;
+    $: isS3PropertiesClosed = true;
 
     const settingsInfoDrawer: DrawerSettings = {
         id: "info-drawer-node",
@@ -59,6 +61,10 @@
 
     function toggleStreamingProperties() {
         isStreamingPropertiesClosed = !isStreamingPropertiesClosed;
+    }
+
+    function toggleS3Properties() {
+        isS3PropertiesClosed = !isS3PropertiesClosed;
     }
 
     function createNewAbstractAssetProperty() {
@@ -139,6 +145,30 @@
                         {#each properties as property}
                             {#if property.nodeType === 'StreamingProperty'}
                                 <DisplayStreamingProperty {property} streamingValue={property.propertyValue} streamingTimestamp={property.propertyValueTimestamp}/>
+                            {/if}
+                        {/each}
+                    {/if}
+                </div>
+                <div class="properties-box border variant-ghost-primary">
+                    <div class="properties-header">
+                        <div>S3 Properties</div>
+                        <div class="chevron">
+                            <button class="btn" on:click={handleAddPropertyToNode}>
+                                <PlusCircleIcon size="16" />
+                            </button>
+                            <button class="btn" on:click={toggleS3Properties}>
+                                {#if isS3PropertiesClosed}
+                                    <ChevronUpIcon size="16" />
+                                {:else}
+                                    <ChevronDownIcon size="16" />
+                                {/if}
+                            </button>
+                        </div>
+                    </div>
+                    {#if !isS3PropertiesClosed}
+                        {#each properties as property}
+                            {#if property.nodeType === 'S3ObjectProperty'}
+                                <DisplayS3Property {property} />
                             {/if}
                         {/each}
                     {/if}

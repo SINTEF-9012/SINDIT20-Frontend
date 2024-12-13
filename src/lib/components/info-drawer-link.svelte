@@ -30,8 +30,8 @@
     <main class="grid grid-cols-1 gap-4">
         {#each Object.entries(link) as [key, value]}
             <div class="flex flex-col gap-1">
-                <label>{key}</label>
-                <input type="text" value={value} />
+                <label for={key}>{key}</label>
+                <input type="text" id={key} value={value} />
             </div>
         {/each}
     </main>

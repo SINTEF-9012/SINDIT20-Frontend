@@ -1,12 +1,27 @@
 <script lang="ts">
     import type { Property } from '$lib/types';
+    import { propertyNodeTypes }  from '$lib/stores'
+    import { TrashIcon, FileIcon } from 'svelte-feather-icons';
 
     export let property: Property;
     export let propertyValue: any;
 
+    const propertyType = propertyNodeTypes.find((propertyType) => propertyType === property.nodeType);
+
 
     function handleAddPropertyToNode() {
+        // TODO: Implement this function
         console.log('handleAddPropertyToNode');
+    }
+
+    function handleClickProperty(property_id: string) {
+        // TODO: Implement this function
+        console.log('handleClickProperty', property_id);
+    }
+
+    function handleDeletePropertyFromNode(property_id: string) {
+        // TODO: Implement this function
+        console.log('handleDeletePropertyFromNode', property_id);
     }
 
     function formatPropertyValue(propertyValue: any): string {
@@ -33,9 +48,24 @@
 
 
 <div class="node-property variant-soft-primary gap-2">
-    <div>{property.propertyName}</div>
+    <button on:click={() => handleClickProperty(property.id)}>
+        {property.propertyName}
+    </button>
     <div class="node-prop-value gap-1">
-        <div>{formatPropertyValue(propertyValue)}</div>
+        {#if propertyType === 'AbstractAssetProperty'}
+            <div>{formatPropertyValue(propertyValue)}</div>
+        {:else if propertyType === 'StreamingProperty'}
+            <div>{formatPropertyValue(propertyValue)}</div>
+        {:else if propertyType === 'DatabaseProperty'}
+            <div>{formatPropertyValue(propertyValue)}</div>
+        {:else if propertyType === 'S3ObjectProperty'}
+            <div><FileIcon size=16/></div>
+        {/if}
+    </div>
+    <div class="trash-button-container">
+        <button class="trash-button btn text-red-500" on:click={() => handleDeletePropertyFromNode(property.id)}>
+            <TrashIcon size=16/>
+        </button>
     </div>
 </div>
 
@@ -48,11 +78,17 @@
 		border-radius: 5px;
 		padding: 5px;
 		margin: 5px;
-		overflow-x: hidden;
+        position: relative;
 	}
 	.node-prop-value {
 		display: flex;
 		flex-direction: row;
 		justify-content: right;
+        margin-right: 15px;
 	}
+    .trash-button-container {
+        position: absolute;
+        right: -25px;
+        top: -12px;
+    }
 </style>
