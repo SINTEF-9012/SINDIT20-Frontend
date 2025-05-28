@@ -2,8 +2,8 @@ import { env } from '$env/dynamic/public';
 import type { ConnectionType, AbstractAssetProperty, StreamingProperty, S3Property } from '$lib/types';
 import { getBackendUri } from '$lib/utils';
 
-const API_BASE_URL = env.PUBLIC_SINDIT_BACKEND_API
-const API_BASE_ENDPOINT = `${API_BASE_URL}/kg`
+const API_BASE_URL = '/api/proxy';
+const API_BASE_ENDPOINT = `${API_BASE_URL}?endpoint=kg`
 
 
 export async function getNodes() {

@@ -20,7 +20,7 @@
 	import { isBackendRunning, selectedWorkspace, isWorkspaceSelected } from '$lib/stores';
 	import { getNodes as getNodesBackendQuery } from '$apis/sindit-backend/kg';
 	import { addNodesToStates, getCurrentWorkspace, checkBackendRunningStatus } from '$lib/utils';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 
 	// Check if backend is running
@@ -78,15 +78,33 @@
 		addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
 	}
 
-	// Get current workspace if backend is running
-	$: if ($isBackendRunning) {
-		getCurrentWorkspace();
-	}
-
-	// Load workspace data if workspace is selected and backend is running
-	$: if ($isWorkspaceSelected && $isBackendRunning) {
-		loadWorkspaceData();
-	}
+	onMount(() => {
+		// React to backend running
+		const unsubBackend = isBackendRunning.subscribe((backendRunning) => {
+			if (backendRunning) {
+				getCurrentWorkspace();
+			}
+		});
+		// React to workspace selection and backend running
+		let lastWorkspaceSelected = false;
+		const unsubWorkspace = isWorkspaceSelected.subscribe((workspaceSelected) => {
+			if (workspaceSelected && $isBackendRunning) {
+				loadWorkspaceData();
+			}
+			lastWorkspaceSelected = workspaceSelected;
+		});
+		// Also react to backend running for workspace data
+		const unsubBackendForWorkspace = isBackendRunning.subscribe((backendRunning) => {
+			if (backendRunning && $isWorkspaceSelected) {
+				loadWorkspaceData();
+			}
+		});
+		return () => {
+			unsubBackend();
+			unsubWorkspace();
+			unsubBackendForWorkspace();
+		};
+	});
 
 	onDestroy(() => {
 		toastState.destroy();

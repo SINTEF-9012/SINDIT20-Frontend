@@ -1,5 +1,7 @@
 // Frontend specifics
 
+import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
+
 export type Workspace = {
 	name: string;
 	uri: string;
@@ -24,7 +26,7 @@ export type GLTFModel = {name: string, path: string};
 // Backend node types
 export type AssetNodeType = 'AbstractAsset';
 export type ConnectionNodeType = 'Connection';
-export type PropertyNodeType = 'Property' | 'AbstractAssetProperty' | 'DatabaseProperty' | 'StreamingProperty' | 'TimeseriesProperty' | 'S3ObjectProperty';
+export type PropertyNodeType = 'Property' | 'AbstractAssetProperty' | 'DatabaseProperty' | 'StreamingProperty' | 'TimeseriesProperty' | 'S3ObjectProperty' | 'PropertyCollection';
 export type AllBackendNodeTypes = AssetNodeType | ConnectionNodeType | PropertyNodeType;
 
 // Connection types
@@ -88,6 +90,11 @@ export interface S3ObjectProperty extends Property {
 	propertyConnection: NodeUri;
 	bucket: string;
 	key: string;
+}
+
+export interface PropertyCollection extends AbstractAssetProperty {
+	nodeType: 'PropertyCollection';
+	collectionProperties: Property[] | NodeUri[];
 }
 
 export interface Connection {

@@ -9,25 +9,28 @@
         propertyName: property.propertyName,
         description: property.description,
     };
+
+    // Use a unique suffix for IDs
+    const idSuffix = property.id ?? property.propertyName ?? Math.random().toString(36).slice(2, 10);
 </script>
 
 
 <div class="abstract-properties border variant-ghost-tertiary">
     <div class="prop">
-        <label for="name">PropetyName:</label>
-        <input type="input" id="name" bind:value={inputForm.propertyName} class="input text-white">
+        <label for={"name-" + idSuffix}>PropetyName:</label>
+        <input type="input" id={"name-" + idSuffix} bind:value={inputForm.propertyName} class="input text-white">
     </div>
     <div class="prop">
-        <label for="name">Description:</label>
-        <input type="input" id="description" bind:value={inputForm.description} class="input text-white">
+        <label for={"description-" + idSuffix}>Description:</label>
+        <input type="input" id={"description-" + idSuffix} bind:value={inputForm.description} class="input text-white">
     </div>
     <div class="prop">
-        <label for="name">Value:</label>
-        <input type="input" id="value" value={streamingValue} class="input text-white" disabled>
+        <label for={"value-" + idSuffix}>Value:</label>
+        <input type="input" id={"value-" + idSuffix} value={streamingValue} class="input text-white" disabled>
     </div>
     <div class="prop">
-        <label for="name">Time:</label>
-        <input type="input" id="value" value={streamingTimestamp} class="input text-white" disabled>
+        <label for={"time-" + idSuffix}>Time:</label>
+        <input type="input" id={"time-" + idSuffix} value={streamingTimestamp} class="input text-white" disabled>
     </div>
 </div>
 
