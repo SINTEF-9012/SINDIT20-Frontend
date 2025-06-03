@@ -24,7 +24,31 @@ async function getToken(username: string, password: string) {
 }
 
 async function proxyToBackend({ endpoint, method, token, body }: { endpoint: string, method: string, token: string, body?: any }) {
-    const url = `${API_BASE_URL}/${endpoint}`;
+    // Encode only parameter values in the query string, support multiple params, leave # as part of the value if present
+    let url = API_BASE_URL;
+    if (endpoint) {
+        const [endpointPath, endpointQuery] = endpoint.split('?', 2);
+        // Remove leading slash to avoid double slashes
+        const endpointClean = endpointPath.startsWith('/') ? endpointPath.slice(1) : endpointPath;
+        url += `/${endpointClean}`;
+        if (endpointQuery) {
+            // Support multiple params, encode only values, preserve keys and '='
+            const encodedQuery = endpointQuery
+                .split('&')
+                .map(pair => {
+                    const eqIdx = pair.indexOf('=');
+                    if (eqIdx === -1) {
+                        // No value, just encode key
+                        return encodeURIComponent(pair);
+                    }
+                    const key = pair.slice(0, eqIdx);
+                    const value = pair.slice(eqIdx + 1);
+                    return `${key}=${encodeURIComponent(value)}`;
+                })
+                .join('&');
+            url += `?${encodedQuery}`;
+        }
+    }
     const options: RequestInit = {
         method,
         headers: {
@@ -33,6 +57,8 @@ async function proxyToBackend({ endpoint, method, token, body }: { endpoint: str
         }
     };
     if (body) options.body = JSON.stringify(body);
+    console.log("endpoint:", endpoint);
+    console.log(`Proxying ${method} request to: ${url}`, body ? `with body: ${JSON.stringify(body)}` : '');
     return fetch(url, options);
 }
 
@@ -73,6 +99,7 @@ async function handleProxy({ request, cookies, url, method }: { request: Request
 }
 
 export async function GET({ request, cookies, url }) {
+    console.log("GET request to proxy endpoint:", url);
     return handleProxy({ request, cookies, url, method: 'GET' });
 }
 

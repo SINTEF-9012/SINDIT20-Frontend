@@ -73,8 +73,8 @@ export async function deleteNode(nodeId: string): Promise<Response> {
 }
 
 export async function getNodesByClass(nodeClass: string) {
-    const endpoint = 'nodes_by_class';
-    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_class=${nodeClass}`;
+    const endpoint = 'nodes_by_type';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?type_uri=${encodeURIComponent(nodeClass)}`;
     console.log("getNodesByClass GET:", url)
     const response = await fetch(url);
     if (!response.ok) {

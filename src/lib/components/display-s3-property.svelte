@@ -204,15 +204,15 @@
 <div class="s3-properties border variant-ghost-tertiary">
     <div class="prop">
         <label for={"name-" + idSuffix}>PropetyName:</label>
-        <input type="input" id={"name-" + idSuffix} bind:value={inputForm.propertyName} class="input text-white">
+        <input type="input" id={"name-" + idSuffix} name={"name-" + idSuffix} bind:value={inputForm.propertyName} class="input text-white">
     </div>
     <div class="prop">
         <label for={"description-" + idSuffix}>Description:</label>
-        <input type="input" id={"description-" + idSuffix} bind:value={inputForm.description} class="input text-white">
+        <input type="input" id={"description-" + idSuffix} name={"description-" + idSuffix} bind:value={inputForm.description} class="input text-white">
     </div>
     <div class="prop">
         <label for={"value-" + idSuffix}>Value:</label>
-        <input type="input" id={"value-" + idSuffix} bind:value={inputForm.propertyValue} readonly class="input text-white">
+        <input type="input" id={"value-" + idSuffix} name={"value-" + idSuffix} bind:value={inputForm.propertyValue} readonly class="input text-white">
     </div>
     <div class="s3-object">
         {#if isUploadValue}

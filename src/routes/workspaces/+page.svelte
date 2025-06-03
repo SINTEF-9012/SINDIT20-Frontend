@@ -62,6 +62,8 @@
         selectedWorkspace.set(_selectedWorkspace);
         // Delete all nodes in the current workspace
         nodesState.deleteAllNodes();
+        connectionsState.deleteAllConnections();
+        propertiesState.deleteAllProperties();
         // Get all nodes in the selected workspace and add them to the nodes state
         setTimeout(async () => {
             const nodes = await getNodesBackendQuery();
