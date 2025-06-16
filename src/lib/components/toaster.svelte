@@ -7,8 +7,8 @@
 	const toasts = toastState.toasts;
 </script>
 
-<div class="absolute right-2 top-2 flex flex-col gap-2 z-50">
-	{#each $toasts as toast}
+<div class="fixed right-6 top-28 flex flex-col gap-2 z-[90]">
+	{#each $toasts as toast (toast.id)}
 		<Toast {toast} />
 	{/each}
 </div>

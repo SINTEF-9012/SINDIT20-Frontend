@@ -4,13 +4,16 @@ import { env } from '$env/dynamic/public';
 const API_BASE_URL = '/api/proxy';
 const API_BASE_ENDPOINT = `${API_BASE_URL}?endpoint=ws`
 
-
 export async function getWorkspace(): Promise<{workspace_uri: string}> {
     const endpoint = 'get';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
     console.log("getCurrentWorkspace GET:", url)
     const response = await fetch(url);
     if (!response.ok) {
+        // Remove toast logic from here; handle in Svelte page/component
+        if (response.status === 401) {
+            throw new Error('NOT_AUTHENTICATED');
+        }
         throw new Error(`Error performing GET request ${url}`);
     }
     return response.json();
@@ -22,6 +25,10 @@ export async function listWorkspaces() {
     console.log("listWorkspaces GET:", url)
     const response = await fetch(url);
     if (!response.ok) {
+        // Remove toast logic from here; handle in Svelte page/component
+        if (response.status === 401) {
+            throw new Error('NOT_AUTHENTICATED');
+        }
         throw new Error(`Error performing GET request ${url}`);
     }
     return response.json();
@@ -39,8 +46,12 @@ export async function switchWorkspace(
         headers: {
             'Content-Type': 'application/json'
         },
-        });
+    });
     if (!response.ok) {
+        // Remove toast logic from here; handle in Svelte page/component
+        if (response.status === 401) {
+            throw new Error('NOT_AUTHENTICATED');
+        }
         throw new Error(`Error performing POST request ${url}`);
     }
     return response.json();

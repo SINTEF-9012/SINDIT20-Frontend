@@ -39,30 +39,36 @@
   }
 </script>
 
-<div class="three-page">
-  <div class="content-wrapper">
-  {#if showToolbox}
-    <div class="column toolbox bg-gray-300 border-gray-50">
-      <Toolbox {models} on:closeToolbox={handleCloseToolbox} />
+<div class="about-container mx-auto max-w-xl p-8 mt-8 bg-white/80 dark:bg-slate-900/80 rounded-2xl shadow text-primary-900 dark:text-primary-100">
+  <div class="three-page">
+    <div class="content-wrapper">
+    {#if showToolbox}
+      <div class="column toolbox bg-gray-300 border-gray-50">
+        <Toolbox {models} on:closeToolbox={handleCloseToolbox} />
+      </div>
+    {/if}
+    <div class="column threlte-canvas" class:full-width={!showToolbox}>
+      <Canvas>
+        <Scene selectedModel={$selected3DModel} />
+      </Canvas>
+    </div>
+    </div>
+  </div>
+
+  {#if !showToolbox}
+    <div class="toolbox-button">
+      <button class="btn variant-ghost-success" on:click={() => showToolbox = !showToolbox}>
+        Toolbox
+      </button>
     </div>
   {/if}
-  <div class="column threlte-canvas" class:full-width={!showToolbox}>
-    <Canvas>
-      <Scene selectedModel={$selected3DModel} />
-    </Canvas>
-  </div>
-  </div>
 </div>
 
-{#if !showToolbox}
-  <div class="toolbox-button">
-    <button class="btn variant-ghost-success" on:click={() => showToolbox = !showToolbox}>
-      Toolbox
-    </button>
-  </div>
-{/if}
-
 <style>
+  .about-container {
+    min-height: 60vh;
+    box-sizing: border-box;
+  }
   .three-page {
     position: relative;
     height: 100%;

@@ -128,12 +128,16 @@ export class Connections {
 		connectionType: ConnectionType
 	) {
 		const newNode = this.connectionNodeObject(nodeName, description, host, port, connectionType, false);
-        this.addConnection(newNode);
 		try {
 			await createConnectionNodeQuery(newNode.id, newNode.connectionName, newNode.description, host, port, connectionType);
-		} catch (error) {
+			this.addConnection(newNode);
+		} catch (error: any) {
 			this.deleteConnection(newNode.id);
-			this.toastState.add('Error creating Connection', error as string, 'error');
+			if (error instanceof Error && error.message === 'NOT_AUTHENTICATED') {
+				this.toastState.add('Authentication Required', 'You must sign in to create a connection.', 'error');
+			} else {
+				this.toastState.add('Error creating Connection', error?.message || String(error), 'error');
+			}
 		}
 	}
 }

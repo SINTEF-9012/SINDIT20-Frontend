@@ -5,9 +5,11 @@
     import { refreshConnections as refreshConnectionsQuery } from "$apis/sindit-backend/connection";
     import { getModalStore } from "@skeletonlabs/skeleton";
     import { RefreshCwIcon, CheckCircleIcon, XCircleIcon } from "svelte-feather-icons";
+    import { getToastState } from "$lib/components/states/toast-state.svelte";
 
     const modalStore = getModalStore();
     const connectionsState = getConnectionsState();
+    const toastState = getToastState();
 
     $: connections = connectionsState.connections;
     let searchQuery = '';
@@ -27,11 +29,21 @@
     }
 
 
-    function onRefreshConnections() {
-        refreshConnectionsQuery();
-        // Reload connections from backend into state
-        connectionsState.updateConnectionsFromBackend();
-        connections = connectionsState.connections;
+    async function onRefreshConnections() {
+        try {
+            await refreshConnectionsQuery();
+            // Reload connections from backend into state
+            connectionsState.updateConnectionsFromBackend();
+            connections = connectionsState.connections;
+            toastState.add('Connections Refreshed', 'Connections list has been refreshed.', 'success');
+        } catch (err) {
+            if (err instanceof Error && err.message === 'NOT_AUTHENTICATED') {
+                toastState.add('Authentication Required', 'You must sign in to refresh connections.', 'error');
+            } else {
+                toastState.add('Error', 'Failed to refresh connections.', 'error');
+            }
+            console.error('Error refreshing connections:', err);
+        }
     }
 
     function onCreateConnection() {
@@ -50,76 +62,52 @@
 
 </script>
 
-<header class="fixed-header w-full">
-    <h1 class="text-4xl">Connections</h1>
-    <div class="flex grid-flow-row columns-3 gap-2 pt-2 pb-2">
-        <input type="text" bind:value={searchQuery} placeholder="Search connections..." />
-        <button class="btn variant-ghost-primary"
-                title="Create new connection"
-                on:click={onCreateConnection}
-        >
-            Create new
-        </button>
-        <button class="btn variant-ghost-tertiary"
-            on:click={onRefreshConnections}
-            title="Refresh Connections"
-        >
-            <RefreshCwIcon size="24" />
-        </button>
+<div class="text-center space-y-8 max-w-2xl mx-auto py-16 w-full">
+    <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 bg-clip-text text-transparent mb-8">Connections</h1>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+      <input type="text" id="connection-search" name="connection-search" bind:value={searchQuery} placeholder="Search connections..." class="input flex-1 min-w-0" />
+      <button class="btn variant-ghost-primary text-primary-800 dark:text-primary-100" title="Create new connection" on:click={onCreateConnection}>Create new</button>
+      <button class="btn variant-ghost-tertiary text-primary-800 dark:text-primary-100" on:click={onRefreshConnections} title="Refresh Connections">
+        <RefreshCwIcon size="24" />
+      </button>
     </div>
-</header>
-<main class="grid-container">
-    {#each $connections as connection}
-        <div class="card variant-ghost-tertiary">
-            <div class="card-content columns-1 gap-1">
-                <div class="card-title">
-                    <h2>{connection.connectionName}</h2>
-                </div>
-                <div class="card-field">
-                    <p>{connection.description}</p>
-                    <p>Host: {connection.host}</p>
-                    <p>Port: {connection.port}</p>
-                    <p>Type: {connection.connectionType}</p>
-                    <div class="flex flex-row items-center justify-between">
-                        <p>isConnected:</p>
-                        {#if connection.isConnected}
-                            <CheckCircleIcon size="16" class="text-green-500"/>
-                        {:else}
-                            <XCircleIcon size="16" class="text-red-500"/>
-                        {/if}
-                    </div>
-                </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {#each filteredConnections as connection}
+        <div class="card flex flex-col h-full p-4 rounded-xl shadow border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100">
+          <div class="card-content flex-1">
+            <div class="card-title mb-2">
+              <h2 class="text-lg font-semibold truncate">{connection.connectionName}</h2>
             </div>
-            <div class="card-footer flex-row">
-                <button class="btn btn-sm variant-ghost-error" on:click={(event) => handleDeleteConnection(event, connection)}>Delete</button>
-                <button class="btn btn-sm variant-ghost-success" disabled>Update</button>
+            <div class="card-field text-sm">
+              <p>{connection.description}</p>
+              <p>Host: {connection.host}</p>
+              <p>Port: {connection.port}</p>
+              <p>Type: {connection.connectionType}</p>
+              <div class="flex flex-row items-center justify-between mt-2">
+                <span>isConnected:</span>
+                {#if connection.isConnected}
+                  <CheckCircleIcon size="16" class="text-green-500"/>
+                {:else}
+                  <XCircleIcon size="16" class="text-red-500"/>
+                {/if}
+              </div>
             </div>
+          </div>
+          <div class="card-footer flex flex-row gap-2 mt-4">
+            <button class="btn btn-sm variant-ghost-error" on:click={(event) => handleDeleteConnection(event, connection)}>Delete</button>
+            <button class="btn btn-sm variant-ghost-success" disabled>Update</button>
+          </div>
         </div>
-    {/each}
-</main>
-
+      {/each}
+    </div>
+</div>
 
 <style>
-    .grid-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 16px; /* Adjust the gap between cards as needed */
-    }
-
-    .card {
-      width: 250px; /* Fixed width for the cards */
-      padding: 16px; /* Example padding */
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      height: 100%;
-    }
-    .card-content {
-        flex-grow: 1;
-    }
-    .card-footer {
-        margin-top: 8px;
-        padding: 0;
-    }
-  </style>
+.input {
+  border-radius: 0.5rem;
+  color: #1e293b;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 0.5rem 1rem;
+}
+</style>

@@ -13,7 +13,7 @@
 	import { JSONEditor } from 'svelte-jsoneditor'
 	import { modeCurrent } from '@skeletonlabs/skeleton';
 	import { backendNodesData } from '$lib/stores'
-
+	import ToolboxSidebar from './ToolboxSidebar.svelte';
 
 	const drawerStore = getDrawerStore();
 	const modalStore = getModalStore();
@@ -238,13 +238,20 @@
 	}
 
 	function updateNodePositions(): void {
-
 		let nodes = $abstractAssetNodes.map((node) => ({ ...node }));
 		const links = $links.map((link) => ({ ...link }));
-		nodes = applyRepulsion(nodes);
+		
+		// Apply repulsion with type preservation
+		const updatedNodes = applyRepulsion(nodes);
+		// Preserve the nodeType property when updating
+		const typedNodes = updatedNodes.map(node => ({
+			...node,
+			nodeType: 'AbstractAsset' as const,
+		}));
+		
 		// nodes = applySping(nodes, links); // Uncomment this line to enable spring force
 
-		$abstractAssetNodes = [...nodes]; // trigger reactivity of nodes
+		$abstractAssetNodes = [...typedNodes]; // trigger reactivity of nodes
 		$links = [...links]; // trigger reactivity of links
 	}
 
@@ -281,9 +288,15 @@
     function handleMouseDownEditorResize(event: MouseEvent) {
         isResizing = true;
         startX = event.clientX;
-        editorWidth = document.querySelector('.json-editor').clientWidth;
-        canvasWidth = document.querySelector('.canvas-container').offsetWidth;
-        pageWidth = document.querySelector('.container').clientWidth;
+        const editorEl = document.querySelector('.json-editor') as HTMLElement;
+        const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
+        const pageEl = document.querySelector('.container') as HTMLElement;
+        
+        if (editorEl && canvasEl && pageEl) {
+            editorWidth = editorEl.clientWidth;
+            canvasWidth = canvasEl.offsetWidth;
+            pageWidth = pageEl.clientWidth;
+        }
     }
 
     function handleMouseMoveEditorResize(event: MouseEvent) {
@@ -291,24 +304,41 @@
         const dx = event.clientX - startX;
         const canvasNewWidth = canvasWidth + dx;
         const editorNewWidth = pageWidth - canvasNewWidth;
-        document.querySelector('.canvas-container').style.width = `${canvasNewWidth}px`;
-        document.querySelector('.json-editor').style.width = `${editorNewWidth}px`;
-
+        
+        const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
+        const editorEl = document.querySelector('.json-editor') as HTMLElement;
+        
+        if (canvasEl && editorEl) {
+            canvasEl.style.width = `${canvasNewWidth}px`;
+            editorEl.style.width = `${editorNewWidth}px`;
+        }
     }
 
     function handleMouseUpEditorResize() {
         isResizing = false;
-        editorWidth = document.querySelector('.json-editor').clientWidth;
-        canvasWidth = document.querySelector('.canvas-container').offsetWidth;
+        const editorEl = document.querySelector('.json-editor') as HTMLElement;
+        const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
+        
+        if (editorEl && canvasEl) {
+            editorWidth = editorEl.clientWidth;
+            canvasWidth = canvasEl.offsetWidth;
+        }
     }
 
     function toggleJSONEditor() {
         showJSONEditor = !showJSONEditor;
         if (!showJSONEditor) {
-            document.querySelector('.canvas-container').style.width = '100%';
+            const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
+            if (canvasEl) {
+                canvasEl.style.width = '100%';
+            }
         }
     }
 
+	let showToolbox = true;
+	function toggleToolbox() {
+		showToolbox = !showToolbox;
+	}
 
 	let interval: NodeJS.Timeout;
 	onMount(() => {
@@ -326,16 +356,16 @@
 		const centerX = canvas.width / 2;
 		const centerY = canvas.height / 2;
 
-		// Nodes component
-		const canvasContent = canvasRef.querySelector('.canvas-content');
-		if (canvasContent) {
-			const nodeRect = canvasContent.getBoundingClientRect();
-			context?.drawImage(
-				canvasContent,
-				centerX - nodeRect.width / 2,
-				centerY - nodeRect.height / 2
-			);
-		}
+		// Nodes component - Skip drawing canvas content as it contains DOM elements
+		// const canvasContent = canvasRef.querySelector('.canvas-content');
+		// if (canvasContent) {
+		// 	const nodeRect = canvasContent.getBoundingClientRect();
+		// 	context?.drawImage(
+		// 		canvasContent,
+		// 		centerX - nodeRect.width / 2,
+		// 		centerY - nodeRect.height / 2
+		// 	);
+		// }
 
 		canvas.addEventListener('mousedown', handleMouseDown);
 		window.addEventListener('mouseup', handleMouseUp);
@@ -361,102 +391,306 @@
 </script>
 
 <div class="canvas-page">
-	<div class="toolbox-button-container flex-none">
-		<button class="toolbox-button border border-black variant-glass-primary" on:click={openToolbox}>
-			<svg class="toolbox-icon" style="transform: rotate(90deg);" viewBox="0 0 24 24">
-				<path d="M12 2L2 22h20L12 2zm-2 16h4v-2h-4v2zm0-4h4v-2h-4v2zm0-4h4V8h-4v2z" fill="currentColor"/>
-			</svg>
-		</button>
-	</div>
-    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-    <div class="container" on:mouseup={handleMouseUpEditorResize} on:mousemove={handleMouseMoveEditorResize} role="application">
-		<div class="canvas-container">
-			<canvas class="canvas" bind:this={canvasRef} on:wheel={handleMouseWheel}></canvas>
-			<div class="canvas-content" bind:this={canvasContent}>
-				{#each $abstractAssetNodes as node (node.id)}
-					<Node
-						{node}
-						{zoomLevel}
-					/>
-				{/each}
-				{#each $links as link (link.id)}
-					<Link
-						{link}
-						{zoomLevel}
-					/>
-				{/each}
-			</div>
-		</div>
-		{#if showJSONEditor}
-			<button class="resizer" on:mousedown={handleMouseDownEditorResize} aria-label="resizer"></button>
-			<div class="json-editor {darkMode}">
-				<JSONEditor bind:content mode="text" />
-			</div>
-		{/if}
-	</div>
+    <!-- Toolbox Sidebar Toggle Button -->
+    <button class="toolbox-toggle-btn absolute top-4 left-4 z-30 bg-primary-600 text-white rounded-full shadow-lg p-2 hover:bg-primary-700 transition-all" on:click={toggleToolbox} aria-label={showToolbox ? 'Hide toolbox' : 'Show toolbox'}>
+        {#if showToolbox}
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        {:else}
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12h16"/></svg>
+        {/if}
+    </button>
+    <div class="canvas-layout h-full w-full flex flex-row min-h-0 max-h-full">
+        {#if showToolbox}
+            <div class="toolbox-sidebar-container flex-shrink-0 h-full min-h-0 flex flex-col">
+                <ToolboxSidebar />
+            </div>
+        {/if}
+        <div class="main-columns flex-1 h-full min-h-0 flex flex-row gap-0 max-h-full">
+            <div class="canvas-scroll flex-1 h-full min-h-0 overflow-y-auto max-h-full flex flex-col">
+                <div class="canvas-container h-full min-h-0 relative flex-1">
+                    <canvas class="canvas" bind:this={canvasRef} on:wheel={handleMouseWheel}></canvas>
+                    <div class="canvas-content" bind:this={canvasContent}>
+                        {#each $abstractAssetNodes as node (node.id)}
+                            <Node
+                                {node}
+                                {zoomLevel}
+                            />
+                        {/each}
+                        {#each $links as link (link.id)}
+                            <Link
+                                {link}
+                                {zoomLevel}
+                            />
+                        {/each}
+                    </div>
+                </div>
+            </div>
+            {#if showJSONEditor}
+                <div class="json-editor-scroll flex-shrink-0 h-full min-h-0 overflow-y-auto max-h-full flex flex-col">
+                    <div class="json-editor-container {darkMode} h-full min-h-0 flex flex-col">
+                        <div class="json-editor-header">
+                            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300">Data Inspector</h3>
+                            <button 
+                                class="close-btn" 
+                                on:click={toggleJSONEditor}
+                                aria-label="Close editor"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="json-editor {darkMode} flex-1 min-h-0">
+                            <JSONEditor bind:content mode={'text'} />
+                        </div>
+                    </div>
+                </div>
+            {/if}
+        </div>
+    </div>
 </div>
-
 
 <style>
     @import 'svelte-jsoneditor/themes/jse-theme-dark.css';
+    
     .canvas-page {
-        position: fixed;
+        position: relative;
         display: flex;
         width: 100%;
-        height: calc(100% - 4rem - 20px);
-        margin-top: 10px;
+        height: 100vh;
+        min-height: 0;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+        max-height: 100vh;
     }
+    .canvas-layout {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        max-height: 100vh;
+    }
+    .toolbox-sidebar-container {
+        height: 100%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        background: none;
+        z-index: 20;
+        max-height: 100%;
+        overflow-y: auto;
+    }
+    .main-columns {
+        display: flex;
+        flex-direction: row;
+        flex: 1 1 0%;
+        height: 100%;
+        min-height: 0;
+        max-height: 100vh;
+        gap: 0;
+    }
+    .canvas-scroll {
+        flex: 1 1 0%;
+        height: 100%;
+        min-height: 0;
+        max-height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+    .json-editor-scroll {
+        width: 380px;
+        min-width: 300px;
+        max-width: 480px;
+        height: 100%;
+        min-height: 0;
+        max-height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+    .json-editor-container {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .toolbox-toggle-btn {
+        position: absolute;
+        left: 1rem;
+        top: 1rem;
+        z-index: 30;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     .container {
         display: flex;
-        height: 90vh;
-        width: calc(100% - 10px);
         height: 100%;
-        min-width: 50%;
-        max-width: calc(100% - 10px);
-        margin-right: 2.5rem;
+        min-height: 0;
+        width: 100%;
+        gap: 0;
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        max-height: 100vh;
     }
-	.canvas-container {
-		position: relative;
-		overflow: hidden;
-		width: 100%;
-		height: 100%;
-		border: 1px solid white;
-	}
+    
+    .canvas-container {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+        border-radius: 1rem 0 0 1rem;
+    }
+    
+    .resizer-container {
+        display: flex;
+        align-items: center;
+        width: 8px;
+        background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+    }
+    
     .resizer {
-        width: 5px;
+        width: 100%;
+        height: 60px;
         cursor: col-resize;
-        background-color: gray;
+        background: transparent;
+        border: none;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
     }
-	.json-editor {
-        border: 1px solid white;
+    
+    .resizer:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .resizer-handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .resizer-dots {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        align-items: center;
+    }
+    
+    .dot {
+        width: 4px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+    
+    .resizer:hover .dot {
+        background: rgba(255, 255, 255, 0.9);
+        transform: scale(1.2);
+    }
+    
+    .json-editor-container {
         width: 380px;
-        min-width: 380px;
+        min-width: 300px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 0 1rem 1rem 0;
+        display: flex;
+        flex-direction: column;
+        border-left: 1px solid rgba(255, 255, 255, 0.3);
     }
-	.canvas {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		left: 0;
-		z-index: 0;
-	}
-	.canvas-content {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		z-index: 0;
-	}
-	.toolbox-button-container {
-		display: flex;
-		align-items: stretch;
-		width: 10px;
-	}
-	.toolbox-button {
-		right: 0;
-		width: 10px;
-		height: 100%;
-		padding: 0;
-		box-sizing: border-box;
-		max-width: 10px;
-	}
+    
+    .json-editor-container.jse-theme-dark {
+        background: rgba(30, 41, 59, 0.95);
+        color: white;
+    }
+    
+    .json-editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    }
+    
+    .close-btn {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+    
+    .close-btn:hover {
+        background: rgba(248, 113, 113, 0.1);
+        color: #ef4444;
+    }
+    
+    .json-editor {
+        flex: 1;
+        min-height: 0;
+        background: transparent;
+    }
+    
+    .canvas {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: 0;
+        border-radius: 1rem 0 0 1rem;
+    }
+    
+    .canvas-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: 1;
+    }
+    
+    .toolbox-button-container {
+        display: flex;
+        align-items: stretch;
+        width: 50px;
+        z-index: 10;
+    }
+    
+    .toolbox-button {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        box-sizing: border-box;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .toolbox-icon {
+        width: 24px;
+        height: 24px;
+    }
 </style>

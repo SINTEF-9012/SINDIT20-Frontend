@@ -16,6 +16,8 @@
         border: "border-gray-50",
         bgDrawer: "bg-gray-300",
         shadow: "shadow-lg",
+        regionDrawer: 'z-[60]',
+        regionBackdrop: 'z-[55]',
     };
 
     drawerStore.open(settingsInfoDrawer);

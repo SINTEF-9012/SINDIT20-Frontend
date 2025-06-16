@@ -68,8 +68,8 @@ async function handleProxy({ request, cookies, url, method }: { request: Request
 
     let token = cookies.get('api_token');
     // Use provided env for username/password if not in cookies
-    const username = cookies.get('session_username') || API_USERNAME;
-    const password = cookies.get('session_password') || API_PASSWORD;
+    const username = cookies.get('session_username');
+    const password = cookies.get('session_password');
     if (!username || !password) return json({ error: 'Not authenticated' }, { status: 401 });
 
     let body = undefined;
@@ -98,13 +98,38 @@ async function handleProxy({ request, cookies, url, method }: { request: Request
     return json(data, { status: backendRes.status });
 }
 
+// Add a login endpoint for storing username/password in session cookies and generating a token
+export async function POST({ request, cookies, url }) {
+    if (url.searchParams.get('endpoint') === 'login') {
+        // Handle login: store username and password in secure cookies
+        const { username, password } = await request.json();
+        if (!username || !password) {
+            return json({ error: 'Username and password required' }, { status: 400 });
+        }
+        // Try to get a token to verify credentials
+        try {
+            const token = await getToken(username, password);
+            cookies.set('session_username', username, { httpOnly: true, secure: true, sameSite: 'strict', path: '/' });
+            cookies.set('session_password', password, { httpOnly: true, secure: true, sameSite: 'strict', path: '/' });
+            cookies.set('api_token', token, { httpOnly: true, secure: true, sameSite: 'strict', path: '/' });
+            return json({ success: true, access_token: token });
+        } catch (e) {
+            return json({ error: 'Invalid username or password' }, { status: 401 });
+        }
+    }
+    if (url.searchParams.get('endpoint') === 'logout') {
+        // Clear all auth/session cookies
+        cookies.set('session_username', '', { httpOnly: true, secure: true, sameSite: 'strict', path: '/', maxAge: 0 });
+        cookies.set('session_password', '', { httpOnly: true, secure: true, sameSite: 'strict', path: '/', maxAge: 0 });
+        cookies.set('api_token', '', { httpOnly: true, secure: true, sameSite: 'strict', path: '/', maxAge: 0 });
+        return json({ success: true });
+    }
+    return handleProxy({ request, cookies, url, method: 'POST' });
+}
+
 export async function GET({ request, cookies, url }) {
     console.log("GET request to proxy endpoint:", url);
     return handleProxy({ request, cookies, url, method: 'GET' });
-}
-
-export async function POST({ request, cookies, url }) {
-    return handleProxy({ request, cookies, url, method: 'POST' });
 }
 
 export async function PUT({ request, cookies, url }) {
