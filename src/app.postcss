@@ -7,3 +7,27 @@ html,
 body {
 	@apply h-full overflow-hidden;
 }
+
+/* Fix z-index for Skeleton UI Drawer to appear above header */
+:global(.drawer) {
+	z-index: 60 !important;
+}
+
+/* Ensure drawer backdrop also has proper z-index */
+:global(.drawer-backdrop) {
+	z-index: 55 !important;
+}
+
+/* Alternative class names for Skeleton UI drawer */
+:global([data-testid="drawer"]) {
+	z-index: 60 !important;
+}
+
+/* Target Skeleton UI specific drawer classes */
+:global(.drawer-overlay) {
+	z-index: 55 !important;
+}
+
+:global(.drawer-container) {
+	z-index: 60 !important;
+}

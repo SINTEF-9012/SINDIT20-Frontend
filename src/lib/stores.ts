@@ -17,7 +17,7 @@ export const isWorkspaceSelected = writable(false);
 // node types
 export const assetNodeTypes: AssetNodeType[] = ['AbstractAsset'];
 export const connectionNodeTypes: ConnectionNodeType[] = ['Connection'];
-export const propertyNodeTypes: PropertyNodeType[] = ['AbstractAssetProperty', 'DatabaseProperty', 'StreamingProperty', 'TimeseriesProperty', 'S3ObjectProperty'];
+export const propertyNodeTypes: PropertyNodeType[] = ['AbstractAssetProperty', 'DatabaseProperty', 'StreamingProperty', 'TimeseriesProperty', 'S3ObjectProperty', 'PropertyCollection'];
 export const nodeClasses = {
     'AbstractAsset': 'urn:samm:sindit.sintef.no:1.0.0#AbstractAsset',
     'Connection': 'urn:samm:sindit.sintef.no:1.0.0#Connection',

@@ -7,9 +7,9 @@ import path from 'path';
 export default defineConfig({
 	plugins: [sveltekit(), purgeCss(), svelteTesting()],
 	server: {
-		host: 'localhost',
+		host: '0.0.0.0',  // Allow external connections
 		strictPort: true,
-		port: 5173
+		port: 3000  // Change to your preferred port
 	},
 	resolve: {
 		alias: {

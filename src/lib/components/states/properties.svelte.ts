@@ -284,14 +284,18 @@ export class Properties {
             propertyName = node.label;
         }
         if (class_type === 'AbstractAssetProperty') {
-            this.addAbstractAssetProperty(node.uri, propertyName, node.description, node.propertyDataType.uri, node.propertyUnit.uri, node.propertyValue, node.propertyValueTimestamp);
+            this.addAbstractAssetProperty(node.uri, propertyName, node.description, node.propertyDataType?.uri, node.propertyUnit?.uri, node.propertyValue, node.propertyValueTimestamp);
         } else if (class_type === 'StreamingProperty') {
             // console.log("addPropertyNode", node)
             this.addStreamingProperty(node.uri, node.streamingTopic, node.streamingPath, propertyName, node.propertyDescription, node.propertyDataType?.uri, node.propertyUnit?.uri, node.propertyConnection.uri, node.propertyValue, node.propertyValueTimestamp);
         } else if ( class_type === 'S3ObjectProperty' ) {
             console.log(node);
             this.addS3Property(node.uri, node.bucket, node.key, propertyName, node.description, node.propertyConnection.uri, node.propertyValue, node.propertyValueTimestamp);
-        } else {
+        }
+        else if(class_type === 'PropertyCollection') {
+            console.log("PropertyCollection is not supported in this context");
+        }
+        else {
             throw new Error(`Invalid property node type '${class_type}'`);
         }
     }

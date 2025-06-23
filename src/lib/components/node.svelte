@@ -137,18 +137,13 @@
 	on:dblclick={() => dblclick()}
 	tabindex="0"
 	role="button"
-	class="node border border-primary-500 border-1 {nodeSelectedBackground}"
+	class="node {nodeSelectedBackground}"
 	style="transform: translate({node.position.x - nodeSize / 2}px, {node.position.y - nodeSize / 2}px); width: {nodeSize}px; height: {nodeSize}px;"
 >
 	{#if nodeSize >= threshold}
 		<div class="grid-cols-1 gap-1">
 			<div class="text-center">
-				<span class="text-white" style="font-size: {fontSizeTitle}">{node.nodeName}</span>
-			</div>
-			<div class="text-center">
-				<span class="text-gray-400" style="font-size: {fontSizeDescription}"
-					>{node.description}</span
-				>
+				<span class="text-gray-700 font-medium" style="font-size: {fontSizeTitle}">{node.nodeName}</span>
 			</div>
 		</div>
 	{/if}
@@ -191,8 +186,20 @@
 		max-width: 500px;
 		overflow-x: visible;
 		text-wrap: nowrap;
-		border-radius: 50%; /* make it a circle */
 		z-index: 2;
+		border-radius: 50%;
+		background-color: rgb(229, 231, 235);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	}
+
+	.node.variant-ghost-secondary {
+		background-color: #0ea5e9;
+		color: rgb(82, 82, 82);
+	}
+
+	.node.variant-ghost-primary {
+		background-color: #7dd3fc;
+		color: rgb(82, 82, 82);
 	}
 	.node-info {
 		position: absolute;
@@ -216,11 +223,12 @@
 		max-height: 200px;
 		overflow-y: scroll;
 	}
+s
 	.add-node-property {
 		display: flex;
 		flex-direction: row;
 		justify-content: left;
-        align-items: center;
+		align-items: center;
 		border-radius: 5px;
 		padding: 5px;
 		margin: 5px;

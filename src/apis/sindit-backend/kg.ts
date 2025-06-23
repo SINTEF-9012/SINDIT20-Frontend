@@ -2,15 +2,17 @@ import { env } from '$env/dynamic/public';
 import type { ConnectionType, AbstractAssetProperty, StreamingProperty, S3Property } from '$lib/types';
 import { getBackendUri } from '$lib/utils';
 
-const API_BASE_URL = env.PUBLIC_SINDIT_BACKEND_API
-const API_BASE_ENDPOINT = `${API_BASE_URL}/kg`
-
+const API_BASE_URL = '/api/proxy';
+const API_BASE_ENDPOINT = `${API_BASE_URL}?endpoint=kg`
 
 export async function getNodes() {
     const endpoint = 'nodes';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
     console.log("getNodes GET:", url)
     const response = await fetch(url);
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -25,6 +27,9 @@ export async function getNode(
     const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}&depth=${depth}`;
     console.log("getNode GET:", url)
     const response = await fetch(url);
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -49,6 +54,9 @@ export async function updateNode(node: any, overwrite: boolean = true) {
         },
         body: JSON.stringify(node)
     });
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -66,6 +74,9 @@ export async function deleteNode(nodeId: string): Promise<Response> {
             'Content-Type': 'application/json'
         }
     });
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error(`Error performing DELETE request ${response.statusText}`);
     }
@@ -73,10 +84,13 @@ export async function deleteNode(nodeId: string): Promise<Response> {
 }
 
 export async function getNodesByClass(nodeClass: string) {
-    const endpoint = 'nodes_by_class';
-    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_class=${nodeClass}`;
+    const endpoint = 'nodes_by_type';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?type_uri=${encodeURIComponent(nodeClass)}`;
     console.log("getNodesByClass GET:", url)
     const response = await fetch(url);
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -103,6 +117,9 @@ export async function createAbstractNode(
         },
         body: JSON.stringify(data)
     });
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -130,6 +147,9 @@ export async function addPropertyToAssetNode(
         },
         body: JSON.stringify(asset)
     });
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -180,6 +200,9 @@ export async function createAbstractPropertyNode(
     },
         body: JSON.stringify(data)
     });
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -230,6 +253,9 @@ export async function createStreamingPropertyNode(
     },
         body: JSON.stringify(data)
     });
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -264,6 +290,9 @@ export async function createS3PropertyNode(
     },
         body: JSON.stringify(data)
     });
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -293,6 +322,9 @@ export async function createConnectionNode(
     },
         body: JSON.stringify(data)
     });
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error('Error performing POST request');
     }
@@ -314,6 +346,12 @@ export async function streamData(
             'Content-Type': 'application/json'
         }
     });
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
+    if (!response.ok) {
+        throw new Error(`Error performing GET request ${url}`);
+    }
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
 
@@ -341,11 +379,15 @@ export async function streamDataReader(
             'Content-Type': 'application/json'
         }
     });
+    if (response.status === 401) {
+        throw new Error('NOT_AUTHENTICATED');
+    }
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
     if (!response.body) {
         throw new Error('Response body is empty');
     }
-    return response.body.getReader();
+    const reader = response.body.getReader();
+    return reader;
 }

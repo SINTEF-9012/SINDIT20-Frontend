@@ -18,18 +18,18 @@ export class Connections {
     }
 
 	destroy() {
-        // this.deleteAllConnections();
-		this.connections.set([]);
+        this.deleteAllConnections();
+		//this.connections.set([]);
     }
 
-    private connectionNodeObject(
+	private connectionNodeObject(
 		connectionName: string,
 		description: string,
 		host: string,
 		port: number,
 		connectionType: ConnectionType,
 		isConnected: boolean,
-		id?: string
+		id?: string | null
 	): Connection {
 		if (!id) {
 			id = crypto.randomUUID();
@@ -57,6 +57,10 @@ export class Connections {
 
     deleteConnection(id: string) {
         this.connections.update((connections) => connections.filter((node) => node.id !== id));
+    }
+
+    deleteAllConnections() {
+        this.connections.set([]);
     }
 
 	addConnection<T extends Connection>(
@@ -96,7 +100,7 @@ export class Connections {
 	}
 
 	addConnectionNode(
-		id: string,
+		id: string | null,
 		connectionName: string,
 		description: string,
 		host: string,
@@ -104,6 +108,12 @@ export class Connections {
 		connectionType: ConnectionType,
 		isConnected: boolean
 	) {
+		if (id) {
+			const existingConnection = this.getConnection(id);
+			if (existingConnection) {
+				return existingConnection;
+			}
+		}
 		const newConnection = this.connectionNodeObject(connectionName, description, host, port, connectionType, isConnected, id);
 		this.addConnection(newConnection);
 		return newConnection;
@@ -118,12 +128,16 @@ export class Connections {
 		connectionType: ConnectionType
 	) {
 		const newNode = this.connectionNodeObject(nodeName, description, host, port, connectionType, false);
-        this.addConnection(newNode);
 		try {
 			await createConnectionNodeQuery(newNode.id, newNode.connectionName, newNode.description, host, port, connectionType);
-		} catch (error) {
+			this.addConnection(newNode);
+		} catch (error: any) {
 			this.deleteConnection(newNode.id);
-			this.toastState.add('Error creating Connection', error as string, 'error');
+			if (error instanceof Error && error.message === 'NOT_AUTHENTICATED') {
+				this.toastState.add('Authentication Required', 'You must sign in to create a connection.', 'error');
+			} else {
+				this.toastState.add('Error creating Connection', error?.message || String(error), 'error');
+			}
 		}
 	}
 }
