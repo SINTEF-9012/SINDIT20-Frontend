@@ -240,7 +240,7 @@
 	function updateNodePositions(): void {
 		let nodes = $abstractAssetNodes.map((node) => ({ ...node }));
 		const links = $links.map((link) => ({ ...link }));
-		
+
 		// Apply repulsion with type preservation
 		const updatedNodes = applyRepulsion(nodes);
 		// Preserve the nodeType property when updating
@@ -248,7 +248,7 @@
 			...node,
 			nodeType: 'AbstractAsset' as const,
 		}));
-		
+
 		// nodes = applySping(nodes, links); // Uncomment this line to enable spring force
 
 		$abstractAssetNodes = [...typedNodes]; // trigger reactivity of nodes
@@ -279,7 +279,7 @@
 
 		// Apply the transform with current pan and zoom
 		canvasContent.style.transform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`;
-		
+
 		initialMousePosition = { x: event.clientX, y: event.clientY };
 
 		const canvas = canvasRef;
@@ -290,13 +290,13 @@
 	function resetCanvasView(): void {
 		// Reset zoom level
 		zoomLevel = 1;
-		
+
 		// Reset pan offset
 		panOffset = { x: 0, y: 0 };
-		
+
 		// Apply the reset transform
 		canvasContent.style.transform = `translate(0px, 0px) scale(1)`;
-		
+
 		// Clear canvas
 		const canvas = canvasRef;
 		const context = canvas.getContext('2d');
@@ -309,7 +309,7 @@
         const editorEl = document.querySelector('.json-editor') as HTMLElement;
         const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
         const pageEl = document.querySelector('.container') as HTMLElement;
-        
+
         if (editorEl && canvasEl && pageEl) {
             editorWidth = editorEl.clientWidth;
             canvasWidth = canvasEl.offsetWidth;
@@ -322,10 +322,10 @@
         const dx = event.clientX - startX;
         const canvasNewWidth = canvasWidth + dx;
         const editorNewWidth = pageWidth - canvasNewWidth;
-        
+
         const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
         const editorEl = document.querySelector('.json-editor') as HTMLElement;
-        
+
         if (canvasEl && editorEl) {
             canvasEl.style.width = `${canvasNewWidth}px`;
             editorEl.style.width = `${editorNewWidth}px`;
@@ -336,7 +336,7 @@
         isResizing = false;
         const editorEl = document.querySelector('.json-editor') as HTMLElement;
         const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
-        
+
         if (editorEl && canvasEl) {
             editorWidth = editorEl.clientWidth;
             canvasWidth = canvasEl.offsetWidth;
@@ -355,7 +355,7 @@
 
 	let showToolbox = true;
 	let isToolboxCollapsed = false;
-	
+
 	function toggleToolbox() {
 		showToolbox = !showToolbox;
 	}

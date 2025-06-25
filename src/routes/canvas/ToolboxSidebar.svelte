@@ -1,9 +1,9 @@
 <script lang="ts">
-import { 
-    PlusCircleIcon, 
-    LinkIcon, 
-    GitBranchIcon, 
-    ChevronRightIcon, 
+import {
+    PlusCircleIcon,
+    LinkIcon,
+    GitBranchIcon,
+    ChevronRightIcon,
     SearchIcon,
     DatabaseIcon,
     ActivityIcon
@@ -47,15 +47,15 @@ $: totalLinks = $links.length;
 $: selectedNodesCount = selectedNodeIds.length;
 
 // Search functionality
-$: filteredNodes = $abstractAssetNodes.filter(node => 
-    !searchTerm || 
+$: filteredNodes = $abstractAssetNodes.filter(node =>
+    !searchTerm ||
     (node.nodeName && node.nodeName.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (node.id && node.id.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (node.nodeType && node.nodeType.toLowerCase().includes(searchTerm.toLowerCase()))
 );
 
-$: filteredLinks = $links.filter(link => 
-    !searchTerm || 
+$: filteredLinks = $links.filter(link =>
+    !searchTerm ||
     (link.linkDescription && link.linkDescription.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (link.id && link.id.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (link.sourceNodeId && link.sourceNodeId.toLowerCase().includes(searchTerm.toLowerCase())) ||
