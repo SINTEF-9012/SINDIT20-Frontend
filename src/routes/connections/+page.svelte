@@ -80,19 +80,19 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
             </div>
-            <input 
-              type="text" 
-              id="connection-search" 
-              name="connection-search" 
-              bind:value={searchQuery} 
-              placeholder="Search connections..." 
+            <input
+              type="text"
+              id="connection-search"
+              name="connection-search"
+              bind:value={searchQuery}
+              placeholder="Search connections..."
               class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
             />
           </div>
-          
+
           <!-- Action Buttons -->
           <div class="flex gap-3 w-full sm:w-auto">
-            <button 
+            <button
               class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex-1 sm:flex-none justify-center"
               on:click={onCreateConnection}
               title="Create new connection"
@@ -102,7 +102,7 @@
               </svg>
               Create New
             </button>
-            <button 
+            <button
               class="flex items-center gap-2 px-6 py-3 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex-1 sm:flex-none justify-center"
               on:click={onRefreshConnections}
               title="Refresh Connections"
@@ -132,7 +132,7 @@
               {searchQuery ? 'Try adjusting your search terms.' : 'Create your first data connection to get started.'}
             </p>
             {#if !searchQuery}
-              <button 
+              <button
                 class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 on:click={onCreateConnection}
               >
@@ -162,7 +162,7 @@
                     </p>
                   </div>
                 </div>
-                
+
                 <!-- Status Indicator -->
                 <div class="flex items-center gap-2">
                   {#if connection.isConnected}
@@ -204,13 +204,13 @@
 
               <!-- Action Buttons -->
               <div class="flex gap-2">
-                <button 
+                <button
                   class="flex-1 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 font-medium rounded-lg transition-all duration-200 text-sm"
                   on:click={(event) => handleDeleteConnection(event, connection)}
                 >
                   Delete
                 </button>
-                <button 
+                <button
                   class="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 font-medium rounded-lg cursor-not-allowed text-sm"
                   disabled
                 >

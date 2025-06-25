@@ -111,7 +111,6 @@
 
 	async function createNewProperty(propertyNodeType: PropertyNodeType, assetNodeId: string, propertyNode: any) {
 		// Only invoke on first form submit
-		console.log("onFormSubmit createNewProperty", propertyNode);
 		const property_uri = await propertiesState.createProperty(propertyNodeType, assetNodeId, propertyNode);
 
 		if (!property_uri) {

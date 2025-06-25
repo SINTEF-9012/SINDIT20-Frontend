@@ -87,8 +87,15 @@
 	};
 
 	async function loadWorkspaceData() {
-		const nodes = await getNodesBackendQuery();
-		addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
+		console.log('loadWorkspaceData called');
+		try {
+			const nodes = await getNodesBackendQuery();
+			console.log('Nodes received from backend:', nodes);
+			addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
+			console.log('Nodes added to states');
+		} catch (error) {
+			console.error('Error loading workspace data:', error);
+		}
 	}
 
 	onMount(() => {
@@ -101,14 +108,18 @@
 		// React to workspace selection and backend running
 		let lastWorkspaceSelected = false;
 		const unsubWorkspace = isWorkspaceSelected.subscribe((workspaceSelected) => {
+			console.log('Workspace selection changed:', workspaceSelected, 'Backend running:', $isBackendRunning, 'Authenticated:', $isAuthenticated);
 			if (workspaceSelected && $isBackendRunning && $isAuthenticated) {
+				console.log('Calling loadWorkspaceData from workspace subscription');
 				loadWorkspaceData();
 			}
 			lastWorkspaceSelected = workspaceSelected;
 		});
 		// Also react to backend running for workspace data
 		const unsubBackendForWorkspace = isBackendRunning.subscribe((backendRunning) => {
+			console.log('Backend status changed:', backendRunning, 'Workspace selected:', $isWorkspaceSelected, 'Authenticated:', $isAuthenticated);
 			if (backendRunning && $isWorkspaceSelected && $isAuthenticated) {
+				console.log('Calling loadWorkspaceData from backend subscription');
 				loadWorkspaceData();
 			}
 		});
@@ -233,9 +244,9 @@
 			</div>
 			{#if $isAuthenticated}
 				<button class="focus:outline-none" aria-label="Account" on:click={() => showLogoutModal = true}>
-					<Avatar 
-						initials={($authUser && $authUser.email ? $authUser.email[0].toUpperCase() : 'U')} 
-						background="bg-gradient-to-r from-gray-600 to-gray-800 text-white" 
+					<Avatar
+						initials={($authUser && $authUser.email ? $authUser.email[0].toUpperCase() : 'U')}
+						background="bg-gradient-to-r from-gray-600 to-gray-800 text-white"
 						border="border border-gray-200 dark:border-slate-700"
 						rounded="rounded-full"
 						width="w-8"
@@ -244,9 +255,9 @@
 				</button>
 			{:else}
 				<button class="focus:outline-none" aria-label="Sign in" on:click={() => showSignInModal = true}>
-					<Avatar 
-						initials="U" 
-						background="bg-gradient-to-r from-gray-600 to-gray-800 text-white" 
+					<Avatar
+						initials="U"
+						background="bg-gradient-to-r from-gray-600 to-gray-800 text-white"
 						border="border border-gray-200 dark:border-slate-700"
 						rounded="rounded-full"
 						width="w-8"
@@ -262,7 +273,7 @@
   	<main class="flex-1 min-h-0 flex flex-col overflow-hidden">
   		<slot />
 	</main>
-	
+
 
 	<!-- Footer with workspace and backend status -->
 	<footer class="shrink-0 w-full flex items-center justify-between px-8 py-4 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
@@ -270,7 +281,7 @@
 			{#if $selectedWorkspace}
 				<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
 					<BriefcaseIcon class="w-4 h-4" />
-					<button 
+					<button
 						on:click={() => goto('/canvas')}
 						class="font-medium hover:underline transition-all duration-200"
 					>

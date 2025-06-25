@@ -25,7 +25,6 @@
 
 	$: isBaseFormValid = false;
 	$: isFormValid = false;
-	$: console.log("isFormValid", isFormValid);
 
 	// Form Data - to be submitted
 	$: abstractAsset = {

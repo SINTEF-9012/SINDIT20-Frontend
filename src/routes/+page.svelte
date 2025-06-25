@@ -28,14 +28,14 @@
     <!-- Hero Section -->
     <section class="px-8 py-16 md:py-24">
       <div class="max-w-6xl mx-auto text-center">
-        <img 
-          src="/logo/sindit_logo_with_slogan-removebg.png" 
-          alt="Sindit Logo with Slogan" 
-          class="mx-auto mb-8 max-h-32 md:max-h-40 w-auto drop-shadow-xl" 
+        <img
+          src="/logo/sindit_logo_with_slogan-removebg.png"
+          alt="Sindit Logo with Slogan"
+          class="mx-auto mb-8 max-h-32 md:max-h-40 w-auto drop-shadow-xl"
         />
         <h1 class="text-3xl md:text-6xl font-bold bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-500 bg-clip-text text-transparent mb-6 tracking-tight">
           Visual Knowledge Graphs for Industry 4.0
-          <span class="block text-3xl md:text-5xl mt-2">for Modern Industry</span>
+          <!-- <span class="block text-3xl md:text-5xl mt-2">for Modern Industry</span> -->
         </h1>
         <p class="text-xl md:text-2xl text-gray-700 dark:text-gray-200 leading-relaxed max-w-3xl mx-auto mb-8">
           Build, explore, and connect your industrial data visually with semantic web technologies.

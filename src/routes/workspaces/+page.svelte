@@ -170,19 +170,19 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
             </div>
-            <input 
-              type="text" 
-              id="workspace-search" 
-              name="workspace-search" 
-              bind:value={searchQuery} 
-              placeholder="Search workspaces..." 
+            <input
+              type="text"
+              id="workspace-search"
+              name="workspace-search"
+              bind:value={searchQuery}
+              placeholder="Search workspaces..."
               class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             />
           </div>
-          
+
           <!-- Action Buttons -->
           <div class="flex gap-3 w-full sm:w-auto">
-            <button 
+            <button
               class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex-1 sm:flex-none justify-center"
               on:click={onCreateWorkspace}
             >
@@ -191,7 +191,7 @@
               </svg>
               Create New
             </button>
-            <button 
+            <button
               class="flex items-center gap-2 px-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 font-medium rounded-xl transition-all duration-200 cursor-not-allowed flex-1 sm:flex-none justify-center"
               disabled
             >
@@ -223,7 +223,7 @@
               {searchQuery ? 'Try adjusting your search terms.' : 'Create your first workspace to get started.'}
             </p>
             {#if !searchQuery}
-              <button 
+              <button
                 class="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 on:click={onCreateWorkspace}
               >
@@ -276,5 +276,3 @@
     </div>
   </div>
 </div>
-
-

@@ -1,4 +1,5 @@
 <script lang="ts">
+import type { VisualizableNode } from '$lib/types';
 import {
     PlusCircleIcon,
     LinkIcon,
@@ -40,19 +41,37 @@ let showAllLinks = false;
 let selectedNodeIds: string[] = [];
 
 // Reactive data
-$: abstractAssetNodes = nodesState.assets;
+$: visualizableNodes = nodesState.visualizableNodes;
+$: abstractAssetNodes = nodesState.assets; // Keep for backward compatibility
 $: links = linksState.links;
-$: totalNodes = $abstractAssetNodes.length;
+$: totalNodes = $visualizableNodes.length;
 $: totalLinks = $links.length;
 $: selectedNodesCount = selectedNodeIds.length;
 
 // Search functionality
-$: filteredNodes = $abstractAssetNodes.filter(node =>
+$: filteredNodes = $visualizableNodes.filter(node =>
     !searchTerm ||
-    (node.nodeName && node.nodeName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (getNodeDisplayName(node) && getNodeDisplayName(node).toLowerCase().includes(searchTerm.toLowerCase())) ||
     (node.id && node.id.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (node.nodeType && node.nodeType.toLowerCase().includes(searchTerm.toLowerCase()))
 );
+
+function getNodeDisplayName(node: VisualizableNode) {
+    switch (node.nodeType) {
+        case 'AbstractAsset':
+            return node.nodeName;
+        case 'StreamingProperty':
+            return node.propertyName;
+        case 'SINDITKG':
+            return node.label;
+        case 'S3ObjectProperty':
+            return node.propertyName;
+        case 'PropertyCollection':
+            return node.propertyName;
+    }
+    // TypeScript exhaustiveness check - this should never be reached
+    return (node as any).id || 'Unknown Node';
+}
 
 $: filteredLinks = $links.filter(link =>
     !searchTerm ||
@@ -190,7 +209,7 @@ function enterConnectionCreationMode() {
                                             <DatabaseIcon size="14" />
                                         </div>
                                         <div class="browse-details">
-                                            <span class="browse-name">{node.nodeName || node.id}</span>
+                                            <span class="browse-name">{getNodeDisplayName(node)}</span>
                                             <span class="browse-type">{node.nodeType || 'Node'}</span>
                                         </div>
                                     </button>

@@ -1,6 +1,6 @@
 import { env } from '$env/dynamic/public';
 import type {
-    Workspace, AllBackendNodeTypes, AssetNodeType, ConnectionNodeType, PropertyNodeType
+    Workspace, AllBackendNodeTypes, AssetNodeType, ConnectionNodeType, PropertyNodeType, KGNodeType
 } from '$lib/types';
 import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 import { getPropertiesState } from '$lib/components/states/properties.svelte';
@@ -10,6 +10,7 @@ import {
     assetNodeTypes,
     connectionNodeTypes,
     propertyNodeTypes,
+    kgNodeTypes,
     selectedWorkspace,
     isWorkspaceSelected,
     backendNodesData,
@@ -39,6 +40,14 @@ export function getBackendUri(nodeId: string): string {
 export function getNodeIdFromBackendUri(uri: string): string {
     // Get the node ID from a backend URI. Backend URI is the base URI + the node ID
     checkAPIBaseUri();
+
+    // Handle full ontology URIs (like http://sindit.sintef.no/2.0#humidity)
+    if (uri.startsWith('http://') && !uri.startsWith(API_BASE_URI)) {
+        // Remove the http:// protocol for ontology URIs
+        return uri.replace('http://', '');
+    }
+
+    // Handle backend API URIs
     return uri.split(API_BASE_URI)[1] as string;
 }
 
@@ -54,19 +63,45 @@ export function addNodesToStates(
     connectionsState: ReturnType<typeof getConnectionsState>
 ) {
     // TODO: make this function more reliable
+    console.log('addNodesToStates called with nodes:', nodes);
     backendNodesData.set(nodes);
-    nodes.forEach(node => {
+    nodes.forEach((node: any) => {
         const class_uri = node.class_uri;
         const uri = getNodeIdFromBackendUri(node.uri);
         const class_type = getNodeClassTypeFromBackendClassUri(class_uri);
+
+        console.log(`Processing node: ${node.label} (${class_type}) with ID: ${uri}`);
+
         if (assetNodeTypes.includes(class_type as AssetNodeType)) {
+            console.log(`Adding AbstractAsset node: ${uri}`);
             nodesState.addAbstractAssetNode(uri, node.label, node.assetDescription, node.assetProperties);
         } else if (connectionNodeTypes.includes(class_type as ConnectionNodeType)) {
+            // Skip Connection nodes - we don't visualize them
+            console.log(`Adding Connection node: ${uri} (not visualized)`);
             connectionsState.addConnectionNode(uri, node.label, node.connectionDescription, node.host, node.port, node.type, node.isConnected);
         } else if (propertyNodeTypes.includes(class_type as PropertyNodeType)) {
-            propertiesState.addPropertyNode(class_type as PropertyNodeType, node)
+            // Handle StreamingProperty as a visualizable node
+            if (class_type === 'StreamingProperty') {
+                console.log(`Adding StreamingProperty node: ${uri}`);
+                nodesState.addStreamingPropertyNode(
+                    uri,
+                    node.propertyName || node.label,
+                    node.propertyDescription || node.description || '',
+                    node.streamingTopic,
+                    node.streamingPath,
+                    node.propertyConnection,
+                    node.propertyDataType,
+                    node.propertyUnit,
+                    node.propertyValue,
+                    node.propertyValueTimestamp
+                );
+            }
+            // Also add to properties state for compatibility
+            propertiesState.addPropertyNode(class_type as PropertyNodeType, node);
+        } else if (class_type === 'SINDITKG') {
+            nodesState.addSINDITKGNode(uri, node.label, node.uri, node.assets);
         } else {
-            throw new Error(`Unknown node type ${class_type}`);
+            console.warn(`Unknown node type ${class_type}`);
         }
     });
 }
@@ -105,7 +140,6 @@ export async function updateBackendNodesData(node2update: any) {
                 return node;
             }
         });
-        //console.log("Updated nodes:", updatedNodes);
         return updatedNodes;
     });
 }

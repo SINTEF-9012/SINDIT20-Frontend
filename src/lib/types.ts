@@ -1,6 +1,6 @@
 // Frontend specifics
 
-import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
+
 
 export type Workspace = {
 	name: string;
@@ -27,7 +27,8 @@ export type GLTFModel = {name: string, path: string};
 export type AssetNodeType = 'AbstractAsset';
 export type ConnectionNodeType = 'Connection';
 export type PropertyNodeType = 'Property' | 'AbstractAssetProperty' | 'DatabaseProperty' | 'StreamingProperty' | 'TimeseriesProperty' | 'S3ObjectProperty' | 'PropertyCollection';
-export type AllBackendNodeTypes = AssetNodeType | ConnectionNodeType | PropertyNodeType;
+export type KGNodeType = 'SINDITKG';
+export type AllBackendNodeTypes = AssetNodeType | ConnectionNodeType | PropertyNodeType | KGNodeType;
 
 // Connection types
 export type ConnectionType = 'MQTT' | 'InfluxDB' | 'S3';
@@ -65,6 +66,7 @@ export interface Property {
 	propertyValue?: string;
 	propertyValueTimestamp?: string;
 	propertyConnection?: NodeUri;
+	position?: Position; // Add position for visualization
 }
 
 export interface AbstractAssetProperty extends Property {
@@ -83,6 +85,7 @@ export interface StreamingProperty extends Property {
 	streamingTopic: string;
   	streamingPath: string;
 	propertyConnection: NodeUri;
+	position?: Position; // Add position for visualization
 }
 
 export interface S3ObjectProperty extends Property {
@@ -90,12 +93,26 @@ export interface S3ObjectProperty extends Property {
 	propertyConnection: NodeUri;
 	bucket: string;
 	key: string;
+	position?: Position; // Add position for visualization
 }
 
-export interface PropertyCollection extends AbstractAssetProperty {
+export interface PropertyCollection extends Property {
 	nodeType: 'PropertyCollection';
 	collectionProperties: Property[] | NodeUri[];
+	position?: Position; // Add position for visualization
 }
+
+export interface SINDITKG {
+	id: string;
+	uri: string;
+	label: string;
+	assets?: NodeUri[];
+	nodeType: 'SINDITKG';
+	position?: Position; // Add position for visualization
+}
+
+// Union type for all visualizable nodes (excludes Connection)
+export type VisualizableNode = AbstractAsset | StreamingProperty | S3ObjectProperty | PropertyCollection | SINDITKG;
 
 export interface Connection {
 	id: string;
