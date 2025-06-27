@@ -307,15 +307,15 @@
 
 <!-- Sign-in Modal -->
 {#if showSignInModal && !$isAuthenticated}
-  <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in" on:click={() => showSignInModal = false}>
-    <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 w-96 max-w-full flex flex-col gap-5 relative" on:click|stopPropagation>
+  <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in" role="button" tabindex="0" on:click={() => showSignInModal = false} on:keydown={(e) => e.key === 'Escape' && (showSignInModal = false)}>
+    <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 w-96 max-w-full flex flex-col gap-5 relative" role="dialog">
       <button class="absolute top-4 right-4 text-slate-500 hover:text-red-500" on:click={() => showSignInModal = false} aria-label="Close">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
       <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-200 mb-2">Sign In</h2>
       <form on:submit|preventDefault={handleSignInSubmit} class="flex flex-col gap-4">
         <label for="sign-in-username" class="text-sm font-medium text-blue-900 dark:text-blue-100">Username or Email</label>
-        <input id="sign-in-username" name="username" class="input" type="text" placeholder="Username or email" bind:value={signInEmail} required autocomplete="username email" />
+        <input id="sign-in-username" name="username" class="input" type="text" placeholder="Username or email" bind:value={signInEmail} required autocomplete="username" />
         <label for="sign-in-password" class="text-sm font-medium text-blue-900 dark:text-blue-100">Password</label>
         <input id="sign-in-password" name="password" class="input" type="password" placeholder="Password" bind:value={signInPassword} required autocomplete="current-password" />
         {#if signInError || $authError}
@@ -359,8 +359,8 @@
 
 <!-- Logout Modal -->
 {#if showLogoutModal && $isAuthenticated}
-  <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in" on:click={() => showLogoutModal = false}>
-    <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 w-80 max-w-full flex flex-col gap-5 relative" on:click|stopPropagation>
+  <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in" role="button" tabindex="0" on:click={() => showLogoutModal = false} on:keydown={(e) => e.key === 'Escape' && (showLogoutModal = false)}>
+    <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 w-80 max-w-full flex flex-col gap-5 relative" role="dialog">
       <button class="absolute top-4 right-4 text-slate-500 hover:text-red-500" on:click={() => showLogoutModal = false} aria-label="Close">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
