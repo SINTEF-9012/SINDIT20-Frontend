@@ -57,7 +57,7 @@
 
 	let linksState = getLinksState();
 	$: explicitLinks = linksState.links;
-	
+
 	// Make implicit links reactive to visualizable nodes changes
 	$: implicitLinks = $visualizableNodes.length > 0 ? nodesState.generateImplicitLinks() : [];
 	$: allLinks = [...$explicitLinks, ...implicitLinks];
@@ -235,17 +235,17 @@
 
 		// Apply the transform with current pan and zoom
 		canvasContent.style.transform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`;
-		
+
 		initialMousePosition = { x: event.clientX, y: event.clientY };
 
 		const canvas = canvasRef;
 		const context = canvas.getContext('2d');
 		context?.clearRect(0, 0, canvas.width, canvas.height);
 	}
-	
+
 	// Function to fit graph to view - declared here so it's accessible to button click handlers
 	let fitGraphToView = () => {};
-	
+
 	// Function to release all pinned nodes - declared here to be accessible to button click handlers
 	let releaseAllPinnedNodes = () => {};
 
@@ -255,7 +255,7 @@
         const editorEl = document.querySelector('.json-editor') as HTMLElement;
         const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
         const pageEl = document.querySelector('.container') as HTMLElement;
-        
+
         if (editorEl && canvasEl && pageEl) {
             editorWidth = editorEl.clientWidth;
             canvasWidth = canvasEl.offsetWidth;
@@ -268,10 +268,10 @@
         const dx = event.clientX - startX;
         const canvasNewWidth = canvasWidth + dx;
         const editorNewWidth = pageWidth - canvasNewWidth;
-        
+
         const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
         const editorEl = document.querySelector('.json-editor') as HTMLElement;
-        
+
         if (canvasEl && editorEl) {
             canvasEl.style.width = `${canvasNewWidth}px`;
             editorEl.style.width = `${editorNewWidth}px`;
@@ -282,7 +282,7 @@
         isResizing = false;
         const editorEl = document.querySelector('.json-editor') as HTMLElement;
         const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
-        
+
         if (editorEl && canvasEl) {
             editorWidth = editorEl.clientWidth;
             canvasWidth = canvasEl.offsetWidth;
@@ -301,7 +301,7 @@
 
 	let showToolbox = true;
 	let isToolboxCollapsed = false;
-	
+
 	function toggleToolbox() {
 		showToolbox = !showToolbox;
 	}
@@ -352,7 +352,7 @@
 				.attr('width', '100%')
 				.attr('height', '100%')
 				.attr('class', 'd3-force-graph');
-				
+
 			// Add tooltip container for node and link interactions
 			const tooltip = d3.select(svgContainer)
 				.append('div')
@@ -379,16 +379,16 @@
 			.scaleExtent([0.1, 4]) // Allow zooming between 10% and 400%
 			.on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
 				g.attr('transform', event.transform.toString());
-				
+
 				// Update zoom level for display
 				zoomLevel = event.transform.k;
 			})
 			.filter(event => {
 				// Allow zoom with wheel, and pan with mouse drag
 				// Also allow touch events
-				return !event.ctrlKey && 
-					(event.type === 'wheel' || 
-					event.type === 'mousedown' || 
+				return !event.ctrlKey &&
+					(event.type === 'wheel' ||
+					event.type === 'mousedown' ||
 					event.type.startsWith('touch'));
 			});
 
@@ -398,7 +398,7 @@
 		// Create force simulation with optimized parameters
 		const containerWidth = svg.node()?.clientWidth || 1000;
 		const containerHeight = svg.node()?.clientHeight || 800;
-		
+
 		// Create force simulation with stable parameters
 		simulation = d3.forceSimulation<D3Node>()
 			.force('link', d3.forceLink<D3Node, D3Link>()
@@ -407,17 +407,17 @@
 					// Dynamic distance based on node types
 					const source = d.source as D3Node;
 					const target = d.target as D3Node;
-					
+
 					// KG nodes should have more space
 					if (source.type === 'kg' || target.type === 'kg') {
 						return 400;
 					}
-					
+
 					// Asset nodes should have medium space
 					if (source.type === 'asset' || target.type === 'asset') {
 						return 320;
 					}
-					
+
 					// Default for other node types
 					return 280;
 				})
@@ -448,7 +448,7 @@
 			.force('x', d3.forceX(d => {
 				// Use different target points based on node type to encourage better distribution
 				if (d.type === 'kg') return (containerWidth / 2) + 20;
-				if (d.type === 'asset') return (containerWidth / 2) + 10; 
+				if (d.type === 'asset') return (containerWidth / 2) + 10;
 				return (containerWidth / 2) - 10;
 			}).strength(0.03)) // Weaker x-positioning force
 			.force('y', d3.forceY(d => {
@@ -468,10 +468,10 @@
 			// First ensure all nodes have valid positions
 			nodesState.ensureNodePositions();
 			console.log(`Updating graph with ${$visualizableNodes.length} nodes and ${allLinks.length} links`);
-			
+
 			// Log diagnostic information
 			nodesState.logNodePositions();
-			
+
 			// Remove all existing nodes and links
 			g.selectAll('.link').remove();
 			g.selectAll('.node').remove();
@@ -483,21 +483,21 @@
 					console.warn(`Missing position for node ${node.id}, generating random position`);
 					node.position = { x: Math.random() * 800 + 100, y: Math.random() * 600 + 100 };
 				}
-				
+
 				return {
 					id: node.id,
-					name: node.nodeType === 'AbstractAsset' ? node.nodeName : 
-						node.nodeType === 'SINDITKG' ? node.label : 
+					name: node.nodeType === 'AbstractAsset' ? node.nodeName :
+						node.nodeType === 'SINDITKG' ? node.label :
 						node.nodeType === 'StreamingProperty' ? node.propertyName : 'Unknown',
-					type: node.nodeType === 'AbstractAsset' ? 'asset' : 
-						node.nodeType === 'SINDITKG' ? 'kg' : 
+					type: node.nodeType === 'AbstractAsset' ? 'asset' :
+						node.nodeType === 'SINDITKG' ? 'kg' :
 						node.nodeType === 'StreamingProperty' ? 'property' : 'unknown',
 					position: node.position,
 					x: node.position.x,
 					y: node.position.y,
 					isPinned: !!node.fx || !!node.fy, // Track if node was previously pinned
-					description: node.nodeType === 'AbstractAsset' ? node.description : 
-						node.nodeType === 'StreamingProperty' ? node.description : 
+					description: node.nodeType === 'AbstractAsset' ? node.description :
+						node.nodeType === 'StreamingProperty' ? node.description :
 						node.nodeType === 'SINDITKG' ? `Knowledge Graph - ${node.uri}` : 'No description'
 				};
 			});
@@ -516,7 +516,7 @@
 				.enter()
 				.append('g')
 				.attr('class', 'link');
-				
+
 			// Add wider transparent line first (for easier hovering)
 			linkElements.append('line')
 				.attr('class', 'link-hover-area')
@@ -529,7 +529,7 @@
 				.attr('stroke', (d: D3Link) => {
 					// Enhanced color scheme for links based on weight
 					if (d.weight >= 4) return '#3498db'; // Strong links - blue
-					if (d.weight >= 3) return '#2ecc71'; // Medium links - green  
+					if (d.weight >= 3) return '#2ecc71'; // Medium links - green
 					if (d.weight >= 2) return '#e67e22'; // Low-medium links - orange
 					return '#95a5a680'; // Weak links - semi-transparent gray
 				})
@@ -537,7 +537,7 @@
 				.attr('stroke-width', (d: D3Link) => Math.max(Math.sqrt(d.weight) * 1.2, 1.8))
 				.attr('stroke-dasharray', (d: D3Link) => {
 					// Different dash patterns based on weight
-					if (d.weight < 2) return '3,3'; 
+					if (d.weight < 2) return '3,3';
 					if (d.weight < 3) return '5,2';
 					return 'none';
 				})
@@ -545,17 +545,17 @@
 					// Show tooltip with link information
 					if (isStable) {
 						// Get the source and target nodes for display
-						const source = typeof d.source === 'string' ? 
-							nodes.find(n => n.id === d.source) : 
+						const source = typeof d.source === 'string' ?
+							nodes.find(n => n.id === d.source) :
 							d.source as D3Node;
-						const target = typeof d.target === 'string' ? 
-							nodes.find(n => n.id === d.target) : 
+						const target = typeof d.target === 'string' ?
+							nodes.find(n => n.id === d.target) :
 							d.target as D3Node;
-							
+
 						// Calculate position - midpoint of the link
 						const x = event.offsetX;
 						const y = event.offsetY;
-						
+
 						// Show tooltip with link information
 						tooltip
 							.style('left', `${x + 10}px`)
@@ -573,7 +573,7 @@
 							.transition()
 							.duration(200)
 							.style('opacity', 0.95);
-							
+
 						// Highlight the link
 						d3.select(event.target as Element)
 							.transition()
@@ -588,7 +588,7 @@
 						.transition()
 						.duration(200)
 						.style('opacity', 0);
-						
+
 					// Return to normal appearance
 					d3.select(event.target as Element)
 						.transition()
@@ -634,10 +634,10 @@
 				.on('click', (event: MouseEvent, d: D3Node) => {
 					// Handle node selection
 					event.stopPropagation();
-					
+
 					// Check if node is already selected
 					const nodeIndex = selectedNodesIds.indexOf(d.id);
-					
+
 					if (event.ctrlKey || event.metaKey) {
 						// Multi-select mode
 						if (nodeIndex === -1) {
@@ -675,12 +675,12 @@
 							.transition()
 							.duration(200)
 							.style('opacity', 0.95);
-							
+
 						// Use static CSS classes instead of D3 transitions to prevent movement
 						d3.select(event.target as Element)
 							.select('.node-circle')
 							.classed('node-hover', true);
-							
+
 						// Highlight connected nodes and links
 						highlightConnections(d.id);
 					}
@@ -691,26 +691,26 @@
 						.transition()
 						.duration(200)
 						.style('opacity', 0);
-						
+
 					// Return to normal appearance using class removal
 					d3.select(event.target as Element)
 						.select('.node-circle')
 						.classed('node-hover', false);
-						
+
 					// Remove highlighting
 					resetHighlighting();
 				})
 				// Double-click to pin/unpin nodes
 				.on('dblclick', (event: MouseEvent, d: D3Node) => {
 					event.stopPropagation(); // Prevent canvas double-click
-					
+
 					// Toggle pinned state
 					if (d.fx !== null && d.fy !== null) {
 						// If pinned, unpin
 						d.fx = null;
 						d.fy = null;
 						d.isPinned = false;
-						
+
 						// Update appearance to show unpinned state
 						d3.select(event.target as Element)
 							.select('.pin-indicator')
@@ -720,7 +720,7 @@
 						d.fx = d.x;
 						d.fy = d.y;
 						d.isPinned = true;
-						
+
 						// Update appearance to show pinned state
 						d3.select(event.target as Element)
 							.append('text')
@@ -733,7 +733,7 @@
 							.attr('opacity', 0.8)
 							.attr('filter', 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))');
 					}
-					
+
 					// Update node in store to persist pin state
 					if (d.x !== undefined && d.y !== undefined) {
 						const nodeUpdate = {
@@ -742,7 +742,7 @@
 							fx: d.fx,
 							fy: d.fy
 						};
-						
+
 						// Update store position
 						nodesState.updateNodePosition(d.id, nodeUpdate);
 					}
@@ -766,7 +766,7 @@
 				.attr('stroke', '#ffffff') // Simple white border
 				.attr('stroke-width', (d: D3Node) => selectedNodesIds.includes(d.id) ? 3 : 1.5)
 				.attr('stroke-opacity', 0.6);
-				
+
 			// Add pin indicator for pinned nodes
 			nodeElements.filter((d: D3Node) => d.isPinned)
 				.append('text')
@@ -775,7 +775,7 @@
 				.attr('dy', -15) // Position above the node
 				.attr('font-size', '14px')
 				.text('📌');
-				
+
 			// Add text labels for nodes
 			nodeElements.append('text')
 				.attr('text-anchor', 'middle')
@@ -793,7 +793,7 @@
 
 			// Update simulation with new nodes and links
 			simulation.nodes(nodes);
-          
+
 			// Configure the link force with the current links
 			simulation.force<d3.ForceLink<D3Node, D3Link>>('link')
 				?.links(links);
@@ -805,15 +805,15 @@
 			lastPositions.clear();
 			lastAlpha = 1;
 			lastUpdateTime = Date.now();
-			
+
 			// Start simulation with moderate alpha for quicker stabilization
 			simulation.alpha(0.6).restart();
-			
+
 			// Define the tick function to update positions on each simulation step
 			function ticked() {
 				const currentAlpha = simulation.alpha();
 				const currentTime = Date.now();
-				
+
 				// Check for simulation stability using multiple criteria
 				if (!isStable) {
 					// Alpha-based stability check (simulation energy is decreasing)
@@ -822,18 +822,18 @@
 					} else {
 						stableFrameCount = 0;
 					}
-					
+
 					// Position-based stability check (nodes aren't moving much)
 					let allNodesStable = true;
-					
+
 					// Check if positions have stabilized
 					if (nodes.length > 0) {
 						for (const node of nodes) {
 							if (node.x === undefined || node.y === undefined) continue;
-							
+
 							const lastPos = lastPositions.get(node.id);
 							if (lastPos) {
-								if (Math.abs(lastPos.x - node.x) > POSITION_CHANGE_THRESHOLD || 
+								if (Math.abs(lastPos.x - node.x) > POSITION_CHANGE_THRESHOLD ||
 									Math.abs(lastPos.y - node.y) > POSITION_CHANGE_THRESHOLD) {
 									allNodesStable = false;
 									break;
@@ -841,41 +841,41 @@
 							} else {
 								allNodesStable = false;
 							}
-							
+
 							// Update last known position
 							lastPositions.set(node.id, { x: node.x, y: node.y });
 						}
 					} else {
 						allNodesStable = false;
 					}
-					
+
 					if (allNodesStable) {
 						positionStabilityCount++;
 					} else {
 						positionStabilityCount = 0;
 					}
-					
+
 					// Let the simulation run for longer to ensure nodes are visible before stabilizing
 					// Only check for stability if we have some nodes to display
-					if (nodes.length > 0 && 
-					   (stableFrameCount > MAX_STABLE_FRAMES || 
-					    positionStabilityCount > MAX_STABLE_FRAMES / 2 || 
+					if (nodes.length > 0 &&
+					   (stableFrameCount > MAX_STABLE_FRAMES ||
+					    positionStabilityCount > MAX_STABLE_FRAMES / 2 ||
 						currentAlpha <= simulation.alphaMin())) {
-						
+
 						// Before considering the layout stable, ensure nodes have reasonable positions
 						let allNodesVisible = true;
 						for (const node of nodes) {
 							// Check if any node has invalid or default coordinates
 							if (node.x === undefined || node.y === undefined ||
 								isNaN(node.x) || isNaN(node.y)) {
-								
+
 								allNodesVisible = false;
 								console.warn(`Node ${node.id} has invalid position: x=${node.x}, y=${node.y}`);
 								node.x = Math.random() * 800 + 100;
 								node.y = Math.random() * 600 + 100;
 							}
 						}
-						
+
 						if (allNodesVisible) {
 							isStable = true;
 							console.log("Graph layout stabilized", {
@@ -884,15 +884,15 @@
 								alpha: currentAlpha,
 								nodeCount: nodes.length
 							});
-							
+
 							// Stop the simulation completely to prevent further updates
 							simulation.alpha(0).stop();
-							
+
 							// Do one final position update to the store
 							for (const node of nodes) {
 								nodesState.updateNodePosition(node.id, { x: node.x!, y: node.y! });
 							}
-							
+
 							return; // Skip further updates
 						} else {
 							// If nodes aren't all visible, restart the simulation
@@ -902,28 +902,28 @@
 							simulation.alpha(0.3).restart();
 						}
 					}
-					
+
 					lastAlpha = currentAlpha;
 				}
-				
+
 				// Limit node positions to keep within the visible area with padding that accounts for UI elements
 				// Ensure adequate padding to prevent nodes from overlapping with Data Inspector
 				const leftPadding = 280; // Left edge padding for tools tab
 				const rightPadding = 420; // Increased right padding for data inspector tab (380px + 40px buffer)
 				const topPadding = 120; // Top edge padding for header
 				const bottomPadding = 180; // Bottom padding for footer
-				
+
 				// Get actual dimensions from the container
 				const width = svg.node()?.clientWidth || 1000;
 				const height = svg.node()?.clientHeight || 800;
-				
+
 				// Calculate node radius based on type for more accurate boundary checking
 				const getNodeRadius = (d: D3Node) => {
 					if (d.type === 'kg') return 45; // Factory KG nodes (red)
 					if (d.type === 'asset') return 38; // Asset nodes (green)
 					return 32; // Property nodes (blue)
 				};
-				
+
 				// Apply bounds to prevent nodes from going too far off-screen or overlapping with UI elements
 				nodes.forEach(d => {
 					// Check for invalid positions first and fix them
@@ -932,10 +932,10 @@
 						d.x = (width / 2) + (Math.random() * 200 - 100);
 						d.y = (height / 2) + (Math.random() * 200 - 100);
 					}
-					
+
 					// Get this node's radius for boundary calculations
 					const nodeRadius = getNodeRadius(d);
-					
+
 					// Only bound non-fixed nodes
 					if (d.fx === null || d.fy === null) {
 						// Apply asymmetric padding plus node radius to ensure even large nodes stay fully within bounds
@@ -943,7 +943,7 @@
 						d.y = Math.max(topPadding + nodeRadius, Math.min(height - bottomPadding - nodeRadius, d.y));
 					}
 				});
-				
+
 				// Update all lines (both visible and hover area)
 				linkElements.selectAll('.link-line, .link-hover-area')
 					.attr('x1', (d: D3Link) => (d.source as D3Node).x || 0)
@@ -955,7 +955,7 @@
 				linkElements.selectAll('.link-label')
 					.attr('x', (d: D3Link) => ((d.source as D3Node).x + (d.target as D3Node).x) / 2 || 0)
 					.attr('y', (d: D3Link) => ((d.source as D3Node).y + (d.target as D3Node).y) / 2 || 0);
-					
+
 				// Update background rectangles for labels
 				linkElements.selectAll('.link-label-bg')
 					.attr('x', (d: D3Link) => {
@@ -967,24 +967,24 @@
 
 				// Update node positions
 				nodeElements.attr('transform', (d: D3Node) => `translate(${d.x || 0}, ${d.y || 0})`);
-				
+
 				// Only update store positions if:
 				// 1. Not yet stable
 				// 2. Alpha is low enough (simulation is settling)
 				// 3. Enough time has passed since last update (throttling)
 				// 4. Positions have changed significantly
-				if (!isStable && 
-					currentAlpha < 0.3 && 
+				if (!isStable &&
+					currentAlpha < 0.3 &&
 					(currentTime - lastUpdateTime > UPDATE_THROTTLE)) {
-					
+
 					let positionsChanged = false;
-					
+
 					// Detect if any node has moved significantly
 					for (const node of nodes) {
 						const index = $visualizableNodes.findIndex(n => n.id === node.id);
 						if (index !== -1 && node.x !== undefined && node.y !== undefined) {
 							// Only update if position has changed significantly
-							if (Math.abs(($visualizableNodes[index].position?.x || 0) - node.x) > 2 || 
+							if (Math.abs(($visualizableNodes[index].position?.x || 0) - node.x) > 2 ||
 								Math.abs(($visualizableNodes[index].position?.y || 0) - node.y) > 2) {
 								positionsChanged = true;
 								// Using the nodesState methods to update position
@@ -992,13 +992,13 @@
 							}
 						}
 					}
-					
+
 					if (positionsChanged) {
 						lastUpdateTime = currentTime;
 					}
 				}
 			}
-			
+
 			// Register the tick function with the simulation
 			simulation.on('tick', ticked);
 
@@ -1009,26 +1009,26 @@
 					.transition()
 					.duration(200)
 					.attr('opacity', 0.3);
-					
+
 				g.selectAll('.node-label')
 					.transition()
 					.duration(200)
 					.attr('opacity', 0.3);
-					
+
 				g.selectAll('.link-line')
 					.transition()
 					.duration(200)
 					.attr('opacity', 0.15);
-					
+
 				// Find connected nodes and links
 				const connectedNodeIds = new Set<string>();
 				connectedNodeIds.add(nodeId); // Include the selected node
-				
+
 				// Find links connected to this node
 				const connectedLinks = links.filter(link => {
 					const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
 					const targetId = typeof link.target === 'string' ? link.target : link.target.id;
-					
+
 					if (sourceId === nodeId || targetId === nodeId) {
 						// Add connected nodes to the set
 						if (sourceId !== nodeId) connectedNodeIds.add(sourceId);
@@ -1037,7 +1037,7 @@
 					}
 					return false;
 				});
-				
+
 				// Highlight the connected nodes
 				g.selectAll('.node')
 					.filter((d: D3Node) => connectedNodeIds.has(d.id))
@@ -1047,7 +1047,7 @@
 							.transition()
 							.duration(200)
 							.attr('opacity', 1);
-							
+
 						// Highlight label
 						d3.select(this).select('.node-label')
 							.transition()
@@ -1055,7 +1055,7 @@
 							.attr('opacity', 1)
 							.attr('font-weight', 'bold');
 					});
-					
+
 				// Highlight the connected links
 				g.selectAll('.link')
 					.filter((d: D3Link) => {
@@ -1069,20 +1069,20 @@
 							.duration(200)
 							.attr('opacity', 1)
 							.attr('stroke-width', (d: D3Link) => Math.max(Math.sqrt(d.weight) * 1.5, 3));
-							
+
 						// Make label visible if there is one
 						d3.select(this).select('.link-label')
 							.transition()
 							.duration(200)
 							.attr('opacity', 1);
-							
+
 						d3.select(this).select('.link-label-bg')
 							.transition()
 							.duration(200)
 							.attr('opacity', 0.9);
 					});
 			}
-			
+
 			// Reset highlighting to normal state
 			function resetHighlighting() {
 				// Reset all nodes
@@ -1090,40 +1090,40 @@
 					.transition()
 					.duration(200)
 					.attr('opacity', 1);
-					
+
 				g.selectAll('.node-label')
 					.transition()
 					.duration(200)
 					.attr('opacity', 1)
 					.attr('font-weight', 'normal');
-					
+
 				// Reset all links
 				g.selectAll('.link-line')
 					.transition()
 					.duration(200)
 					.attr('opacity', (d: D3Link) => d.weight >= 3 ? 0.85 : 0.7)
 					.attr('stroke-width', (d: D3Link) => Math.max(Math.sqrt(d.weight) * 1.2, 1.8));
-					
+
 				// Reset link labels
 				g.selectAll('.link-label')
 					.transition()
 					.duration(200)
 					.attr('opacity', (d: D3Link) => d.label ? 0.95 : 0);
-					
+
 				g.selectAll('.link-label-bg')
 					.transition()
 					.duration(200)
 					.attr('opacity', (d: D3Link) => d.label ? 0.7 : 0);
 			}
-			
+
 			// Implementation of releaseAllPinnedNodes for external access
 			releaseAllPinnedNodes = () => {
 				// Check if simulation exists
 				if (!simulation) return;
-				
+
 				// Find pinned nodes
 				let hasPinnedNodes = false;
-				
+
 				// Get all nodes from the simulation
 				simulation.nodes().forEach(node => {
 					if (node.fx !== null || node.fy !== null) {
@@ -1132,7 +1132,7 @@
 						node.fy = null;
 						node.isPinned = false;
 						hasPinnedNodes = true;
-						
+
 						// Also update in store
 						nodesState.updateNodePosition(node.id, {
 							x: node.x || 0,
@@ -1142,20 +1142,20 @@
 						});
 					}
 				});
-				
+
 				if (hasPinnedNodes) {
 					// Remove pin indicators
 					g.selectAll('.pin-indicator').remove();
-					
+
 					// Restart simulation briefly to adjust layout
 					isStable = false;
 					stableFrameCount = 0;
 					positionStabilityCount = 0;
 					lastPositions.clear();
-					
+
 					// Start the simulation with gentle alpha
 					simulation.alpha(0.2).restart();
-					
+
 					// Set a timeout to stabilize
 					setTimeout(() => {
 						if (!isStable) {
@@ -1171,7 +1171,7 @@
 		// Define drag behavior functions
 		function dragStarted(event: d3.D3DragEvent<SVGGElement, D3Node, any>, d: D3Node) {
 			if (!event.active) simulation.alphaTarget(0.3).restart();
-			
+
 			// If shift is held during drag start, prepare to pin the node
 			d.isPinned = event.sourceEvent.shiftKey;
 		}
@@ -1180,12 +1180,12 @@
 			// Update node position directly
 			d.x = event.x;
 			d.y = event.y;
-			
+
 			// If shift is held or node was already pinned, show the pin indicator
 			if (event.sourceEvent.shiftKey || d.isPinned) {
 				// Add visual indicator that node will be pinned
 				const nodeElement = d3.select(event.sourceEvent.target.closest('.node'));
-				
+
 				if (nodeElement.select('.pin-indicator').empty()) {
 					nodeElement.append('text')
 						.attr('class', 'pin-indicator')
@@ -1199,25 +1199,25 @@
 
 		function dragEnded(event: d3.D3DragEvent<SVGGElement, D3Node, any>, d: D3Node) {
 			if (!event.active) simulation.alphaTarget(0);
-			
+
 			// If shift was held during drag or node was already pinned, pin the node
 			if (event.sourceEvent.shiftKey || d.isPinned) {
 				d.fx = d.x;
 				d.fy = d.y;
 				d.isPinned = true;
-				
+
 				// Update store with pinned state
-				nodesState.updateNodePosition(d.id, { 
-					x: d.x!, 
+				nodesState.updateNodePosition(d.id, {
+					x: d.x!,
 					y: d.y!,
-					fx: d.x, 
-					fy: d.y 
+					fx: d.x,
+					fy: d.y
 				});
 			} else {
 				// Just update position without pinning
 				nodesState.updateNodePosition(d.id, { x: d.x!, y: d.y! });
 			}
-			
+
 			// Additional visual update (in case the simulation doesn't trigger another tick)
 			d3.select(event.sourceEvent.target.closest('.node'))
 				.attr('transform', `translate(${d.x || 0}, ${d.y || 0})`);
@@ -1228,53 +1228,53 @@
 			// Dim all nodes and links first
 			g.selectAll('.node-circle')
 				.attr('opacity', 0.3);
-				
+
 			g.selectAll('.link-line')
 				.attr('opacity', 0.2);
-				
+
 			// Find all connected links
-			const connectedLinks = links.filter(link => 
-				link.source === nodeId || 
+			const connectedLinks = links.filter(link =>
+				link.source === nodeId ||
 				(typeof link.source === 'object' && link.source.id === nodeId) ||
-				link.target === nodeId || 
+				link.target === nodeId ||
 				(typeof link.target === 'object' && link.target.id === nodeId)
 			);
-			
+
 			// Highlight the source node
 			g.selectAll('.node')
 				.filter((d: D3Node) => d.id === nodeId)
 				.select('.node-circle')
 				.attr('opacity', 1);
-				
+
 			// Highlight all connected nodes and links
 			connectedLinks.forEach(link => {
 				const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
 				const targetId = typeof link.target === 'string' ? link.target : link.target.id;
-				
+
 				// Highlight connected nodes
 				g.selectAll('.node')
 					.filter((d: D3Node) => d.id === sourceId || d.id === targetId)
 					.select('.node-circle')
 					.attr('opacity', 1);
-					
+
 				// Highlight the link
 				g.selectAll('.link-line')
 					.filter((d: D3Link) => {
 						const dSourceId = typeof d.source === 'string' ? d.source : d.source.id;
 						const dTargetId = typeof d.target === 'string' ? d.target : d.target.id;
-						return (dSourceId === sourceId && dTargetId === targetId) || 
+						return (dSourceId === sourceId && dTargetId === targetId) ||
 							   (dSourceId === targetId && dTargetId === sourceId);
 					})
 					.attr('opacity', 1)
 					.attr('stroke-width', (d: D3Link) => Math.max(Math.sqrt(d.weight) * 1.5, 3));
 			});
 		}
-		
+
 		function resetHighlighting() {
 			// Reset all nodes and links to full opacity
 			g.selectAll('.node-circle')
 				.attr('opacity', 1);
-				
+
 			g.selectAll('.link-line')
 				.attr('opacity', 1)
 				.attr('stroke-width', (d: D3Link) => Math.max(Math.sqrt(d.weight) * 1.2, 1.8));
@@ -1283,14 +1283,14 @@
 		// Initial graph update
 		updateGraph();			// Explicitly start the simulation after initial update
 		simulation.alpha(0.3).restart(); // Make sure simulation is started
-			
+
 		// Set a failsafe timer to ensure simulation eventually stops
 			setTimeout(() => {
 				if (!isStable) {
 					console.log("Forcing simulation to stop after timeout");
 					isStable = true;
 					simulation.stop();
-					
+
 					// Do one final position update
 					for (const node of nodes) {
 						if (node.x !== undefined && node.y !== undefined) {
@@ -1299,22 +1299,22 @@
 					}
 				}
 			}, 8000); // 8 seconds max simulation time
-		
+
 		// Function to fit all nodes in view - assign to the outer variable
 		fitGraphToView = () => {
 			if (!svg.node() || !g.node()) return;
-			
+
 			const containerWidth = svg.node()?.clientWidth || 1000;
 			const containerHeight = svg.node()?.clientHeight || 800;
-			
+
 			// Pause the simulation first for more accurate bounds calculation
 			const wasRunning = !simulation.alpha() <= simulation.alphaMin();
 			const currentAlpha = simulation.alpha();
 			simulation.stop();
-			
+
 			// Temporarily reset stability flag for position recalculation
 			const wasStable = isStable;
-			
+
 			// Let the UI update before proceeding
 			setTimeout(() => {
 				// Get the bounds of all nodes
@@ -1324,48 +1324,48 @@
 					if (wasRunning) simulation.alpha(currentAlpha).restart();
 					return;
 				}
-				
+
 				// Calculate bounds - need to transform node positions to get actual coordinates
 				let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
 				nodeElements.each(function(d: any) {
 					const x = d.x || 0;
 					const y = d.y || 0;
-					
+
 					minX = Math.min(minX, x);
 					maxX = Math.max(maxX, x);
 					minY = Math.min(minY, y);
 					maxY = Math.max(maxY, y);
 				});
-				
+
 				// Add generous padding for better visibility
 				const padding = Math.min(containerWidth, containerHeight) * 0.15; // 15% of smaller dimension
 				minX -= padding;
 				maxX += padding;
 				minY -= padding;
 				maxY += padding;
-				
+
 				// Calculate the scale to fit all nodes
 				const graphWidth = maxX - minX;
 				const graphHeight = maxY - minY;
-				
+
 				// Avoid division by zero
 				if (graphWidth === 0 || graphHeight === 0) {
 					// Restart the simulation if we need to continue
 					if (wasRunning) simulation.alpha(currentAlpha).restart();
 					return;
 				}
-				
+
 				const scaleX = containerWidth / graphWidth;
 				const scaleY = containerHeight / graphHeight;
 				let scale = Math.min(scaleX, scaleY);
-				
+
 				// Limit scale to reasonable values, but ensure we can see all nodes
 				scale = Math.min(Math.max(scale, 0.3), 1.5);
-				
+
 				// Calculate center points
 				const centerX = (minX + maxX) / 2;
 				const centerY = (minY + maxY) / 2;
-				
+
 				// Apply transform with smoother animation
 				svg.transition()
 					.duration(1200)
@@ -1380,7 +1380,7 @@
 					.on("end", function() {
 						// Update the zoom level display
 						zoomLevel = scale;
-						
+
 						// Return to previous stability state or force stabilization
 						if (!wasStable) {
 							// Clear stability tracking for a fresh start
@@ -1388,17 +1388,17 @@
 							stableFrameCount = 0;
 							positionStabilityCount = 0;
 							lastPositions.clear();
-							
+
 							// Restart with gentle alpha to settle quickly
 							simulation.alpha(0.1).restart();
-							
+
 							// Force stabilization after a short timeout if not stabilized naturally
 							setTimeout(() => {
 								if (!isStable) {
 									isStable = true;
 									simulation.stop();
 									console.log("Forced graph stability after fit-to-view");
-									
+
 									// Final position update to store
 									for (const node of nodes) {
 										if (node.x !== undefined && node.y !== undefined) {
@@ -1415,7 +1415,7 @@
 					});
 			}, 50); // Short delay is enough since we already stopped the simulation
 		}
-		
+
 		// Initial fit view to ensure all nodes are visible
 		setTimeout(fitGraphToView, 300);
 
@@ -1424,7 +1424,7 @@
 		let lastNodeCount = 0;
 		let lastLinkCount = 0;
 		let nodeUpdateNeeded = true; // Start with true to ensure initial visualization
-		
+
 		unsubscribeNodes = visualizableNodes.subscribe((nodes) => {
 			// Force update if we have nodes but none were visualized yet
 			if (nodes.length > 0) {
@@ -1432,10 +1432,10 @@
 				if (nodes.length !== lastNodeCount || nodeUpdateNeeded) {
 					lastNodeCount = nodes.length;
 					nodeUpdateNeeded = false;
-					
+
 					// Clear any pending updates
 					if (updateTimer) clearTimeout(updateTimer);
-					
+
 					// Debounce updates to prevent multiple rapid re-renders
 					updateTimer = setTimeout(() => {
 						console.log(`Updating graph due to node changes (${nodes.length} nodes)`);
@@ -1443,17 +1443,17 @@
 						stableFrameCount = 0;
 						positionStabilityCount = 0;
 						lastPositions.clear(); // Reset position tracking
-						
+
 						updateGraph();
 						// Start the simulation explicitly
 						simulation.alpha(0.6).restart();
-						
+
 						// Wait for graph to update before fitting to view
 						setTimeout(() => {
 							fitGraphToView();
 							console.log("Graph updated and fit to view");
 						}, 300);
-						
+
 						updateTimer = null;
 					}, 100);
 				}
@@ -1464,22 +1464,22 @@
 			// Only update if link count changed
 			if (links.length !== lastLinkCount) {
 				lastLinkCount = links.length;
-				
+
 				// Clear any pending updates
 				if (updateTimer) clearTimeout(updateTimer);
-				
+
 				// Debounce updates to prevent multiple rapid re-renders
 				updateTimer = setTimeout(() => {
 					console.log(`Updating graph due to link changes (${links.length} links)`);
 					isStable = false; // Reset stability to ensure proper layout
-					
+
 					updateGraph();
 					// Start the simulation explicitly
 					simulation.alpha(0.3).restart();
-					
+
 					// Wait for graph to update before fitting to view
 					setTimeout(fitGraphToView, 300);
-					
+
 					updateTimer = null;
 				}, 100);
 			}
@@ -1501,7 +1501,7 @@
 		canvas.removeEventListener('click', handleCanvasClick);
 		canvas.removeEventListener('dblclick', handleCanvasDoubleClick);
 		canvas.removeEventListener('wheel', handleMouseWheel);
-		
+
 		// Clean up D3 subscriptions
 		if (unsubscribeNodes) unsubscribeNodes();
 		if (unsubscribeLinks) unsubscribeLinks();
@@ -1597,7 +1597,7 @@
                 <div class="canvas-container h-full min-h-0 relative flex-1">
                     <!-- D3 Force Graph Visualization -->
                     <div bind:this={svgContainer} class="d3-container" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10; pointer-events: all;"></div>
-                    
+
                     <canvas
                         class="canvas"
                         bind:this={canvasRef}
@@ -1627,7 +1627,7 @@
                             </div>
                         </div>
                     {/if}
-                    
+
                     <!-- Graph Help Overlay -->
                     <div class="graph-help-overlay">
                         <div class="help-content">
@@ -1680,7 +1680,7 @@
         pointer-events: all;
         overflow: hidden; /* Clip content to prevent overflow behind UI elements */
     }
-    
+
     .d3-force-graph {
         width: 100%;
         height: 100%;
@@ -1695,28 +1695,28 @@
     :global(.node-circle) {
         transition: stroke-width 0.2s ease;
     }
-    
+
     :global(.node-circle.node-hover) {
         filter: brightness(1.1);
         stroke: white;
         stroke-width: 2.5px;
         stroke-opacity: 0.8;
     }
-    
+
     :global(.node-label) {
         pointer-events: none;
         font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
         user-select: none;
     }
-    
+
     :global(.node-type-asset) {
         filter: drop-shadow(0 4px 8px rgba(46, 204, 113, 0.5));
     }
-    
+
     :global(.node-type-kg) {
         filter: drop-shadow(0 5px 10px rgba(231, 76, 60, 0.6)); /* Red shadow for KG */
     }
-    
+
     :global(.node-type-property) {
         filter: drop-shadow(0 4px 8px rgba(52, 152, 219, 0.5)); /* Blue shadow for properties */
     }
@@ -1731,12 +1731,12 @@
         pointer-events: none;
         font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     }
-    
+
     :global(.graph-tooltip) {
         font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
         line-height: 1.4;
     }
-    
+
     :global(.tooltip-title) {
         font-weight: 600;
         font-size: 13px;
@@ -1746,7 +1746,7 @@
         justify-content: space-between;
         align-items: center;
     }
-    
+
     :global(.tooltip-type) {
         font-size: 11px;
         color: #94a3b8;
@@ -1754,17 +1754,17 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    
+
     :global(.tooltip-body) {
         font-size: 12px;
         color: #e2e8f0;
     }
-    
+
     :global(.tooltip-body strong) {
         color: #f8f9fa;
         font-weight: 500;
     }
-    
+
     :global(.pin-indicator) {
         font-size: 10px;
         margin-left: 6px;
@@ -1774,20 +1774,20 @@
         transition: all 0.3s ease;
         stroke-linecap: round;
     }
-    
+
     :global(.link:hover .link-line) {
         stroke-width: 4px;
         stroke-opacity: 1;
         filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
     }
-    
+
     :global(.link:hover .link-label) {
         font-weight: bold;
         opacity: 1;
         font-size: 12px;
         transform: scale(1.1);
     }
-    
+
     :global(.link:hover .link-label-bg) {
         opacity: 0.9;
     }
@@ -1803,7 +1803,7 @@
     :global(.dark) .link-label {
         fill: #f8f9fa;
     }
-    
+
     :global(.link-hover-area) {
         opacity: 0;
         cursor: pointer;
@@ -2149,23 +2149,23 @@
         opacity: 0.6;
         transition: opacity 0.2s ease;
     }
-    
+
     .graph-help-overlay:hover {
         opacity: 1;
     }
-    
+
     .help-content {
         display: flex;
         flex-direction: column;
         gap: 8px;
     }
-    
+
     .help-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
-    
+
     .help-key {
         font-size: 12px;
         font-weight: 600;
@@ -2174,7 +2174,7 @@
         padding: 2px 6px;
         border-radius: 4px;
     }
-    
+
     .help-desc {
         font-size: 12px;
         color: #cbd5e1;
