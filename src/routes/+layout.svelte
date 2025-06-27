@@ -210,28 +210,28 @@
 		<nav class="flex gap-1 text-sm text-gray-600 dark:text-gray-400 overflow-x-auto hide-scrollbar">
 			<a href="/workspaces"
 				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
-					{ $page.url.pathname.startsWith('/workspaces') ? 'text-black dark:text-white' : '' }"
+					{ $page?.url?.pathname?.startsWith('/workspaces') ? 'text-black dark:text-white' : '' }"
 			>
 				<BriefcaseIcon class="w-4 h-4" />
 				Workspaces
 			</a>
 			<a href="/connections"
 				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
-					{ $page.url.pathname.startsWith('/connections') ? 'text-black dark:text-white' : '' }"
+					{ $page?.url?.pathname?.startsWith('/connections') ? 'text-black dark:text-white' : '' }"
 			>
 				<LinkIcon class="w-4 h-4" />
 				Connections
 			</a>
 			<a href="/canvas"
 				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
-					{ $page.url.pathname.startsWith('/canvas') ? 'text-black dark:text-white' : '' }"
+					{ $page?.url?.pathname?.startsWith('/canvas') ? 'text-black dark:text-white' : '' }"
 			>
 				<Share2Icon class="w-4 h-4" />
 				Knowledge Graph
 			</a>
 			<a href="/about"
 				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
-					{ $page.url.pathname.startsWith('/about') ? 'text-black dark:text-white' : '' }"
+					{ $page?.url?.pathname?.startsWith('/about') ? 'text-black dark:text-white' : '' }"
 			>
 				<InfoIcon class="w-4 h-4" />
 				About
