@@ -244,9 +244,9 @@
 			</div>
 			{#if $isAuthenticated}
 				<button class="focus:outline-none" aria-label="Account" on:click={() => showLogoutModal = true}>
-					<Avatar
-						initials={($authUser && $authUser.email ? $authUser.email[0].toUpperCase() : 'U')}
-						background="bg-gradient-to-r from-gray-600 to-gray-800 text-white"
+					<Avatar 
+						initials={($authUser && $authUser.email ? $authUser.email[0].toUpperCase() : 'U')} 
+						background="bg-gradient-to-r from-gray-600 to-gray-800 text-white" 
 						border="border border-gray-200 dark:border-slate-700"
 						rounded="rounded-full"
 						width="w-8"
@@ -255,9 +255,9 @@
 				</button>
 			{:else}
 				<button class="focus:outline-none" aria-label="Sign in" on:click={() => showSignInModal = true}>
-					<Avatar
-						initials="U"
-						background="bg-gradient-to-r from-gray-600 to-gray-800 text-white"
+					<Avatar 
+						initials="U" 
+						background="bg-gradient-to-r from-gray-600 to-gray-800 text-white" 
 						border="border border-gray-200 dark:border-slate-700"
 						rounded="rounded-full"
 						width="w-8"
@@ -272,38 +272,37 @@
 	<!-- Main Content Area -->
   	<main class="flex-1 min-h-0 flex flex-col overflow-hidden">
   		<slot />
+		
+		<!-- Footer with workspace and backend status -->
+		<footer class="fixed bottom-0 w-full flex items-center justify-between px-8 py-4 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 z-50">
+			<div class="flex items-center gap-4">
+				{#if $selectedWorkspace}
+					<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+						<BriefcaseIcon class="w-4 h-4" />
+						<button 
+							on:click={() => goto('/canvas')}
+							class="font-medium hover:underline transition-all duration-200"
+						>
+							{$selectedWorkspace}
+						</button>
+					</div>
+				{/if}
+			</div>
+			<div class="flex items-center gap-4">
+				{#if $isBackendRunning}
+					<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
+						<div class="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+						<span class="font-medium">Backend Healthy</span>
+					</div>
+				{:else}
+					<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
+						<div class="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+						<span class="font-medium">Backend offline</span>
+					</div>
+				{/if}
+			</div>
+		</footer>
 	</main>
-
-
-	<!-- Footer with workspace and backend status -->
-	<footer class="shrink-0 w-full flex items-center justify-between px-8 py-4 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
-		<div class="flex items-center gap-4">
-			{#if $selectedWorkspace}
-				<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-					<BriefcaseIcon class="w-4 h-4" />
-					<button
-						on:click={() => goto('/canvas')}
-						class="font-medium hover:underline transition-all duration-200"
-					>
-						{$selectedWorkspace}
-					</button>
-				</div>
-			{/if}
-		</div>
-		<div class="flex items-center gap-4">
-			{#if $isBackendRunning}
-				<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
-					<div class="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
-					<span class="font-medium">Backend Healthy</span>
-				</div>
-			{:else}
-				<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
-					<div class="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
-					<span class="font-medium">Backend offline</span>
-				</div>
-			{/if}
-		</div>
-	</footer>
 </div>
 
 <!-- Sign-in Modal -->
