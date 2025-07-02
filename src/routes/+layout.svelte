@@ -210,28 +210,28 @@
 		<nav class="flex gap-1 text-sm text-gray-600 dark:text-gray-400 overflow-x-auto hide-scrollbar">
 			<a href="/workspaces"
 				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
-					{ $page.url.pathname.startsWith('/workspaces') ? 'text-black dark:text-white' : '' }"
+					{ $page?.url?.pathname?.startsWith('/workspaces') ? 'text-black dark:text-white' : '' }"
 			>
 				<BriefcaseIcon class="w-4 h-4" />
 				Workspaces
 			</a>
 			<a href="/connections"
 				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
-					{ $page.url.pathname.startsWith('/connections') ? 'text-black dark:text-white' : '' }"
+					{ $page?.url?.pathname?.startsWith('/connections') ? 'text-black dark:text-white' : '' }"
 			>
 				<LinkIcon class="w-4 h-4" />
 				Connections
 			</a>
 			<a href="/canvas"
 				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
-					{ $page.url.pathname.startsWith('/canvas') ? 'text-black dark:text-white' : '' }"
+					{ $page?.url?.pathname?.startsWith('/canvas') ? 'text-black dark:text-white' : '' }"
 			>
 				<Share2Icon class="w-4 h-4" />
 				Knowledge Graph
 			</a>
 			<a href="/about"
 				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
-					{ $page.url.pathname.startsWith('/about') ? 'text-black dark:text-white' : '' }"
+					{ $page?.url?.pathname?.startsWith('/about') ? 'text-black dark:text-white' : '' }"
 			>
 				<InfoIcon class="w-4 h-4" />
 				About
@@ -272,51 +272,50 @@
 	<!-- Main Content Area -->
   	<main class="flex-1 min-h-0 flex flex-col overflow-hidden">
   		<slot />
+
+		<!-- Footer with workspace and backend status -->
+		<footer class="fixed bottom-0 w-full flex items-center justify-between px-8 py-4 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 z-50">
+			<div class="flex items-center gap-4">
+				{#if $selectedWorkspace}
+					<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+						<BriefcaseIcon class="w-4 h-4" />
+						<button
+							on:click={() => goto('/canvas')}
+							class="font-medium hover:underline transition-all duration-200"
+						>
+							{$selectedWorkspace}
+						</button>
+					</div>
+				{/if}
+			</div>
+			<div class="flex items-center gap-4">
+				{#if $isBackendRunning}
+					<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
+						<div class="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+						<span class="font-medium">Backend Healthy</span>
+					</div>
+				{:else}
+					<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
+						<div class="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+						<span class="font-medium">Backend offline</span>
+					</div>
+				{/if}
+			</div>
+		</footer>
 	</main>
-
-
-	<!-- Footer with workspace and backend status -->
-	<footer class="shrink-0 w-full flex items-center justify-between px-8 py-4 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
-		<div class="flex items-center gap-4">
-			{#if $selectedWorkspace}
-				<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-					<BriefcaseIcon class="w-4 h-4" />
-					<button
-						on:click={() => goto('/canvas')}
-						class="font-medium hover:underline transition-all duration-200"
-					>
-						{$selectedWorkspace}
-					</button>
-				</div>
-			{/if}
-		</div>
-		<div class="flex items-center gap-4">
-			{#if $isBackendRunning}
-				<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
-					<div class="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
-					<span class="font-medium">Backend Healthy</span>
-				</div>
-			{:else}
-				<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
-					<div class="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
-					<span class="font-medium">Backend offline</span>
-				</div>
-			{/if}
-		</div>
-	</footer>
 </div>
 
 <!-- Sign-in Modal -->
 {#if showSignInModal && !$isAuthenticated}
-  <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in" on:click={() => showSignInModal = false}>
-    <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 w-96 max-w-full flex flex-col gap-5 relative" on:click|stopPropagation>
+  <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in" role="button" tabindex="0" on:click={() => showSignInModal = false} on:keydown={(e) => e.key === 'Escape' && (showSignInModal = false)}>
+    <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 w-96 max-w-full flex flex-col gap-5 relative" role="dialog">
       <button class="absolute top-4 right-4 text-slate-500 hover:text-red-500" on:click={() => showSignInModal = false} aria-label="Close">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
       <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-200 mb-2">Sign In</h2>
       <form on:submit|preventDefault={handleSignInSubmit} class="flex flex-col gap-4">
         <label for="sign-in-username" class="text-sm font-medium text-blue-900 dark:text-blue-100">Username or Email</label>
-        <input id="sign-in-username" name="username" class="input" type="text" placeholder="Username or email" bind:value={signInEmail} required autocomplete="username email" />
+        <input id="sign-in-username" name="username" class="input" type="text" placeholder="Username or email" bind:value={signInEmail} required autocomplete="username" />
         <label for="sign-in-password" class="text-sm font-medium text-blue-900 dark:text-blue-100">Password</label>
         <input id="sign-in-password" name="password" class="input" type="password" placeholder="Password" bind:value={signInPassword} required autocomplete="current-password" />
         {#if signInError || $authError}
@@ -360,8 +359,8 @@
 
 <!-- Logout Modal -->
 {#if showLogoutModal && $isAuthenticated}
-  <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in" on:click={() => showLogoutModal = false}>
-    <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 w-80 max-w-full flex flex-col gap-5 relative" on:click|stopPropagation>
+  <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in" role="button" tabindex="0" on:click={() => showLogoutModal = false} on:keydown={(e) => e.key === 'Escape' && (showLogoutModal = false)}>
+    <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 w-80 max-w-full flex flex-col gap-5 relative" role="dialog">
       <button class="absolute top-4 right-4 text-slate-500 hover:text-red-500" on:click={() => showLogoutModal = false} aria-label="Close">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>

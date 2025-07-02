@@ -907,11 +907,11 @@
 				}
 
 				// Limit node positions to keep within the visible area with padding that accounts for UI elements
-				// Increase padding significantly to ensure nodes stay away from UI elements
+				// Ensure adequate padding to prevent nodes from overlapping with Data Inspector
 				const leftPadding = 280; // Left edge padding for tools tab
-				const rightPadding = 350; // Increased right padding for data inspector tab
-				const topPadding = 120; // Top edge padding
-				const bottomPadding = 180; // Increased bottom padding for footer
+				const rightPadding = 420; // Increased right padding for data inspector tab (380px + 40px buffer)
+				const topPadding = 120; // Top edge padding for header
+				const bottomPadding = 180; // Bottom padding for footer
 
 				// Get actual dimensions from the container
 				const width = svg.node()?.clientWidth || 1000;
@@ -1509,9 +1509,6 @@
 	});
 </script>
 
-<!-- D3 Force Graph Visualization -->
-<div bind:this={svgContainer} class="d3-container" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10; pointer-events: all;"></div>
-
 <div class="canvas-page">
     <div class="canvas-layout h-full w-full flex flex-row min-h-0 max-h-full">
         <!-- Toolbox Sidebar -->
@@ -1598,6 +1595,9 @@
 
                 <!-- Canvas Container -->
                 <div class="canvas-container h-full min-h-0 relative flex-1">
+                    <!-- D3 Force Graph Visualization -->
+                    <div bind:this={svgContainer} class="d3-container" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10; pointer-events: all;"></div>
+
                     <canvas
                         class="canvas"
                         bind:this={canvasRef}
@@ -1678,12 +1678,14 @@
         height: 100%;
         background: transparent;
         pointer-events: all;
+        overflow: hidden; /* Clip content to prevent overflow behind UI elements */
     }
 
     .d3-force-graph {
         width: 100%;
         height: 100%;
         background: transparent;
+        overflow: hidden; /* Prevent graph content from overflowing container boundaries */
     }
 
     :global(.node) {
@@ -2136,7 +2138,7 @@
     /* Help Overlay Styles */
     .graph-help-overlay {
         position: absolute;
-        bottom: 20px;
+        bottom: 80px;
         right: 20px;
         background: rgba(15, 23, 42, 0.85);
         padding: 12px;
