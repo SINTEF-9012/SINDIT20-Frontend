@@ -9,7 +9,7 @@ export default defineConfig({
 	server: {
 		host: '0.0.0.0',  // Allow external connections
 		strictPort: true,
-		port: 3000  // Change to your preferred port
+		port: 5173  // Change to your preferred port
 	},
 	resolve: {
 		alias: {
