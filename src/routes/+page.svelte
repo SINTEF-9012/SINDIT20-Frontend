@@ -33,7 +33,7 @@
           Visual Knowledge Graphs for Industry 4.0
         </h1>
         <p class="text-lg lg:text-2xl text-slate-700 dark:text-slate-200 leading-relaxed max-w-xl mx-auto mb-5">
-          Build, explore, and connect your industrial data visually. 
+          Build, explore, and connect your industrial data visually.
         </p>
       </div>
       <!-- Features: now full width, below main content -->

@@ -237,9 +237,9 @@
 			</div>
 			{#if $isAuthenticated}
 				<button class="focus:outline-none flex items-center h-full" aria-label="Account" on:click={() => showLogoutModal = true}>
-					<Avatar 
-						initials={($authUser && $authUser.email ? $authUser.email[0].toUpperCase() : 'U')} 
-						background="bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-700 text-white" 
+					<Avatar
+						initials={($authUser && $authUser.email ? $authUser.email[0].toUpperCase() : 'U')}
+						background="bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-700 text-white"
 						border="border-2 border-primary-400 dark:border-secondary-600 shadow-lg"
 						rounded="rounded-xl"
 						width="w-10"
@@ -248,9 +248,9 @@
 				</button>
 			{:else}
 				<button class="focus:outline-none flex items-center h-full" aria-label="Sign in" on:click={() => showSignInModal = true}>
-					<Avatar 
-						initials="U" 
-						background="bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-700 text-white" 
+					<Avatar
+						initials="U"
+						background="bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-700 text-white"
 						border="border-2 border-primary-400 dark:border-secondary-600 shadow-lg"
 						rounded="rounded-xl"
 						width="w-10"
@@ -266,12 +266,12 @@
   	<main class="flex-1 min-h-0 flex flex-col overflow-hidden">
   		<slot />
 	</main>
-	
+
 
 	<!-- Footer with workspace and backend status -->
 	<footer class="shrink-0 w-full flex flex-col md:flex-row items-center justify-between px-8 py-4 bg-primary-50 dark:bg-primary-900 border-t border-blue-200/50 dark:border-blue-700/30 text-primary-800 dark:text-primary-100">
 		<div class="flex items-center gap-4">
-			<button 
+			<button
 				on:click={() => goto('/canvas')}
 				class="group transition-all duration-200"
 			>

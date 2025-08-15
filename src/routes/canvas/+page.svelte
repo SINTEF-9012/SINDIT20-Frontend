@@ -240,7 +240,7 @@
 	function updateNodePositions(): void {
 		let nodes = $abstractAssetNodes.map((node) => ({ ...node }));
 		const links = $links.map((link) => ({ ...link }));
-		
+
 		// Apply repulsion with type preservation
 		const updatedNodes = applyRepulsion(nodes);
 		// Preserve the nodeType property when updating
@@ -248,7 +248,7 @@
 			...node,
 			nodeType: 'AbstractAsset' as const,
 		}));
-		
+
 		// nodes = applySping(nodes, links); // Uncomment this line to enable spring force
 
 		$abstractAssetNodes = [...typedNodes]; // trigger reactivity of nodes
@@ -291,7 +291,7 @@
         const editorEl = document.querySelector('.json-editor') as HTMLElement;
         const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
         const pageEl = document.querySelector('.container') as HTMLElement;
-        
+
         if (editorEl && canvasEl && pageEl) {
             editorWidth = editorEl.clientWidth;
             canvasWidth = canvasEl.offsetWidth;
@@ -304,10 +304,10 @@
         const dx = event.clientX - startX;
         const canvasNewWidth = canvasWidth + dx;
         const editorNewWidth = pageWidth - canvasNewWidth;
-        
+
         const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
         const editorEl = document.querySelector('.json-editor') as HTMLElement;
-        
+
         if (canvasEl && editorEl) {
             canvasEl.style.width = `${canvasNewWidth}px`;
             editorEl.style.width = `${editorNewWidth}px`;
@@ -318,7 +318,7 @@
         isResizing = false;
         const editorEl = document.querySelector('.json-editor') as HTMLElement;
         const canvasEl = document.querySelector('.canvas-container') as HTMLElement;
-        
+
         if (editorEl && canvasEl) {
             editorWidth = editorEl.clientWidth;
             canvasWidth = canvasEl.offsetWidth;
@@ -430,8 +430,8 @@
                     <div class="json-editor-container {darkMode} h-full min-h-0 flex flex-col">
                         <div class="json-editor-header">
                             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300">Data Inspector</h3>
-                            <button 
-                                class="close-btn" 
+                            <button
+                                class="close-btn"
                                 on:click={toggleJSONEditor}
                                 aria-label="Close editor"
                             >
@@ -452,7 +452,7 @@
 
 <style>
     @import 'svelte-jsoneditor/themes/jse-theme-dark.css';
-    
+
     .canvas-page {
         position: relative;
         display: flex;
@@ -544,7 +544,7 @@
         overflow: hidden;
         max-height: 100vh;
     }
-    
+
     .canvas-container {
         position: relative;
         overflow: hidden;
@@ -553,14 +553,14 @@
         background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
         border-radius: 1rem 0 0 1rem;
     }
-    
+
     .resizer-container {
         display: flex;
         align-items: center;
         width: 8px;
         background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2), rgba(255,255,255,0.1));
     }
-    
+
     .resizer {
         width: 100%;
         height: 60px;
@@ -573,11 +573,11 @@
         justify-content: center;
         transition: all 0.2s ease;
     }
-    
+
     .resizer:hover {
         background: rgba(255, 255, 255, 0.2);
     }
-    
+
     .resizer-handle {
         display: flex;
         align-items: center;
@@ -585,14 +585,14 @@
         width: 100%;
         height: 100%;
     }
-    
+
     .resizer-dots {
         display: flex;
         flex-direction: column;
         gap: 3px;
         align-items: center;
     }
-    
+
     .dot {
         width: 4px;
         height: 4px;
@@ -600,12 +600,12 @@
         border-radius: 50%;
         transition: all 0.2s ease;
     }
-    
+
     .resizer:hover .dot {
         background: rgba(255, 255, 255, 0.9);
         transform: scale(1.2);
     }
-    
+
     .json-editor-container {
         width: 380px;
         min-width: 300px;
@@ -616,12 +616,12 @@
         flex-direction: column;
         border-left: 1px solid rgba(255, 255, 255, 0.3);
     }
-    
+
     .json-editor-container.jse-theme-dark {
         background: rgba(30, 41, 59, 0.95);
         color: white;
     }
-    
+
     .json-editor-header {
         display: flex;
         justify-content: space-between;
@@ -630,7 +630,7 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
     }
-    
+
     .close-btn {
         background: none;
         border: none;
@@ -640,18 +640,18 @@
         border-radius: 6px;
         transition: all 0.2s ease;
     }
-    
+
     .close-btn:hover {
         background: rgba(248, 113, 113, 0.1);
         color: #ef4444;
     }
-    
+
     .json-editor {
         flex: 1;
         min-height: 0;
         background: transparent;
     }
-    
+
     .canvas {
         position: absolute;
         width: 100%;
@@ -661,21 +661,21 @@
         z-index: 0;
         border-radius: 1rem 0 0 1rem;
     }
-    
+
     .canvas-content {
         position: absolute;
         top: 50%;
         left: 50%;
         z-index: 1;
     }
-    
+
     .toolbox-button-container {
         display: flex;
         align-items: stretch;
         width: 50px;
         z-index: 10;
     }
-    
+
     .toolbox-button {
         width: 100%;
         height: 100%;
@@ -688,7 +688,7 @@
         border: none;
         cursor: pointer;
     }
-    
+
     .toolbox-icon {
         width: 24px;
         height: 24px;
