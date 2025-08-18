@@ -32,7 +32,7 @@
 </script>
 
 <div class="text-center space-y-8 max-w-2xl mx-auto py-16 w-full text-primary-800 dark:text-primary-100 font-sans">
-	<h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 bg-clip-text text-transparent mb-8">This is the about page. Currently toasting.</h1>
+	<h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 bg-clip-text text-transparent mb-8">This is the about page. Currently toasting.</h1>
 
 	<form on:submit={handleSubmit} class="flex flex-col gap-4">
 		<div class="flex flex-col gap-1">

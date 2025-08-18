@@ -17,8 +17,8 @@
     let linksState = getLinksState();
     const drawerStore = getDrawerStore();
 
-    let height = 10; // Height of the link line element (ink arrow)
-    let linkButtonHeight: number = 60;
+    let height = 12; // Height of the link line element (ink arrow)
+    let linkButtonHeight: number = 70;
     let linkTextElement: HTMLDivElement;
     let linkWeightElement: HTMLDivElement;
 
@@ -26,7 +26,7 @@
     $: angle = angleRadians
     $: centerX = length / 2;
     $: centerY = height / 2;
-    $: boxSize = 0.8 * length;
+    $: boxSize = Math.min(0.8 * length, 200); // Limit max width for better appearance
     $: flipText = angle > Math.PI / 2 || angle < -Math.PI / 2;
     $: {
         if (linkTextElement) {
@@ -42,7 +42,6 @@
     }
 
     function onLinkClick() {
-        console.log("link dblclick", link);
         selectedLinkId.set(link.id);
         drawerStore.open({id: 'info-drawer-link'});
     }
@@ -60,54 +59,55 @@
     pointer-events="none"
     style="pointer-events: none; z-index: 0"
     >
-    <!-- Define the arrow marker -->
+    <!-- Define gradients and patterns -->
     <defs>
+        <!-- Simple arrow marker -->
         <marker
             id="arrow"
-            viewBox={`0 0 10 ${height}`}
-            refX="10"
-            refY={height / 2}
-            markerWidth="6"
-            markerHeight={height}
+            viewBox="0 0 12 12"
+            refX="11"
+            refY="6"
+            markerWidth="10"
+            markerHeight="10"
             orient="auto-start-reverse">
-            <path d={`M 0 0 L 10 ${height / 2} L 0 ${height} z`} fill="white" />
+            <path
+                d="M 0 2 L 10 6 L 0 10 L 2 6 z"
+                fill="#374151"
+                stroke="#1f2937"
+                stroke-width="0.5"
+            />
         </marker>
     </defs>
 
+    <!-- Background line for better visibility -->
     <line
-        x1={0}
+        x1={2}
         y1={height / 2}
-        x2={length}
+        x2={length - 2}
         y2={height / 2}
-        stroke="white"
-        stroke-width={linkWeight}
+        stroke="rgba(0, 0, 0, 0.1)"
+        stroke-width={Math.max(linkWeight + 2, 4)}
+        stroke-linecap="round"
+        opacity="0.5"
+    />
+
+    <!-- Main link line with solid colors -->
+    <line
+        x1={2}
+        y1={height / 2}
+        x2={length - 2}
+        y2={height / 2}
+        stroke={linkText.includes('property') ? '#a3a3a3' :
+               linkText.includes('asset') ? '#525252' :
+               '#1e40af'}
+        stroke-width={Math.max(linkWeight, 3)}
+        stroke-linecap="round"
+        opacity="0.8"
         marker-start={linkDirection === "left" ? "url(#arrow)" : ""}
         marker-end={linkDirection === "right" ? "url(#arrow)" : ""}
+        class="link-line"
     />
 </svg>
-
-{#if zoomLevel > 0.2 && zoomLevel < 2}
-    <button class="center-box"
-        style="
-            left: {centerX}px;
-            top: {centerY}px;
-            width: {boxSize}px;
-            height: {linkButtonHeight}px;
-            transform: translate(-50%, -50%);
-            pointer-events: auto;
-        "
-        on:click={onLinkClick}
-    >
-        <!-- Link text above the link line -->
-         {#if flipText}
-            <div class="center-link-weight text-gray-400" bind:this={linkWeightElement}>{linkWeight}</div>
-            <div class="center-link-text text-white" bind:this={linkTextElement}>{linkText}</div>
-        {:else}
-            <div class="center-link-text text-white" bind:this={linkTextElement}>{linkText}</div>
-            <div class="center-link-weight text-gray-400" bind:this={linkWeightElement}>{linkWeight}</div>
-        {/if}
-    </button>
-{/if}
 </div>
 
 <style>
@@ -116,30 +116,18 @@
         width: fit-content;
         z-index: 1;
     }
-    .center-link-text {
-        white-space: nowrap; /* Prevent text from wrapping */
-        overflow: visible; /* Allow text to overflow its box */
-        text-align: center;
-        z-index: 1;
+
+    /* Minimalist link line */
+    :global(.link-line) {
+        transition: stroke 0.2s;
+        cursor: pointer;
+        stroke: #64748b;
+        stroke-width: 2;
+        opacity: 0.8;
     }
-    .center-link-weight {
-        white-space: nowrap; /* Prevent text from wrapping */
-        overflow: visible; /* Allow text to overflow its box */
-        text-align: center;
-        z-index: 1;
-    }
-    .center-box {
-        position: absolute;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        border: none;
-        background: transparent;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        align-items: center;
-		cursor: pointer;
-        z-index: 2;
+    :global(.link-line:hover) {
+        stroke: #0f172a;
+        stroke-width: 3;
+        opacity: 1;
     }
 </style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Node as NodeType } from '$lib/types';
+	import type { VisualizableNode } from '$lib/types';
 	import type { Link as LinkType } from '$lib/types';
 	import Link from '$lib/components/svg/link.svelte';
 	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
@@ -7,26 +7,35 @@
 
 	const nodesState = getNodesState();
 
-	export let link: LinkType;
-	export let zoomLevel: number;
-
-	$: source = nodesState.getAbstractAssetNode(link.sourceNodeId);
-	$: target = nodesState.getAbstractAssetNode(link.targetNodeId);
-	$: linkDescription = link.linkDescription;
-	$: linkWeight = link.linkWeight;
-	$: linkDirection = link.linkDirection;
-
-	function distance(source: NodeType, target: NodeType) {
+	function distance(source: VisualizableNode, target: VisualizableNode) {
+		if (!source?.position || !target?.position) return 0;
 		const dx = target.position.x - source.position.x;
 		const dy = target.position.y - source.position.y;
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 
-	function getRotation(source: NodeType, target: NodeType) {
+	function getRotation(source: VisualizableNode, target: VisualizableNode) {
+		if (!source?.position || !target?.position) return 0;
 		const dx = target.position.x - source.position.x;
 		const dy = target.position.y - source.position.y;
 		return Math.atan2(dy, dx);
 	}
+
+	export let link: LinkType;
+	export let zoomLevel: number;
+
+	// Declare variables for calculated values
+	let rotationRadians = 0;
+	let rotationDeg = 0;
+	let sourceOffset = { x: 0, y: 0 };
+	let nodeDistance = 0;
+	let linkDistance = 0;
+
+	$: source = nodesState.getNodeById(link.sourceNodeId) as VisualizableNode;
+	$: target = nodesState.getNodeById(link.targetNodeId) as VisualizableNode;
+	$: linkDescription = link.linkDescription;
+	$: linkWeight = link.linkWeight;
+	$: linkDirection = link.linkDirection;
 
 	function getRotationDeg(rotationRadians: number) {
 		return (rotationRadians * 180) / Math.PI;
@@ -39,23 +48,36 @@
         };
     }
 
-	// TODO: why are these undefined initially?
-	if (source === undefined || target === undefined) {
-		console.log('Source or target node not found');
-		console.log('Source:', source);
-		console.log('Target:', target);
-	}
-
 	// TODO: fix this undefined issue! (source and target are undefined initially)
-	$: rotationRadians = getRotation(source, target);			// angle between source and target
-	$: rotationDeg = getRotationDeg(rotationRadians);			// angle between source and target in degrees
-    $: sourceOffset = getOffset(rotationRadians, nodeSize);  // offset from source center to surface (start point of the link)
-	$: nodeDistance = distance(source, target);					// distance between source and target (center to center)
-	$: linkDistance = nodeDistance - (2 * nodeSize);	// distance between source and target surfaces
+	// Calculate link properties with better error handling
+	$: {
+		// Ensure both nodes exist and have positions before calculating
+		if (source && target && source.position && target.position) {
+			rotationRadians = getRotation(source, target);
+			rotationDeg = getRotationDeg(rotationRadians);
+			sourceOffset = getOffset(rotationRadians, nodeSize / 2);
+			nodeDistance = distance(source, target);
+			linkDistance = Math.max(nodeDistance - nodeSize, 10); // Minimum distance of 10px
+			console.log(`Link ${link.id}: source=${source.id}, target=${target.id}, distance=${linkDistance}`);
+		} else {
+			// Default values when nodes are missing
+			rotationRadians = 0;
+			rotationDeg = 0;
+			sourceOffset = { x: 0, y: 0 };
+			nodeDistance = 0;
+			linkDistance = 0;
+			console.log(`Link ${link.id}: source or target missing/invalid`, {
+				sourceExists: !!source,
+				targetExists: !!target,
+				sourceHasPosition: source?.position ? true : false,
+				targetHasPosition: target?.position ? true : false
+			});
+		}
+	}
 
 </script>
 
-
+{#if source && target && source.position && target.position && linkDistance > 0}
 <div
 	class="link"
 	style="
@@ -63,8 +85,10 @@
 		left: {(source.position.x + sourceOffset.x)}px;
 		top: {(source.position.y + sourceOffset.y)}px;
 		width: {linkDistance}px;
+		height: 2px;
 		transform-origin: top left;
 		transform: rotate({rotationDeg}deg);
+		z-index: 1;
 	"
 >
 	<Link
@@ -77,6 +101,7 @@
 		angleRadians={rotationRadians}
 	/>
 </div>
+{/if}
 
 <style>
 	.link {

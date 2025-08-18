@@ -39,7 +39,6 @@
 
 	// Create a new link between two selected nodes in the knowledge graph
 	function createNewLink(): void {
-		console.log("link created...");
 		const linkDescription = formData.linkDescription;
 		const linkWeight = formData.linkWeight;
 		const linkDirection = formData.linkDirection;
@@ -79,8 +78,6 @@
 	const cForm = 'border border-surface-500 p-4 space-y-4 rounded-container-token';
 
 	onMount(() => {
-		// console.log('source:', source);
-		// console.log('target:', target);
 		const sourceNode = nodes.getAbstractAssetNode($selectedNodes[0]);
 		const targetNode = nodes.getAbstractAssetNode($selectedNodes[1]);
 		if (!sourceNode || !targetNode) {
