@@ -42,6 +42,7 @@ before_script:
 
 check:
   stage: check
+  image: alpine:latest
   script: echo "This step allways passes."
 
 npm-test:
