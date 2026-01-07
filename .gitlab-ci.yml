@@ -1,4 +1,5 @@
 stages:
+  - check
   - test
   - analysis
   - build
@@ -21,9 +22,6 @@ before_script:
 
 .base-rules:
   rules:
-    # Do not run when creating tags
-    - if: $CI_COMMIT_TAG
-      when: never
     # Always run on default branch (main)
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       when: always
@@ -39,6 +37,13 @@ before_script:
     # Run if on a branch and not a merge request
     - if: $CI_COMMIT_BRANCH
 
+
+check:
+  stage: check
+  extends: .base-rules
+  image: alpine:latest
+  script:
+    - echo "This step always passes."
 
 npm-test:
   stage: test
@@ -113,8 +118,9 @@ docker-build:
       --label "git-commit-branch=$CI_COMMIT_BRANCH"
       --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
       --label "git-commit-title=$CI_COMMIT_TITLE"
-      -t $IMAGE_PATH/$IMAGE_NAME:sha-$CI_COMMIT_SHORT_SHA
+      --label "git-tag=$CI_COMMIT_TAG"
+      -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+      -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_TAG
       -t $IMAGE_PATH/$IMAGE_NAME:latest .
   rules:
-    - if: $CI_COMMIT_BRANCH == "sindit"
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_TAG
