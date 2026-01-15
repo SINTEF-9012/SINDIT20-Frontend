@@ -41,7 +41,8 @@ export class Nodes {
 		description: string,
 		assetProperties: NodeUri[] = [],
 		position?: { x: number; y: number },
-		id?: string
+		id?: string,
+		assetType?: string
 	): AbstractAsset {
 		if (!id) {
 			id = crypto.randomUUID();
@@ -56,6 +57,7 @@ export class Nodes {
 			position,
 			nodeType: 'AbstractAsset',
 			assetProperties,
+			assetType,
 		};
 	}
 
@@ -131,7 +133,6 @@ export class Nodes {
 			isNaN(node.position.x) ||
 			isNaN(node.position.y)) {
 			node.position = this.generateRandomPosition();
-			console.log(`Setting initial position for new node: ${node.id} (${node.nodeType})`);
 		}
 
 		this.visualizableNodes.update(nodes => [...nodes, node]);
@@ -273,8 +274,9 @@ export class Nodes {
 		nodeName: string,
 		description: string,
 		assetProperties: NodeUri[],
+		assetType?: string
 	): AbstractAsset {
-		const newAsset = this.abstractAssetNodeObject(nodeName, description, assetProperties, undefined, id);
+		const newAsset = this.abstractAssetNodeObject(nodeName, description, assetProperties, undefined, id, assetType);
 		this.addVisualizableNode(newAsset);
 		return newAsset;
 	}
@@ -351,7 +353,9 @@ export class Nodes {
 					// Find the corresponding property node (support all property types)
 					const propertyId = utilsGetNodeIdFromBackendUri(propertyRef.uri);
 					const propertyNode = allNodes.find(n =>
-						(n.nodeType === 'StreamingProperty' ||
+						(n.nodeType === 'AbstractAssetProperty' ||
+						 n.nodeType === 'StreamingProperty' ||
+						 n.nodeType === 'TimeseriesProperty' ||
 						 n.nodeType === 'S3ObjectProperty' ||
 						 n.nodeType === 'PropertyCollection') &&
 						n.id === propertyId
@@ -396,6 +400,59 @@ export class Nodes {
 					}
 				});
 			}
+
+			// Create links between PropertyCollection and its contained properties
+			if (node.nodeType === 'PropertyCollection' && node.collectionProperties) {
+
+				node.collectionProperties.forEach((propertyRef, index) => {
+
+					// Handle both Property objects and NodeUri references
+					let propertyId: string | null = null;
+
+					// Check if it's a NodeUri or a Property object
+					if ('uri' in propertyRef) {
+						// It's a NodeUri reference
+						propertyId = utilsGetNodeIdFromBackendUri(propertyRef.uri);
+					} else if ('id' in propertyRef) {
+						// It's a Property object with direct id
+						propertyId = propertyRef.id;
+					} else {
+					}
+
+					if (propertyId) {
+
+						const propertyNode = allNodes.find(n =>
+							(n.nodeType === 'AbstractAssetProperty' ||
+							 n.nodeType === 'StreamingProperty' ||
+							 n.nodeType === 'TimeseriesProperty' ||
+							 n.nodeType === 'S3ObjectProperty' ||
+							 n.nodeType === 'PropertyCollection') &&
+							n.id === propertyId
+						);
+
+						if (propertyNode) {
+							links.push({
+								id: `collection-property-${node.id}-${propertyNode.id}`,
+								sourceNodeId: node.id,
+								targetNodeId: propertyNode.id,
+								linkDescription: 'contains property',
+								linkWeight: 2,
+								linkDirection: 'right'
+							});
+						} else {
+							allNodes.filter(n =>
+								n.nodeType === 'AbstractAssetProperty' ||
+								n.nodeType === 'StreamingProperty' ||
+								n.nodeType === 'TimeseriesProperty' ||
+								n.nodeType === 'S3ObjectProperty' ||
+								n.nodeType === 'PropertyCollection'
+							).forEach(n => {
+							});
+						}
+					} else {
+					}
+				});
+			}
 		});
 
 		return links;
@@ -416,7 +473,6 @@ export class Nodes {
 				// Initialize with random positions - D3 force simulation will handle the layout
 				node.position = this.generateRandomPosition();
 				hasChanges = true;
-				console.log(`Initialized missing position for node: ${node.id} (${node.nodeType})`);
 			}
 
 			// Restore pinned state if fx/fy are set
@@ -424,7 +480,6 @@ export class Nodes {
 				// Ensure position matches fixed position for consistency
 				node.position = { x: node.fx, y: node.fy };
 				hasChanges = true;
-				console.log(`Restored pinned state for node: ${node.id}`);
 			}
 		});
 
@@ -435,29 +490,10 @@ export class Nodes {
 		return nodes; // Return the nodes for convenience
 	}
 
-	// Diagnostic method to check node positions
-	public logNodePositions() {
-		const nodes = get(this.visualizableNodes);
-		console.log(`=== Node Position Diagnostic (${nodes.length} nodes) ===`);
-
-		nodes.forEach(node => {
-			console.log(`Node: ${node.id} (${node.nodeType})`, {
-				position: node.position,
-				hasPosition: !!node.position,
-				x: node.position?.x,
-				y: node.position?.y,
-				validX: node.position?.x !== undefined && !isNaN(node.position?.x),
-				validY: node.position?.y !== undefined && !isNaN(node.position?.y)
-			});
-		});
-
-		console.log('=== End Diagnostic ===');
-	}
 
 	// Placeholder for force re-layout - This will be handled by D3 in the component
 	forceReLayout() {
 		// Empty implementation - D3 will handle layout
-		console.log('Layout will be handled by D3 force simulation');
 	}
 }
 

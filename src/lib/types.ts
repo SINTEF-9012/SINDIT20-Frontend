@@ -54,6 +54,7 @@ export interface Node {
 
 export interface AbstractAsset extends Node {
 	assetProperties?: NodeUri[];
+	assetType?: string;
 	nodeType: 'AbstractAsset';
 }
 
@@ -89,6 +90,14 @@ export interface StreamingProperty extends Property {
 	position?: Position; // Add position for visualization
 }
 
+export interface TimeseriesProperty extends DatabaseProperty {
+	nodeType: 'TimeseriesProperty';
+	timeseriesIdentifiers?: Record<string, any>;
+	timeseriesRetrievalMethod?: string;
+	timeseriesTags?: Record<string, any>;
+	position?: Position; // Add position for visualization
+}
+
 export interface S3ObjectProperty extends Property {
 	nodeType: 'S3ObjectProperty';
 	propertyConnection: NodeUri;
@@ -113,7 +122,7 @@ export interface SINDITKG {
 }
 
 // Union type for all visualizable nodes (excludes Connection)
-export type VisualizableNode = AbstractAsset | StreamingProperty | S3ObjectProperty | PropertyCollection | SINDITKG;
+export type VisualizableNode = AbstractAsset | AbstractAssetProperty | StreamingProperty | TimeseriesProperty | S3ObjectProperty | PropertyCollection | SINDITKG;
 
 export interface Connection {
 	id: string;

@@ -40,9 +40,9 @@ Use `PaginationController` when you want user-controlled pagination:
     import { onMount } from 'svelte';
 
     let nodes = [];
-    let controller = new PaginationController(getNodes, { 
+    let controller = new PaginationController(getNodes, {
         pageSize: 20,
-        depth: 1 
+        depth: 1
     });
 
     onMount(async () => {
@@ -69,7 +69,7 @@ Use `PaginationController` when you want user-controlled pagination:
         <div>{node.label}</div>
     {/each}
 
-    <PaginationComponent 
+    <PaginationComponent
         state={paginationState}
         onLoadMore={loadMore}
         onLoadAll={loadAll}
@@ -125,7 +125,7 @@ const assets = await getNodesByClass('http://example.org/Asset', 1, 0, 50);
 
     function handleScroll() {
         if (!scrollContainer) return;
-        
+
         const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
         const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
 
@@ -141,7 +141,7 @@ const assets = await getNodesByClass('http://example.org/Asset', 1, 0, 50);
     }
 </script>
 
-<div 
+<div
     bind:this={scrollContainer}
     on:scroll={handleScroll}
     class="h-screen overflow-y-auto"

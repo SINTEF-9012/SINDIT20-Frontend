@@ -59,7 +59,6 @@
 	async function selectWorkspace(workspace: Workspace) {
         try {
             // Set the selected workspace
-            console.log("selected workspace:", workspace);
             await switchWorkspace(workspace.uri);
             _selectedWorkspace = workspace.name;
             selectedWorkspace.set(_selectedWorkspace);
@@ -71,8 +70,7 @@
             setTimeout(async () => {
                 try {
                     const nodes = await getNodesBackendQuery();
-                    addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
-                    console.log("selected workspace:", _selectedWorkspace);
+                    await addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
                     goto(`/canvas`);
                 } catch (err) {
                     if (err) console.error('Error loading workspace nodes:', err);
@@ -111,8 +109,7 @@
     async function getWorkspaces(): Promise<void> {
         try {
             const workspaceList = await listWorkspaces();
-            console.log('Workspaces received:', workspaceList);
-            
+
             // Backend returns array of workspace objects with name, uri, and is_default
             if (Array.isArray(workspaceList)) {
                 workspaces = workspaceList;
@@ -148,7 +145,6 @@
         }
     });
 
-    $: console.log('workspaces', workspaces);
 
 </script>
 

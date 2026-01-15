@@ -1,4 +1,5 @@
 import { getContext, setContext } from 'svelte';
+import { env } from '$env/dynamic/public';
 import { writable, get } from 'svelte/store';
 import { getToastState } from './toast-state.svelte';
 import type {
@@ -15,14 +16,11 @@ import {
     createStreamingPropertyNode as createStreamingPropertyQuery,
     createS3PropertyNode as createS3PropertyQuery,
     addPropertyToAssetNode as addPropertyToAssetNodeQuery,
-    updateNode as updateNodeQuery,
-    streamDataReader as streamDataReaderQuery
+    updateNode as updateNodeQuery
 } from '$apis/sindit-backend/kg';
 
 export class Properties {
     properties = writable<Property[]>([]); // PropertyNodes
-    private streamingObjects: Set<StreamingProperty> = new Set();
-    private readers: Map<string, ReadableStreamDefaultReader<Uint8Array>> = new Map();
     private toastState: ReturnType<typeof getToastState>;
 
     constructor() {
@@ -31,64 +29,10 @@ export class Properties {
 
     destroy() {
         this.properties.set([]);
-        this.streamingObjects.forEach(obj => this.stopStreamingData(obj));
-        this.streamingObjects.clear();
         this.toastState.destroy();
     }
 
-    addStreamingObject(streamingObject: StreamingProperty) {
-        if (!this.streamingObjects.has(streamingObject)) {
-            this.streamingObjects.add(streamingObject);
-            this.startStreamingData(streamingObject);
-        }
-    }
-
-    removeStreamingObject(streamingObject: StreamingProperty) {
-        if (this.streamingObjects.has(streamingObject)) {
-            this.streamingObjects.delete(streamingObject);
-            this.stopStreamingData(streamingObject);
-        }
-    }
-
-    private handleDataSteam(data: any) {
-        const jsondata = JSON.parse(data);
-        if (jsondata.propertyValue) {
-            const property = this.getProperty(jsondata.uri);
-            if (property) {
-                property.propertyValue = jsondata.propertyValue;
-                property.propertyValueTimestamp = jsondata.propertyValueTimestamp;
-                this.updateProperty(property);
-            }
-        }
-    }
-
-    private async streamData(reader: ReadableStreamDefaultReader<Uint8Array>) {
-        const decoder = new TextDecoder();
-        let done = false;
-        while (!done) {
-            const { value, done: readerDone } = await reader.read();
-            done = readerDone;
-            const chunk = decoder.decode(value, { stream: true });
-            this.handleDataSteam(chunk);
-        }
-    }
-
-    private startStreamingData(streamingObject: StreamingProperty) {
-        streamDataReaderQuery(streamingObject.id).then((reader) => {
-            this.readers.set(streamingObject.id, reader);
-            this.streamData(reader);
-        }).catch((error) => {
-            this.toastState.add('Failed to stream data', error as string, 'error');
-        });
-    }
-
-    private stopStreamingData(streamingObject: StreamingProperty) {
-        const reader = this.readers.get(streamingObject.id);
-        if (reader) {
-            reader.cancel();
-            this.readers.delete(streamingObject.id);
-        }
-    }
+    // Streaming functionality removed - the /kg/stream API is experimental
 
     private propertyObject(
 		propertyName: string,
@@ -286,14 +230,21 @@ export class Properties {
         if (class_type === 'AbstractAssetProperty') {
             this.addAbstractAssetProperty(node.uri, propertyName, node.description, node.propertyDataType?.uri, node.propertyUnit?.uri, node.propertyValue, node.propertyValueTimestamp);
         } else if (class_type === 'StreamingProperty') {
-            // console.log("addPropertyNode", node)
             this.addStreamingProperty(node.uri, node.streamingTopic, node.streamingPath, propertyName, node.propertyDescription, node.propertyDataType?.uri, node.propertyUnit?.uri, node.propertyConnection.uri, node.propertyValue, node.propertyValueTimestamp);
         } else if ( class_type === 'S3ObjectProperty' ) {
-            console.log(node);
             this.addS3Property(node.uri, node.bucket, node.key, propertyName, node.description, node.propertyConnection.uri, node.propertyValue, node.propertyValueTimestamp);
         }
-        else if(class_type === 'PropertyCollection') {
-            console.log("PropertyCollection is not supported in this context");
+        else if (class_type === 'PropertyCollection') {
+            // Add PropertyCollection to properties state so lookups and UI can resolve labels
+            const propertyName = node.propertyName || node.label || node.uri || 'PropertyCollection';
+            const newProperty = {
+                id: node.uri,
+                nodeType: 'PropertyCollection',
+                propertyName,
+                description: node.description || node.propertyDescription || '',
+                collectionProperties: node.collectionProperties || [],
+            } as any;
+            this.addProperty(newProperty);
         }
         else {
             throw new Error(`Invalid property node type '${class_type}'`);
@@ -301,7 +252,6 @@ export class Properties {
     }
 
     createProperty(class_type: PropertyNodeType, assetNodeId: string, node: any) {
-        console.log("createProperty", class_type, node)
         if (class_type === 'AbstractAssetProperty') {
             return this.createAbstractAssetProperty(assetNodeId, node.propertyName, node.description, node.propertyDataType.uri, node.propertyUnit.uri, node.propertyValue);
         } else if (class_type === 'StreamingProperty') {
@@ -357,7 +307,7 @@ export class Properties {
             propertyValueTimestamp,
         );
         this.addProperty(newProperty);
-        this.addStreamingObject(newProperty);
+        // Streaming functionality removed - the /kg/stream API is experimental
     }
 
     async addS3Property(
@@ -381,7 +331,6 @@ export class Properties {
             propertyValueTimestamp,
         );
         this.addProperty(newProperty);
-        console.log(get(this.properties));
     }
 
     async createAbstractAssetProperty(
@@ -498,12 +447,23 @@ export class Properties {
     }
 
     // Get properties by their IDs
-	getProperties(ids: NodeUri[]): Property[] {
-		const properties = get(this.properties);
-		//const uris = ids.map((id) => getNodeIdFromBackendUri(id.uri));
-        const uris = ids.map((id) => (id.uri));
-		return properties.filter((property) => uris.includes(property.id));
-	}
+    getProperties(ids: NodeUri[]): Property[] {
+        const properties = get(this.properties);
+        //const uris = ids.map((id) => getNodeIdFromBackendUri(id.uri));
+        // Normalize IDs: for backend API URIs, strip API base; for ontology URIs, strip protocol; otherwise return as-is
+        const API_BASE_URI = env.PUBLIC_SINDIT_BACKEND_API_BASE_URI;
+        const normalizeUriToId = (uri: string): string => {
+            if (API_BASE_URI && uri.startsWith(API_BASE_URI)) {
+                return uri.slice(API_BASE_URI.length);
+            }
+            if (uri.startsWith('http://') || uri.startsWith('https://')) {
+                return uri.replace(/^https?:\/\//, '');
+            }
+            return uri;
+        };
+        const idsNormalized = ids.map((id) => normalizeUriToId(id.uri));
+        return properties.filter((property) => idsNormalized.includes(property.id));
+    }
 
 }
 

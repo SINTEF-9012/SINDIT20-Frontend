@@ -37,28 +37,67 @@
 	const fontSizeDescription = fontSize * 0.8 + 'px';
 
 	function getNodeDisplayName(node: VisualizableNode): string {
-		switch (node.nodeType) {
-			case 'AbstractAsset':
-				return node.nodeName;
-			case 'StreamingProperty':
-				return node.propertyName;
+		let displayName: string;
+
+		console.log(`[getNodeDisplayName] Type: ${node.nodeType}, ID: ${node.id}`);
+		console.log(`[getNodeDisplayName] Full node:`, node);
+		console.log(`[getNodeDisplayName] node.propertyName =`, (node as any).propertyName);
+		console.log(`[getNodeDisplayName] typeof propertyName =`, typeof (node as any).propertyName);
+		console.log(`[getNodeDisplayName] All keys in node:`, Object.keys(node));
+
+	switch (node.nodeType) {
+		case 'AbstractAsset':
+			displayName = node.nodeName;
+			console.log(`  -> AbstractAsset nodeName: ${displayName}`);
+			break;
+		case 'AbstractAssetProperty':
+			displayName = node.propertyName;
+			console.log(`  -> AbstractAssetProperty propertyName: ${displayName}`);
+			break;
+		case 'StreamingProperty':
+				displayName = node.propertyName;
+				console.log(`  -> StreamingProperty propertyName: ${displayName}`);
+				break;
+			case 'TimeseriesProperty':
+				displayName = node.propertyName;
+				console.log(`  -> TimeseriesProperty propertyName: ${displayName}`);
+				break;
 			case 'SINDITKG':
-				return node.label;
+				displayName = node.label;
+				console.log(`  -> SINDITKG label: ${displayName}`);
+				break;
 			case 'S3ObjectProperty':
-				return node.propertyName;
+				displayName = node.propertyName;
+				console.log(`  -> S3ObjectProperty propertyName: ${displayName}`);
+				break;
 			case 'PropertyCollection':
-				return node.propertyName;
+				displayName = node.propertyName;
+				console.log(`  -> PropertyCollection propertyName: ${displayName}`);
+				break;
+			default:
+				displayName = (node as any).id || 'Unknown Node';
+				console.log(`  -> Default: ${displayName}`);
 		}
-		// TypeScript exhaustiveness check - this should never be reached
-		return (node as any).id || 'Unknown Node';
+
+		if (!displayName || displayName === 'undefined') {
+			console.warn('Node missing display name - returning ID or Unknown:', { nodeType: node.nodeType, id: node.id, node });
+			return node.id || 'Unknown';
+		}
+
+		console.log(`  -> Final display name: ${displayName}`);
+		return displayName;
 	}
 
 	function getNodeColor(nodeType: string): string {
 		switch (nodeType) {
 			case 'AbstractAsset':
 				return 'node-abstract-asset';
+			case 'AbstractAssetProperty':
+				return 'node-abstract-asset-property';
 			case 'StreamingProperty':
 				return 'node-streaming-property';
+			case 'TimeseriesProperty':
+				return 'node-timeseries-property';
 			case 'SINDITKG':
 				return 'node-sinditkg';
 			case 'S3ObjectProperty':
@@ -146,6 +185,10 @@
 	}
 
     onMount(() => {
+		console.log(`[NODE MOUNTED] Type: ${node.nodeType}, ID: ${node.id}`);
+		console.log(`[NODE MOUNTED] Has propertyName:`, (node as any).propertyName);
+		console.log(`[NODE MOUNTED] Display name will be:`, getNodeDisplayName(node));
+		console.log(`[NODE MOUNTED] nodeSize=${nodeSize}, threshold=${threshold}, will show text=${nodeSize >= threshold}`);
 		// Only load properties for AbstractAsset nodes
 		if (node.nodeType === 'AbstractAsset') {
 			const property_uris = node.assetProperties;
@@ -277,6 +320,12 @@
 		border-color: rgba(255, 255, 255, 0.3);
 	}
 
+	.node-timeseries-property {
+		background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+		color: white;
+		border-color: rgba(255, 255, 255, 0.3);
+	}
+
 	.node-sinditkg {
 		background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
 		color: white;
@@ -295,6 +344,12 @@
 
 	.node-property-collection {
 		background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+		color: white;
+		border-color: rgba(255, 255, 255, 0.3);
+	}
+
+	.node-abstract-asset-property {
+		background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
 		color: white;
 		border-color: rgba(255, 255, 255, 0.3);
 	}

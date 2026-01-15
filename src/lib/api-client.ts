@@ -7,20 +7,20 @@ import { goto } from '$app/navigation';
  */
 export async function authenticatedFetch(url: string, options?: RequestInit): Promise<Response> {
     const response = await fetch(url, options);
-    
+
     if (response.status === 401) {
         // Clear authentication state
         if (browser) {
             localStorage.removeItem('sindit_auth_user');
         }
-        
+
         // Redirect to home page
         if (browser) {
             goto('/');
         }
-        
+
         throw new Error('NOT_AUTHENTICATED');
     }
-    
+
     return response;
 }

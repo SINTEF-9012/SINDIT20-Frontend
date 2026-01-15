@@ -67,7 +67,6 @@
 
 	// Open Drawer
 	function openNavDrawer() {
-		console.log('openNavDrawer');
 		drawerStore.open({id: 'navigation'});
 	}
 
@@ -87,12 +86,9 @@
 	};
 
 	async function loadWorkspaceData() {
-		console.log('loadWorkspaceData called');
 		try {
 			const nodes = await getNodesBackendQuery();
-			console.log('Nodes received from backend:', nodes);
-			addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
-			console.log('Nodes added to states');
+			await addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
 		} catch (error) {
 			console.error('Error loading workspace data:', error);
 		}
@@ -108,18 +104,14 @@
 		// React to workspace selection and backend running
 		let lastWorkspaceSelected = false;
 		const unsubWorkspace = isWorkspaceSelected.subscribe((workspaceSelected) => {
-			console.log('Workspace selection changed:', workspaceSelected, 'Backend running:', $isBackendRunning, 'Authenticated:', $isAuthenticated);
 			if (workspaceSelected && $isBackendRunning && $isAuthenticated) {
-				console.log('Calling loadWorkspaceData from workspace subscription');
 				loadWorkspaceData();
 			}
 			lastWorkspaceSelected = workspaceSelected;
 		});
 		// Also react to backend running for workspace data
 		const unsubBackendForWorkspace = isBackendRunning.subscribe((backendRunning) => {
-			console.log('Backend status changed:', backendRunning, 'Workspace selected:', $isWorkspaceSelected, 'Authenticated:', $isAuthenticated);
 			if (backendRunning && $isWorkspaceSelected && $isAuthenticated) {
-				console.log('Calling loadWorkspaceData from backend subscription');
 				loadWorkspaceData();
 			}
 		});

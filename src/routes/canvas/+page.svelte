@@ -26,6 +26,8 @@
 		position?: { x: number; y: number };
 		isPinned?: boolean; // Track if node is deliberately pinned
 		description?: string; // For tooltips
+		nodeType: string; // Original node type (PropertyCollection, AbstractAsset, etc.)
+		originalNode: any; // Store full original node data for tooltips
 	}
 
 	interface D3Link extends d3.SimulationLinkDatum<D3Node> {
@@ -409,12 +411,12 @@
 					const target = d.target as D3Node;
 
 					// KG nodes should have more space
-					if (source.type === 'kg' || target.type === 'kg') {
+					if (source.type === 'SINDITKG' || target.type === 'SINDITKG') {
 						return 400;
 					}
 
 					// Asset nodes should have medium space
-					if (source.type === 'asset' || target.type === 'asset') {
+					if (source.type === 'AbstractAsset' || target.type === 'AbstractAsset') {
 						return 320;
 					}
 
@@ -425,8 +427,8 @@
 			.force('charge', d3.forceManyBody<D3Node>()
 				.strength(d => {
 					// Adjust repulsion strength based on node type
-					if (d.type === 'kg') return -4000; // Stronger repulsion for Factory KG nodes
-					if (d.type === 'asset') return -3500; // Medium repulsion for Asset nodes
+					if (d.type === 'SINDITKG') return -4000; // Stronger repulsion for KG nodes
+					if (d.type === 'AbstractAsset') return -3500; // Medium repulsion for Asset nodes
 					return -3000; // Default repulsion for Property nodes
 				})
 				.distanceMin(180) // Increased minimum distance for less clustering
@@ -439,22 +441,22 @@
 			.force('collision', d3.forceCollide<D3Node>()
 				.radius(d => {
 					// Adjust collision radius based on node type
-					if (d.type === 'kg') return 180; // Factory KG nodes (red)
-					if (d.type === 'asset') return 160; // Asset nodes (green)
-					return 140; // Property nodes (blue)
+					if (d.type === 'SINDITKG') return 180; // KG nodes
+					if (d.type === 'AbstractAsset') return 160; // Asset nodes
+					return 140; // Property nodes
 				})
 				.strength(0.9) // Increased strength for better collision avoidance
 				.iterations(4)) // More iterations for better collision detection
 			.force('x', d3.forceX(d => {
 				// Use different target points based on node type to encourage better distribution
-				if (d.type === 'kg') return (containerWidth / 2) + 20;
-				if (d.type === 'asset') return (containerWidth / 2) + 10;
+				if (d.type === 'SINDITKG') return (containerWidth / 2) + 20;
+				if (d.type === 'AbstractAsset') return (containerWidth / 2) + 10;
 				return (containerWidth / 2) - 10;
 			}).strength(0.03)) // Weaker x-positioning force
 			.force('y', d3.forceY(d => {
 				// Use different target points based on node type to encourage better distribution
-				if (d.type === 'kg') return (containerHeight / 2) - 60;
-				if (d.type === 'asset') return (containerHeight / 2) - 30;
+				if (d.type === 'SINDITKG') return (containerHeight / 2) - 60;
+				if (d.type === 'AbstractAsset') return (containerHeight / 2) - 30;
 				return (containerHeight / 2) - 20;
 			}).strength(0.04)) // Slightly stronger y-positioning
 			// Critical parameters for stability and performance
@@ -467,10 +469,6 @@
 		function updateGraph() {
 			// First ensure all nodes have valid positions
 			nodesState.ensureNodePositions();
-			console.log(`Updating graph with ${$visualizableNodes.length} nodes and ${allLinks.length} links`);
-
-			// Log diagnostic information
-			nodesState.logNodePositions();
 
 			// Remove all existing nodes and links
 			g.selectAll('.link').remove();
@@ -486,19 +484,23 @@
 
 				return {
 					id: node.id,
-					name: node.nodeType === 'AbstractAsset' ? node.nodeName :
-						node.nodeType === 'SINDITKG' ? node.label :
-						node.nodeType === 'StreamingProperty' ? node.propertyName : 'Unknown',
-					type: node.nodeType === 'AbstractAsset' ? 'asset' :
-						node.nodeType === 'SINDITKG' ? 'kg' :
-						node.nodeType === 'StreamingProperty' ? 'property' : 'unknown',
+				name: node.nodeType === 'AbstractAsset' ? node.nodeName :
+					node.nodeType === 'SINDITKG' ? node.label :
+					(node.nodeType === 'StreamingProperty' ||
+					 node.nodeType === 'TimeseriesProperty' ||
+					 node.nodeType === 'S3ObjectProperty' ||
+					 node.nodeType === 'PropertyCollection' ||
+					 node.nodeType === 'AbstractAssetProperty') ? node.propertyName : 'Unknown',
+				type: node.nodeType, // Use actual nodeType for color mapping
 					position: node.position,
 					x: node.position.x,
 					y: node.position.y,
 					isPinned: !!node.fx || !!node.fy, // Track if node was previously pinned
 					description: node.nodeType === 'AbstractAsset' ? node.description :
 						node.nodeType === 'StreamingProperty' ? node.description :
-						node.nodeType === 'SINDITKG' ? `Knowledge Graph - ${node.uri}` : 'No description'
+						node.nodeType === 'SINDITKG' ? `Knowledge Graph - ${node.uri}` : 'No description',
+					nodeType: node.nodeType,
+					originalNode: node
 				};
 			});
 
@@ -621,6 +623,74 @@
 				.attr('filter', 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))')
 				.text((d: D3Link) => d.label || '');
 
+			// Helper function to generate detailed node info for tooltip
+			function getNodeDetailsHTML(node: D3Node): string {
+				const originalNode = node.originalNode;
+				let detailsHTML = '';
+
+				switch (node.nodeType) {
+				case 'AbstractAsset':
+					detailsHTML = `
+						<div><strong>ID:</strong> ${node.id}</div>
+						${originalNode.assetType ? `<div><strong>Type:</strong> ${originalNode.assetType}</div>` : ''}
+						${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+						${originalNode.assetProperties ? `<div><strong>Properties:</strong> ${originalNode.assetProperties.length}</div>` : ''}
+					`;
+						break;
+					case 'PropertyCollection':
+						detailsHTML = `
+							<div><strong>ID:</strong> ${node.id}</div>
+							${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${originalNode.propertyDataType}</div>` : ''}
+							${originalNode.collectionProperties ? `<div><strong>Items:</strong> ${originalNode.collectionProperties.length}</div>` : ''}
+							${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+						`;
+						break;
+					case 'AbstractAssetProperty':
+						detailsHTML = `
+							<div><strong>ID:</strong> ${node.id}</div>
+							${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
+							${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri || JSON.stringify(originalNode.propertyDataType) : originalNode.propertyDataType}</div>` : ''}
+							${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+						`;
+						break;
+					case 'StreamingProperty':
+						detailsHTML = `
+							<div><strong>ID:</strong> ${node.id}</div>
+							${originalNode.streamingTopic ? `<div><strong>Topic:</strong> ${originalNode.streamingTopic}</div>` : ''}
+							${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+						`;
+						break;
+					case 'TimeseriesProperty':
+						detailsHTML = `
+							<div><strong>ID:</strong> ${node.id}</div>
+							${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
+							${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+						`;
+						break;
+				case 'S3ObjectProperty':
+					detailsHTML = `
+						<div><strong>ID:</strong> ${node.id}</div>
+						${originalNode.bucket ? `<div><strong>Bucket:</strong> ${originalNode.bucket}</div>` : ''}
+						${originalNode.key ? `<div><strong>Key:</strong> ${originalNode.key}</div>` : ''}
+						${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
+						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri || JSON.stringify(originalNode.propertyDataType) : originalNode.propertyDataType}</div>` : ''}
+						${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${typeof originalNode.propertyConnection === 'object' ? originalNode.propertyConnection.uri : originalNode.propertyConnection}</div>` : ''}
+						${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+					`;
+					break;
+					case 'SINDITKG':
+						detailsHTML = `
+							<div><strong>URI:</strong> ${originalNode.uri || node.id}</div>
+							${originalNode.assets ? `<div><strong>Assets:</strong> ${originalNode.assets.length}</div>` : ''}
+						`;
+						break;
+					default:
+						detailsHTML = `<div><strong>ID:</strong> ${node.id}</div>`;
+				}
+
+				return detailsHTML;
+			}
+
 			// Create node elements
 			const nodeElements = g.selectAll<SVGGElement, D3Node>('.node')
 				.data(nodes)
@@ -666,9 +736,9 @@
 										${d.name}
 										${d.isPinned ? '<span class="pin-indicator">📌</span>' : ''}
 									</div>
-									<div class="tooltip-type">${d.type.charAt(0).toUpperCase() + d.type.slice(1)}</div>
-									<div class="tooltip-body">
-										${d.description || 'No description available'}
+									<div class="tooltip-type" style="color: #60a5fa; font-weight: 600; margin: 4px 0;">${d.nodeType}</div>
+									<div class="tooltip-body" style="font-size: 11px; line-height: 1.5;">
+										${getNodeDetailsHTML(d)}
 									</div>
 								</div>
 							`)
@@ -753,15 +823,31 @@
 				.attr('class', 'node-circle')
 				.attr('r', (d: D3Node) => {
 					// Size based on node type
-					if (d.type === 'kg') return 36;
-					if (d.type === 'asset') return 30;
-					return 26; // Smaller for properties and other nodes
+					if (d.type === 'SINDITKG') return 36;
+					if (d.type === 'AbstractAsset') return 30;
+					if (d.type === 'PropertyCollection') return 28; // Slightly larger for collections
+					return 26; // Standard size for property nodes
 				})
 				.attr('fill', (d: D3Node) => {
 					// Color based on node type
-					if (d.type === 'kg') return '#e74c3c'; // Red for Factory KG nodes
-					if (d.type === 'asset') return '#2ecc71'; // Green for assets
-					return '#3498db'; // Blue for property nodes
+					switch (d.type) {
+						case 'SINDITKG':
+							return '#e74c3c'; // Red for Knowledge Graph nodes
+						case 'AbstractAsset':
+							return '#2ecc71'; // Green for Asset nodes
+						case 'AbstractAssetProperty':
+							return '#3498db'; // Blue for basic properties
+						case 'StreamingProperty':
+							return '#9b59b6'; // Purple for streaming properties
+						case 'TimeseriesProperty':
+							return '#e67e22'; // Orange for timeseries properties
+						case 'S3ObjectProperty':
+							return '#f39c12'; // Yellow-orange for S3 properties
+					case 'PropertyCollection':
+							return '#e91e63'; // Pink/Magenta for property collections
+						default:
+							return '#95a5a6'; // Gray for unknown
+					}
 				})
 				.attr('stroke', '#ffffff') // Simple white border
 				.attr('stroke-width', (d: D3Node) => selectedNodesIds.includes(d.id) ? 3 : 1.5)
@@ -878,12 +964,6 @@
 
 						if (allNodesVisible) {
 							isStable = true;
-							console.log("Graph layout stabilized", {
-								stableFrames: stableFrameCount,
-								positionStability: positionStabilityCount,
-								alpha: currentAlpha,
-								nodeCount: nodes.length
-							});
 
 							// Stop the simulation completely to prevent further updates
 							simulation.alpha(0).stop();
@@ -896,7 +976,6 @@
 							return; // Skip further updates
 						} else {
 							// If nodes aren't all visible, restart the simulation
-							console.log("Some nodes have invalid positions, continuing simulation");
 							stableFrameCount = 0;
 							positionStabilityCount = 0;
 							simulation.alpha(0.3).restart();
@@ -919,8 +998,9 @@
 
 				// Calculate node radius based on type for more accurate boundary checking
 				const getNodeRadius = (d: D3Node) => {
-					if (d.type === 'kg') return 45; // Factory KG nodes (red)
-					if (d.type === 'asset') return 38; // Asset nodes (green)
+					if (d.type === 'SINDITKG') return 45; // KG nodes
+					if (d.type === 'AbstractAsset') return 38; // Asset nodes
+					if (d.type === 'PropertyCollection') return 36; // Collection nodes
 					return 32; // Property nodes (blue)
 				};
 
@@ -1161,7 +1241,6 @@
 						if (!isStable) {
 							isStable = true;
 							simulation.stop();
-							console.log("Forced graph stability after releasing pins");
 						}
 					}, 1500);
 				}
@@ -1287,7 +1366,6 @@
 		// Set a failsafe timer to ensure simulation eventually stops
 			setTimeout(() => {
 				if (!isStable) {
-					console.log("Forcing simulation to stop after timeout");
 					isStable = true;
 					simulation.stop();
 
@@ -1397,7 +1475,6 @@
 								if (!isStable) {
 									isStable = true;
 									simulation.stop();
-									console.log("Forced graph stability after fit-to-view");
 
 									// Final position update to store
 									for (const node of nodes) {
@@ -1438,7 +1515,6 @@
 
 					// Debounce updates to prevent multiple rapid re-renders
 					updateTimer = setTimeout(() => {
-						console.log(`Updating graph due to node changes (${nodes.length} nodes)`);
 						isStable = false; // Reset stability to ensure proper layout
 						stableFrameCount = 0;
 						positionStabilityCount = 0;
@@ -1451,7 +1527,6 @@
 						// Wait for graph to update before fitting to view
 						setTimeout(() => {
 							fitGraphToView();
-							console.log("Graph updated and fit to view");
 						}, 300);
 
 						updateTimer = null;
@@ -1470,7 +1545,6 @@
 
 				// Debounce updates to prevent multiple rapid re-renders
 				updateTimer = setTimeout(() => {
-					console.log(`Updating graph due to link changes (${links.length} links)`);
 					isStable = false; // Reset stability to ensure proper layout
 
 					updateGraph();

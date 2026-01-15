@@ -19,7 +19,7 @@ export interface PaginationState {
 /**
  * Fetch all items by repeatedly calling a paginated API endpoint
  * until no more items are returned.
- * 
+ *
  * @param fetchFn - Function that fetches a page of items
  * @param depth - Depth parameter for queries
  * @param pageSize - Number of items per page (default: 100)
@@ -36,13 +36,13 @@ export async function fetchAllPages<T>(
 
     while (hasMore) {
         const items = await fetchFn(depth, skip, pageSize);
-        
+
         if (items.length === 0) {
             hasMore = false;
         } else {
             allItems.push(...items);
             skip += items.length;
-            
+
             // If we got fewer items than the page size, we've reached the end
             if (items.length < pageSize) {
                 hasMore = false;
@@ -156,7 +156,7 @@ export async function fetchWithRetry<T>(
             return await fetchFn();
         } catch (error) {
             lastError = error instanceof Error ? error : new Error(String(error));
-            
+
             // Don't retry on authentication errors
             if (lastError.message === 'NOT_AUTHENTICATED') {
                 throw lastError;
