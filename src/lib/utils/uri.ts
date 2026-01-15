@@ -69,10 +69,10 @@ export function getNodeClassTypeFromUri(classUri: string): string {
 export function getWorkspaceNameFromUri(workspaceUri: string): string {
 	const parts = workspaceUri.split('#');
 	const workspaceName = parts[1];
-	
+
 	if (!workspaceName) {
 		return workspaceUri;
 	}
-	
+
 	return workspaceName;
 }

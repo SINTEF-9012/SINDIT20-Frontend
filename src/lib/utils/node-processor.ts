@@ -3,12 +3,12 @@ import type { getPropertiesState } from '$lib/components/states/properties.svelt
 import type { getConnectionsState } from '$lib/components/states/connections.svelte';
 import type { PropertyNodeType } from '$lib/types';
 import { getNodeIdFromBackendUri, getNodeClassTypeFromUri } from '$lib/utils/uri';
-import { 
-	isAssetNodeType, 
-	isConnectionNodeType, 
+import {
+	isAssetNodeType,
+	isConnectionNodeType,
 	isPropertyNodeType,
 	isVisualizablePropertyType,
-	type BackendNode 
+	type BackendNode
 } from '$lib/utils/validators';
 import { logger } from '$lib/utils/logger';
 
@@ -103,13 +103,13 @@ function processPropertyNode(
 	// Add visualizable properties to nodes state
 	if (isVisualizablePropertyType(classType)) {
 		const propertyNode = createPropertyNodeObject(node, nodeId, classType);
-		
+
 		try {
 			nodesState.addVisualizableNode(propertyNode);
 		} catch (error) {
-			logger.error('Error adding visualizable property node', error, { 
-				nodeId, 
-				classType 
+			logger.error('Error adding visualizable property node', error, {
+				nodeId,
+				classType
 			});
 		}
 	}
@@ -124,7 +124,7 @@ function processSINDITKGNode(
 	nodesState: ReturnType<typeof getNodesState>
 ): void {
 	const assets = getNodeProperty(node, 'assets');
-	
+
 	nodesState.addSINDITKGNode(
 		nodeId,
 		node.label,
@@ -142,7 +142,7 @@ function createPropertyNodeObject(
 	classType: PropertyNodeType
 ): Record<string, unknown> {
 	// Ensure we always have a propertyName
-	const propertyName = 
+	const propertyName =
 		getNodeProperty(node, 'propertyName') ||
 		node.label ||
 		nodeId.split('/').pop() ||
@@ -152,7 +152,7 @@ function createPropertyNodeObject(
 		id: nodeId,
 		nodeType: classType,
 		propertyName,
-		description: getNodeProperty(node, 'propertyDescription') || 
+		description: getNodeProperty(node, 'propertyDescription') ||
 		             getNodeProperty(node, 'description', ''),
 		propertyDataType: getNodeProperty(node, 'propertyDataType'),
 		propertyUnit: getNodeProperty(node, 'propertyUnit'),

@@ -35,7 +35,7 @@ export async function addNodesToStates(
 ): Promise<void> {
 	// Validate and filter to backend nodes only
 	const validNodes = nodes.filter(isBackendNode);
-	
+
 	if (validNodes.length === 0) {
 		logger.warn('No valid backend nodes to process');
 		return;
@@ -52,9 +52,9 @@ export async function addNodesToStates(
 	const allNodes = [...validNodes, ...fetchedProperties];
 	backendNodesData.set(allNodes);
 
-	logger.info('Processing all nodes including fetched properties', { 
+	logger.info('Processing all nodes including fetched properties', {
 		total: allNodes.length,
-		fetched: fetchedProperties.length 
+		fetched: fetchedProperties.length
 	});
 
 	// Process each node and add to appropriate state
@@ -70,10 +70,10 @@ export async function addNodesToStates(
  */
 export function getWorkspaceDictFromUri(workspaceUri: string | { uri: string } | unknown): Workspace {
 	// Handle case where workspaceUri might be an object instead of a string
-	const uriString = typeof workspaceUri === 'string' 
-		? workspaceUri 
+	const uriString = typeof workspaceUri === 'string'
+		? workspaceUri
 		: (workspaceUri && typeof workspaceUri === 'object' && 'uri' in workspaceUri
-			? (workspaceUri as { uri: string }).uri 
+			? (workspaceUri as { uri: string }).uri
 			: String(workspaceUri));
 
 	const workspaceName = getWorkspaceNameFromUri(uriString);
@@ -107,7 +107,7 @@ export async function getCurrentWorkspace(): Promise<Workspace> {
 			logger.warn('No workspace selected');
 			return { name: '', uri: '' };
 		}
-		
+
 		const workspaceDict = getWorkspaceDictFromUri(response.workspace_uri);
 		selectedWorkspace.set(workspaceDict.name);
 		isWorkspaceSelected.set(true);

@@ -102,8 +102,8 @@ export function isBackendNode(value: unknown): value is BackendNode {
 export function isValidUri(uri: string): boolean {
 	try {
 		// Check if it's a valid URL or URN
-		return uri.startsWith('http://') || 
-		       uri.startsWith('https://') || 
+		return uri.startsWith('http://') ||
+		       uri.startsWith('https://') ||
 		       uri.startsWith('urn:');
 	} catch {
 		return false;

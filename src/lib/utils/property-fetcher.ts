@@ -54,7 +54,7 @@ export class PropertyFetcher {
 
 			// Fetch all properties in parallel
 			const newNodes = await this.fetchPropertiesInParallel(Array.from(referencedPropertyUris));
-			
+
 			// Add newly fetched nodes to processing queue and results
 			newNodes.forEach(node => {
 				this.fetchedNodes.push(node);
@@ -114,12 +114,12 @@ export class PropertyFetcher {
 			try {
 				const nodeId = getNodeIdFromBackendUri(uri);
 				const node = await getNodeQuery(nodeId, this.depth);
-				
+
 				if (isBackendNode(node)) {
 					this.fetchedUris.add(node.uri);
 					return node;
 				}
-				
+
 				logger.warn('Fetched node is not valid', { uri });
 				return null;
 			} catch (error) {
