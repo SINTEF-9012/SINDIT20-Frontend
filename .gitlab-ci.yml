@@ -89,6 +89,12 @@ sonarqube:
     - sonar-scanner
   allow_failure: true
 
+# Docker Build Instructions:
+# This job only runs when a Git tag is created.
+# To trigger a Docker build:
+#   git tag v1.0.0
+#   git push origin v1.0.0
+# The image will be tagged with: commit-sha, tag-name, and latest
 docker-build:
   stage: build
   extends: .base-rules

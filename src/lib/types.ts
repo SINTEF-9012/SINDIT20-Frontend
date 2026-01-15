@@ -29,7 +29,8 @@ export type AssetNodeType = 'AbstractAsset';
 export type ConnectionNodeType = 'Connection';
 export type PropertyNodeType = 'Property' | 'AbstractAssetProperty' | 'DatabaseProperty' | 'StreamingProperty' | 'TimeseriesProperty' | 'S3ObjectProperty' | 'PropertyCollection';
 export type KGNodeType = 'SINDITKG';
-export type AllBackendNodeTypes = AssetNodeType | ConnectionNodeType | PropertyNodeType | KGNodeType;
+export type RelationshipNodeType = 'AbstractRelationship' | 'ConsistOfRelationship' | 'PartOfRelationship' | 'ConnectedToRelationship' | 'DependsOnRelationship' | 'DerivedFromRelationship' | 'MonitorsRelationship' | 'ControlsRelationship' | 'SimulatesRelationship' | 'UsesRelationship' | 'CommunicatesWithRelationship' | 'IsTypeOfRelationship';
+export type AllBackendNodeTypes = AssetNodeType | ConnectionNodeType | PropertyNodeType | KGNodeType | RelationshipNodeType;
 
 // Connection types
 export type ConnectionType = 'MQTT' | 'InfluxDB' | 'S3';
@@ -147,6 +148,75 @@ export interface Link {
 
 export type LinkDirection = 'left' | 'right' | 'none';
 
+// Relationships
+export interface AbstractRelationship {
+	id: string;
+	nodeType: RelationshipNodeType;
+	relationshipType: string;
+	relationshipDescription?: string;
+	relationshipValue?: any;
+	relationshipUnit?: NodeUri;
+	relationshipSemanticID?: NodeUri | string;
+	relationshipSource: NodeUri;
+	relationshipTarget: NodeUri;
+}
+
+export interface ConsistOfRelationship extends AbstractRelationship {
+	nodeType: 'ConsistOfRelationship';
+	relationshipType: 'consistsOf';
+}
+
+export interface PartOfRelationship extends AbstractRelationship {
+	nodeType: 'PartOfRelationship';
+	relationshipType: 'partOf';
+}
+
+export interface ConnectedToRelationship extends AbstractRelationship {
+	nodeType: 'ConnectedToRelationship';
+	relationshipType: 'connectedTo';
+}
+
+export interface DependsOnRelationship extends AbstractRelationship {
+	nodeType: 'DependsOnRelationship';
+	relationshipType: 'dependsOn';
+}
+
+export interface DerivedFromRelationship extends AbstractRelationship {
+	nodeType: 'DerivedFromRelationship';
+	relationshipType: 'derivedFrom';
+}
+
+export interface MonitorsRelationship extends AbstractRelationship {
+	nodeType: 'MonitorsRelationship';
+	relationshipType: 'monitors';
+}
+
+export interface ControlsRelationship extends AbstractRelationship {
+	nodeType: 'ControlsRelationship';
+	relationshipType: 'controls';
+}
+
+export interface SimulatesRelationship extends AbstractRelationship {
+	nodeType: 'SimulatesRelationship';
+	relationshipType: 'simulates';
+}
+
+export interface UsesRelationship extends AbstractRelationship {
+	nodeType: 'UsesRelationship';
+	relationshipType: 'uses';
+}
+
+export interface CommunicatesWithRelationship extends AbstractRelationship {
+	nodeType: 'CommunicatesWithRelationship';
+	relationshipType: 'communicatesWith';
+}
+
+export interface IsTypeOfRelationship extends AbstractRelationship {
+	nodeType: 'IsTypeOfRelationship';
+	relationshipType: 'isTypeOf';
+}
+
+export type Relationship = AbstractRelationship | ConsistOfRelationship | PartOfRelationship | ConnectedToRelationship | DependsOnRelationship | DerivedFromRelationship | MonitorsRelationship | ControlsRelationship | SimulatesRelationship | UsesRelationship | CommunicatesWithRelationship | IsTypeOfRelationship;
 
 
 // APIs

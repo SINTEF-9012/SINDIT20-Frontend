@@ -17,7 +17,7 @@
 	import InfoDrawerLink from '$lib/components/info-drawer-link.svelte';
 	import type { ModalComponent } from '@skeletonlabs/skeleton';
 	import { isBackendRunning, selectedWorkspace, isWorkspaceSelected, backendNodesData } from '$lib/stores';
-	import { getAllNodes as getNodesBackendQuery } from '$apis/sindit-backend/kg';
+	import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/sindit-backend/kg';
 	import { addNodesToStates, getCurrentWorkspace, checkBackendRunningStatus } from '$lib/utils';
 	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -89,6 +89,17 @@
 		try {
 			const nodes = await getNodesBackendQuery();
 			await addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
+			
+			// Fetch relationships after nodes are loaded
+			try {
+				const relationships = await getAllRelationships();
+				// Store relationships in linksState for visualization (even if empty)
+				linksState.setRelationships(relationships || []);
+			} catch (relError) {
+				console.warn('No relationships found or error loading relationships:', relError);
+				// Initialize with empty array if there's an error
+				linksState.setRelationships([]);
+			}
 		} catch (error) {
 			console.error('Error loading workspace data:', error);
 		}

@@ -1,4 +1,4 @@
-import type { Link, LinkDirection } from '$lib/types';
+import type { Link, LinkDirection, Relationship } from '$lib/types';
 import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { writable, get } from 'svelte/store';
@@ -6,6 +6,7 @@ import { getNodesState } from './nodes-state.svelte';
 
 export class Links {
 	links = writable<Link[]>([]);
+	relationships = writable<Relationship[]>([]);
 	private toastState: ReturnType<typeof getToastState>;
     private nodesState: ReturnType<typeof getNodesState>;
 
@@ -17,6 +18,7 @@ export class Links {
 	destroy() {
         // this.deleteAllLinks();
 		this.links.set([]);
+		this.relationships.set([]);
     }
 
 	// Create a new link
@@ -77,6 +79,16 @@ export class Links {
 	// Get all links
 	getAllLinks() {
 		return this.links;
+	}
+
+	// Set relationships from backend
+	setRelationships(relationships: Relationship[]) {
+		this.relationships.set(relationships);
+	}
+
+	// Get all relationships
+	getAllRelationships() {
+		return this.relationships;
 	}
 }
 

@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/public';
-import type { ConnectionType, AbstractAssetProperty, StreamingProperty, TimeseriesProperty, S3Property } from '$lib/types';
+import type { ConnectionType, AbstractAssetProperty, StreamingProperty, TimeseriesProperty, S3Property, Relationship } from '$lib/types';
 import { getBackendUri } from '$lib/utils';
 import { authenticatedFetch } from '$lib/api-client';
 import { fetchAllPages } from '$lib/pagination';
@@ -379,6 +379,80 @@ export async function createConnectionNode(
     });
     if (!response.ok) {
         throw new Error('Error performing POST request');
+    }
+    return response.json();
+}
+
+
+// Relationship APIs
+
+/**
+ * Fetch relationships with pagination.
+ *
+ * @param skip - Number of relationships to skip (default: 0)
+ * @param limit - Number of relationships to fetch (default: 10)
+ * @returns Promise resolving to paginated relationships
+ */
+export async function getRelationships(skip: number = 0, limit: number = 10) {
+    const endpoint = 'relationship';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?skip=${skip}&limit=${limit}`;
+    const response = await authenticatedFetch(url);
+    if (!response.ok) {
+        throw new Error(`Error performing GET request ${url}`);
+    }
+    return response.json();
+}
+
+/**
+ * Fetch ALL relationships by automatically handling pagination.
+ * This will make multiple requests until all relationships are retrieved.
+ *
+ * @param pageSize - Number of relationships to fetch per request (default: 100)
+ * @returns Promise resolving to array of all relationships
+ */
+export async function getAllRelationships(pageSize: number = 100): Promise<Relationship[]> {
+    return fetchAllPages(
+        (d, skip, limit) => getRelationships(skip, limit),
+        1, // depth is not used for relationships, pass dummy value
+        pageSize
+    );
+}
+
+/**
+ * Fetch relationships for a specific node.
+ *
+ * @param nodeId - The node ID to fetch relationships for
+ * @returns Promise resolving to array of relationships
+ */
+export async function getRelationshipsByNode(nodeId: string): Promise<Relationship[]> {
+    const endpoint = 'relationship_by_node';
+    const uri = getBackendUri(nodeId);
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}`;
+    const response = await authenticatedFetch(url);
+    if (!response.ok) {
+        throw new Error(`Error performing GET request ${url}`);
+    }
+    return response.json();
+}
+
+/**
+ * Create a new relationship between two assets.
+ *
+ * @param relationship - The relationship object to create
+ * @returns Promise resolving to the created relationship
+ */
+export async function createRelationship(relationship: Relationship) {
+    const endpoint = 'relationship';
+    const url = `${API_BASE_ENDPOINT}/${endpoint}`;
+    const response = await authenticatedFetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(relationship)
+    });
+    if (!response.ok) {
+        throw new Error(`Error performing POST request ${response.statusText}`);
     }
     return response.json();
 }

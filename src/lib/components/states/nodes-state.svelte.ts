@@ -4,6 +4,7 @@ import type {
 	SINDITKG,
 	VisualizableNode,
 	NodeUri,
+	Relationship,
 } from '$lib/types';
 import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
@@ -327,7 +328,7 @@ export class Nodes {
 	}
 
 	// Generate implicit links between nodes based on their relationships
-	generateImplicitLinks(): Array<{
+	generateImplicitLinks(relationships: Relationship[] = []): Array<{
 		id: string;
 		sourceNodeId: string;
 		targetNodeId: string;
@@ -345,6 +346,50 @@ export class Nodes {
 		}> = [];
 
 		const allNodes = get(this.visualizableNodes);
+
+	// First, create links from explicit relationships
+	relationships.forEach(relationship => {
+		// Skip relationships with missing source or target
+		if (!relationship.relationshipSource || !relationship.relationshipTarget) {
+			console.warn('Skipping relationship with missing source or target:', relationship);
+			return;
+		}
+		
+		const sourceId = utilsGetNodeIdFromBackendUri(relationship.relationshipSource.uri);
+		const targetId = utilsGetNodeIdFromBackendUri(relationship.relationshipTarget.uri);
+			
+			// Check if both nodes exist in the graph
+			const sourceNode = allNodes.find(n => n.id === sourceId);
+			const targetNode = allNodes.find(n => n.id === targetId);
+			
+			if (sourceNode && targetNode) {
+				// Map relationship type to link weight (higher weight = more important)
+				const weightMap: Record<string, number> = {
+					'consistsOf': 4,
+					'partOf': 4,
+					'connectedTo': 3,
+					'dependsOn': 3,
+					'monitors': 3,
+					'controls': 3,
+					'derivedFrom': 2,
+					'simulates': 2,
+					'uses': 2,
+					'communicatesWith': 2,
+					'isTypeOf': 2
+				};
+				
+				const weight = weightMap[relationship.relationshipType] || 2;
+				
+				links.push({
+					id: `relationship-${relationship.id}`,
+					sourceNodeId: sourceId,
+					targetNodeId: targetId,
+					linkDescription: relationship.relationshipType,
+					linkWeight: weight,
+					linkDirection: 'right'
+				});
+			}
+		});
 
 		// Create links between AbstractAssets and their properties
 		allNodes.forEach(node => {

@@ -59,9 +59,10 @@
 
 	let linksState = getLinksState();
 	$: explicitLinks = linksState.links;
+	$: relationships = linksState.relationships;
 
-	// Make implicit links reactive to visualizable nodes changes
-	$: implicitLinks = $visualizableNodes.length > 0 ? nodesState.generateImplicitLinks() : [];
+	// Make implicit links reactive to visualizable nodes changes and relationships
+	$: implicitLinks = $visualizableNodes.length > 0 ? nodesState.generateImplicitLinks($relationships) : [];
 	$: allLinks = [...$explicitLinks, ...implicitLinks];
 
 	let isCreateNodeMode: boolean;
@@ -348,7 +349,10 @@
 		let lastUpdateTime = Date.now();
 		const MAX_STABLE_FRAMES = 20; // Reduced frames needed to determine stability
 		const POSITION_CHANGE_THRESHOLD = 1; // Smaller threshold for position changes (in pixels)
-		const UPDATE_THROTTLE = 100; // Minimum ms between store updates			// Create SVG container for the D3 graph
+		const UPDATE_THROTTLE = 100; // Minimum ms between store updates
+		// Declare nodes and links at function scope so they're accessible to all nested functions
+		let nodes: D3Node[] = [];
+		let links: D3Link[] = [];			// Create SVG container for the D3 graph
 			const svg = d3.select(svgContainer)
 				.append('svg')
 				.attr('width', '100%')
@@ -475,7 +479,7 @@
 			g.selectAll('.node').remove();
 
 			// Get current nodes and links data
-			const nodes: D3Node[] = $visualizableNodes.map(node => {
+			nodes = $visualizableNodes.map(node => {
 				// Double-check position is valid (fallback if ensureNodePositions missed something)
 				if (!node.position || node.position.x === undefined || node.position.y === undefined) {
 					console.warn(`Missing position for node ${node.id}, generating random position`);
@@ -504,7 +508,7 @@
 				};
 			});
 
-			const links: D3Link[] = allLinks.map(link => ({
+			links = allLinks.map(link => ({
 				source: link.sourceNodeId,
 				target: link.targetNodeId,
 				weight: link.linkWeight,
