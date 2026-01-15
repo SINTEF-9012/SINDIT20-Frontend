@@ -4,15 +4,15 @@ import Layout from '../../routes/+layout.svelte';
 import Node from '$lib/components/node.svelte';
 
 describe('Node component', () => {
-    let container;
+	let container;
 
-    beforeEach(() => {
-        const layoutRender = render(Layout);
-        container = layoutRender.container;
-    });
+	beforeEach(() => {
+		const layoutRender = render(Layout);
+		container = layoutRender.container;
+	});
 
-    //TODO: implement tests for Node component
-    it('notest', () => {
-        expect(true).toBe(true);
-    });
+	//TODO: implement tests for Node component
+	it('notest', () => {
+		expect(true).toBe(true);
+	});
 });

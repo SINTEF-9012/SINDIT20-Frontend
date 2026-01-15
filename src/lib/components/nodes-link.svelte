@@ -3,7 +3,7 @@
 	import type { Link as LinkType } from '$lib/types';
 	import Link from '$lib/components/svg/link.svelte';
 	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
-	import { nodeSize } from '$lib/stores'
+	import { nodeSize } from '$lib/stores';
 
 	const nodesState = getNodesState();
 
@@ -42,11 +42,11 @@
 	}
 
 	function getOffset(rotationRadians: number, radius: number) {
-        return {
-            x: Math.cos(rotationRadians) * radius,
-            y: Math.sin(rotationRadians) * radius
-        };
-    }
+		return {
+			x: Math.cos(rotationRadians) * radius,
+			y: Math.sin(rotationRadians) * radius
+		};
+	}
 
 	// TODO: fix this undefined issue! (source and target are undefined initially)
 	// Calculate link properties with better error handling
@@ -58,7 +58,9 @@
 			sourceOffset = getOffset(rotationRadians, nodeSize / 2);
 			nodeDistance = distance(source, target);
 			linkDistance = Math.max(nodeDistance - nodeSize, 10); // Minimum distance of 10px
-			console.log(`Link ${link.id}: source=${source.id}, target=${target.id}, distance=${linkDistance}`);
+			console.log(
+				`Link ${link.id}: source=${source.id}, target=${target.id}, distance=${linkDistance}`
+			);
 		} else {
 			// Default values when nodes are missing
 			rotationRadians = 0;
@@ -74,33 +76,32 @@
 			});
 		}
 	}
-
 </script>
 
 {#if source && target && source.position && target.position && linkDistance > 0}
-<div
-	class="link"
-	style="
+	<div
+		class="link"
+		style="
 		position: absolute;
-		left: {(source.position.x + sourceOffset.x)}px;
-		top: {(source.position.y + sourceOffset.y)}px;
+		left: {source.position.x + sourceOffset.x}px;
+		top: {source.position.y + sourceOffset.y}px;
 		width: {linkDistance}px;
 		height: 2px;
 		transform-origin: top left;
 		transform: rotate({rotationDeg}deg);
 		z-index: 1;
 	"
->
-	<Link
-		link={link}
-		linkDistance={linkDistance}
-		linkDirection={linkDirection}
-		linkText={linkDescription}
-		linkWeight={linkWeight}
-		zoomLevel={zoomLevel}
-		angleRadians={rotationRadians}
-	/>
-</div>
+	>
+		<Link
+			{link}
+			{linkDistance}
+			{linkDirection}
+			linkText={linkDescription}
+			{linkWeight}
+			{zoomLevel}
+			angleRadians={rotationRadians}
+		/>
+	</div>
 {/if}
 
 <style>

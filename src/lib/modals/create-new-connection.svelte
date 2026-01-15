@@ -16,23 +16,24 @@
 	const connectionsState = getConnectionsState();
 
 	$: isFormValid = false;
-	$: console.log("isFormValid", isFormValid);
+	$: console.log('isFormValid', isFormValid);
 
 	// Form Data - to be submitted
 	$: connection = {
-        connectionName: '',
-        description: '',
+		connectionName: '',
+		description: '',
 		host: '',
 		port: '',
 		connectionType: ''
-	}
+	};
 
 	$: {
-        if (connection) {
-			isFormValid = (
-                (connection.connectionName != '') &&
-				(isValidHost(connection.host)) && (isValidPort(connection.port)) && (isValidConnectionType(connection.connectionType))
-			);
+		if (connection) {
+			isFormValid =
+				connection.connectionName != '' &&
+				isValidHost(connection.host) &&
+				isValidPort(connection.port) &&
+				isValidConnectionType(connection.connectionType);
 		} else {
 			isFormValid = false;
 		}
@@ -65,7 +66,7 @@
 
 	// Create a new node in the knowledge graph
 	function handleCreateNewConnection(): void {
-        const port = parsePort(connection.port);
+		const port = parsePort(connection.port);
 		try {
 			connectionsState.createConnectionNode(
 				connection.connectionName,
@@ -84,7 +85,7 @@
 
 	// We've created a custom submit function to pass the response and close the modal.
 	function onFormSubmit(): void {
-        handleCreateNewConnection();
+		handleCreateNewConnection();
 		modalStore.close();
 	}
 
@@ -111,30 +112,50 @@
 		<!-- Enable for debugging: -->
 		<form class="modal-form {cForm}">
 			<label class="label">
-				<input class="input" type="text" bind:value={connection.connectionName} placeholder="Enter connection name..." />
+				<input
+					class="input"
+					type="text"
+					bind:value={connection.connectionName}
+					placeholder="Enter connection name..."
+				/>
 			</label>
 			<label class="label">
-				<input class="input" type="text" bind:value={connection.description} placeholder="Description..." />
+				<input
+					class="input"
+					type="text"
+					bind:value={connection.description}
+					placeholder="Description..."
+				/>
 			</label>
-            <div class="connection-properties {cForm} ml-4">
-                <label>
-                    <input class="input" type="text" bind:value={connection.host} placeholder="Host..." />
-                </label>
-                <label>
-                    {#if !isValidPort(connection.port) && connection.port !== ''}
-                        <span class="error-symbol">⚠️</span>
-                    {/if}
-                    <input class="input" type="text" bind:value={connection.port} placeholder="Port..." />
-                </label>
-                <label>
-                    <select class="input" bind:value={connection.connectionType}>
-                        <option value="">Select a connection type...</option>
-                        {#each connectionTypes as conn}
-                            <option value={conn}>{conn}</option>
-                        {/each}
-                    </select>
-                </label>
-            </div>
+			<div class="connection-properties {cForm} ml-4">
+				<label>
+					<input
+						class="input"
+						type="text"
+						bind:value={connection.host}
+						placeholder="Host..."
+					/>
+				</label>
+				<label>
+					{#if !isValidPort(connection.port) && connection.port !== ''}
+						<span class="error-symbol">⚠️</span>
+					{/if}
+					<input
+						class="input"
+						type="text"
+						bind:value={connection.port}
+						placeholder="Port..."
+					/>
+				</label>
+				<label>
+					<select class="input" bind:value={connection.connectionType}>
+						<option value="">Select a connection type...</option>
+						{#each connectionTypes as conn}
+							<option value={conn}>{conn}</option>
+						{/each}
+					</select>
+				</label>
+			</div>
 		</form>
 		<!-- prettier-ignore -->
 		<footer class="modal-footer {parent.regionFooter}">
@@ -144,17 +165,16 @@
 	</div>
 {/if}
 
-
 <style>
 	.input-container {
-	  display: flex;
-	  align-items: center;
+		display: flex;
+		align-items: center;
 	}
 	.error-symbol {
-	  margin-left: 8px;
-	  color: red;
-	  position: absolute;
-	  pointer-events: none;
-	  z-index: 1;
+		margin-left: 8px;
+		color: red;
+		position: absolute;
+		pointer-events: none;
+		z-index: 1;
 	}
 </style>

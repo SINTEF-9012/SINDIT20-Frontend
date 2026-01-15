@@ -5,7 +5,6 @@
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 
-
 	// Props
 	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
@@ -14,13 +13,16 @@
 	const toastState = getToastState();
 	const nodes = getNodesState();
 
-    // Modal metadata - data input
-    const metadata = $modalStore[0].meta;
+	// Modal metadata - data input
+	const metadata = $modalStore[0].meta;
 	if (!metadata) throw new Error('Metadata missing from modal settings.');
 	if (!metadata.name) throw new Error('Metadata name missing from modal settings.');
 	if (!metadata.mode) throw new Error('Metadata mode missing from modal settings.');
 
-	const mode = metadata.mode.toLowerCase().replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+	const mode = metadata.mode
+		.toLowerCase()
+		.replace(/-/g, ' ')
+		.replace(/\b\w/g, (c: string) => c.toUpperCase());
 	const nodeTypes: NodeType[] = ['AbstractAsset'];
 
 	$: isBaseFormValid = false;
@@ -29,12 +31,12 @@
 	// Form Data - to be submitted
 	$: abstractAsset = {
 		nodeName: '',
-        nodeDescription: '',
-		nodeType: 'AbstractAsset',
+		nodeDescription: '',
+		nodeType: 'AbstractAsset'
 	};
 
 	$: {
-		isBaseFormValid = ((abstractAsset.nodeName != '') && (isValidNodeType(abstractAsset.nodeType)));
+		isBaseFormValid = abstractAsset.nodeName != '' && isValidNodeType(abstractAsset.nodeType);
 		if (abstractAsset.nodeType === 'AbstractAsset') {
 			isFormValid = isBaseFormValid;
 		} else {
@@ -58,7 +60,7 @@
 
 	// Create a new node in the knowledge graph
 	function createNewNode(): void {
-		let position = {x: Math.random()*300, y: Math.random()*300};
+		let position = { x: Math.random() * 300, y: Math.random() * 300 };
 		let title = '';
 		let message = '';
 		let logLevel: LogLevel = 'info';
@@ -66,7 +68,11 @@
 			position = metadata.position;
 		}
 		if (abstractAsset.nodeType === 'AbstractAsset') {
-			nodes.createAbstractAssetNode(abstractAsset.nodeName, abstractAsset.nodeDescription, position);
+			nodes.createAbstractAssetNode(
+				abstractAsset.nodeName,
+				abstractAsset.nodeDescription,
+				position
+			);
 			title = `Successfully Created`;
 			message = `Created new node '${abstractAsset.nodeName}'`;
 		} else {
@@ -106,10 +112,20 @@
 		<!-- Enable for debugging: -->
 		<form class="modal-form {cForm}">
 			<label class="label">
-				<input class="input" type="text" bind:value={abstractAsset.nodeName} placeholder="Enter {metadata.name} name..." />
+				<input
+					class="input"
+					type="text"
+					bind:value={abstractAsset.nodeName}
+					placeholder="Enter {metadata.name} name..."
+				/>
 			</label>
 			<label class="label">
-				<input class="input" type="text" bind:value={abstractAsset.nodeDescription} placeholder="Description..." />
+				<input
+					class="input"
+					type="text"
+					bind:value={abstractAsset.nodeDescription}
+					placeholder="Description..."
+				/>
 			</label>
 			<label class="label">
 				<select class="input" bind:value={abstractAsset.nodeType}>
@@ -127,17 +143,16 @@
 	</div>
 {/if}
 
-
 <style>
 	.input-container {
-	  display: flex;
-	  align-items: center;
+		display: flex;
+		align-items: center;
 	}
 	.error-symbol {
-	  margin-left: 8px;
-	  color: red;
-	  position: absolute;
-	  pointer-events: none;
-	  z-index: 1;
+		margin-left: 8px;
+		color: red;
+		position: absolute;
+		pointer-events: none;
+		z-index: 1;
 	}
 </style>

@@ -27,9 +27,9 @@ export const nodeClasses = {
     'DatabaseProperty': 'urn:samm:sindit.sintef.no:1.0.0#DatabaseProperty',
     'StreamingProperty': 'urn:samm:sindit.sintef.no:1.0.0#StreamingProperty',
     'TimeseriesProperty': 'urn:samm:sindit.sintef.no:1.0.0#TimeseriesProperty',
-    'S3Property': 'urn:samm:sindit.sintef.no:1.0.0#S3Property',
+    'S3ObjectProperty': 'urn:samm:sindit.sintef.no:1.0.0#S3ObjectProperty',
     'SINDITKG': 'urn:samm:sindit.sintef.no:1.0.0#SINDITKG'
-}
+} as const;
 
 // node
 export const selectedNodes = writable<string[]>([]);

@@ -20,21 +20,24 @@
 	let source: NodeType;
 	let target: NodeType;
 
-    // Modal metadata - data input
-    const metadata = $modalStore[0].meta;
+	// Modal metadata - data input
+	const metadata = $modalStore[0].meta;
 	if (!metadata) throw new Error('Metadata missing from modal settings.');
 	if (!metadata.name) throw new Error('Metadata name missing from modal settings.');
 	if (!metadata.mode) throw new Error('Metadata mode missing from modal settings.');
 
-	const mode = metadata.mode.toLowerCase().replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+	const mode = metadata.mode
+		.toLowerCase()
+		.replace(/-/g, ' ')
+		.replace(/\b\w/g, (c: string) => c.toUpperCase());
 	const title = `${mode} new ${metadata.name}`;
 	let body = `${mode} a new ${metadata.name}`;
 
 	// Form Data - to be submitted
 	const formData = {
-        linkDescription: '',
-        linkWeight: 1,
-        linkDirection: 'none' as LinkDirection,
+		linkDescription: '',
+		linkWeight: 1,
+		linkDirection: 'none' as LinkDirection
 	};
 
 	// Create a new link between two selected nodes in the knowledge graph
@@ -45,13 +48,7 @@
 		const sourceNodeId = source.id;
 		const targetNodeId = target.id;
 
-		links.createLink(
-			linkDescription,
-			linkWeight,
-			linkDirection,
-			sourceNodeId,
-			targetNodeId
-		);
+		links.createLink(linkDescription, linkWeight, linkDirection, sourceNodeId, targetNodeId);
 		selectedNodes.set([]);
 	}
 
@@ -61,7 +58,6 @@
 		// TODO: Create new item in the knowledge graph // this should be handled in separate func
 		if (metadata.mode === 'create' && metadata.name === 'link') createNewLink();
 		modalStore.close();
-
 	}
 
 	function onClose(): void {
@@ -90,9 +86,7 @@
 			source = sourceNode;
 			target = targetNode;
 			body += ` between ${source.nodeName} and ${target.nodeName} in the knowledge graph.`;
-
 		}
-
 	});
 </script>
 
@@ -105,7 +99,12 @@
 		<!-- Enable for debugging: -->
 		<form class="modal-form {cForm}">
 			<label class="label">
-				<input class="input" type="text" bind:value={formData.linkDescription} placeholder="Enter {metadata.name} name..." />
+				<input
+					class="input"
+					type="text"
+					bind:value={formData.linkDescription}
+					placeholder="Enter {metadata.name} name..."
+				/>
 			</label>
 			<label class="label">
 				<select class="select" bind:value={formData.linkDirection}>
@@ -114,7 +113,14 @@
 					<option value="right">Right</option>
 				</select>
 			</label>
-			<RangeSlider name="range-slider" bind:value={formData.linkWeight} max={25} min={1} step={1} ticked>Weight {formData.linkWeight}</RangeSlider>
+			<RangeSlider
+				name="range-slider"
+				bind:value={formData.linkWeight}
+				max={25}
+				min={1}
+				step={1}
+				ticked>Weight {formData.linkWeight}</RangeSlider
+			>
 		</form>
 		<!-- prettier-ignore -->
 		<footer class="modal-footer {parent.regionFooter}">

@@ -4,23 +4,22 @@ import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { nodeClasses } from '$lib/stores';
 import {
-    getNodesByClass as getNodesByClassQuery,
-    createConnectionNode as createConnectionNodeQuery
+	getNodesByClass as getNodesByClassQuery,
+	createConnectionNode as createConnectionNodeQuery
 } from '$apis/sindit-backend/kg';
 
-
 export class Connections {
-    connections = writable<Connection[]>([]); // ConnectionNodes
-    private toastState: ReturnType<typeof getToastState>;
+	connections = writable<Connection[]>([]); // ConnectionNodes
+	private toastState: ReturnType<typeof getToastState>;
 
-    constructor() {
-        this.toastState = getToastState();
-    }
+	constructor() {
+		this.toastState = getToastState();
+	}
 
 	destroy() {
-        this.deleteAllConnections();
+		this.deleteAllConnections();
 		//this.connections.set([]);
-    }
+	}
 
 	private connectionNodeObject(
 		connectionName: string,
@@ -46,26 +45,24 @@ export class Connections {
 		};
 	}
 
-    getConnection(id: string) {
-        const connections = get(this.connections);
-        return connections.find((node) => node.id === id);
-    }
+	getConnection(id: string) {
+		const connections = get(this.connections);
+		return connections.find((node) => node.id === id);
+	}
 
-    getAllConnectionNodes() {
+	getAllConnectionNodes() {
 		return get(this.connections);
 	}
 
-    deleteConnection(id: string) {
-        this.connections.update((connections) => connections.filter((node) => node.id !== id));
-    }
+	deleteConnection(id: string) {
+		this.connections.update((connections) => connections.filter((node) => node.id !== id));
+	}
 
-    deleteAllConnections() {
-        this.connections.set([]);
-    }
+	deleteAllConnections() {
+		this.connections.set([]);
+	}
 
-	addConnection<T extends Connection>(
-		connection: T
-	) {
+	addConnection<T extends Connection>(connection: T) {
 		this.connections.update((connections) => [...connections, connection]);
 	}
 
@@ -75,7 +72,9 @@ export class Connections {
 			// update all connections by id
 			this.connections.update((oldConnections) => {
 				const updatedConnections = oldConnections.map((oldConnection) => {
-					const newConnection = connections.find((connection) => connection.id === oldConnection.id);
+					const newConnection = connections.find(
+						(connection) => connection.id === oldConnection.id
+					);
 					if (newConnection) {
 						return newConnection; // update connection
 					} else {
@@ -114,7 +113,15 @@ export class Connections {
 				return existingConnection;
 			}
 		}
-		const newConnection = this.connectionNodeObject(connectionName, description, host, port, connectionType, isConnected, id);
+		const newConnection = this.connectionNodeObject(
+			connectionName,
+			description,
+			host,
+			port,
+			connectionType,
+			isConnected,
+			id
+		);
 		this.addConnection(newConnection);
 		return newConnection;
 	}
@@ -127,21 +134,38 @@ export class Connections {
 		port: number,
 		connectionType: ConnectionType
 	) {
-		const newNode = this.connectionNodeObject(nodeName, description, host, port, connectionType, false);
+		const newNode = this.connectionNodeObject(
+			nodeName,
+			description,
+			host,
+			port,
+			connectionType,
+			false
+		);
 		try {
-			await createConnectionNodeQuery(newNode.id, newNode.connectionName, newNode.description, host, port, connectionType);
+			await createConnectionNodeQuery(
+				newNode.id,
+				newNode.connectionName,
+				newNode.description,
+				host,
+				port,
+				connectionType
+			);
 			this.addConnection(newNode);
 		} catch (error: any) {
 			this.deleteConnection(newNode.id);
 			if (error instanceof Error && error.message === 'NOT_AUTHENTICATED') {
-				this.toastState.add('Authentication Required', 'You must sign in to create a connection.', 'error');
+				this.toastState.add(
+					'Authentication Required',
+					'You must sign in to create a connection.',
+					'error'
+				);
 			} else {
 				this.toastState.add('Error creating Connection', error?.message || String(error), 'error');
 			}
 		}
 	}
 }
-
 
 // Unique key to store the state in the Svelte context
 const KEY = Symbol('Connections');

@@ -1,5 +1,11 @@
 <script lang="ts">
-	import type { LogLevel, ReturnedDataTypeSearchUnits, ReturnedDataTypeAllDataTypes, PropertyNodeType, StreamingProperty } from '$lib/types';
+	import type {
+		LogLevel,
+		ReturnedDataTypeSearchUnits,
+		ReturnedDataTypeAllDataTypes,
+		PropertyNodeType,
+		StreamingProperty
+	} from '$lib/types';
 	import { onMount, type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
@@ -10,7 +16,7 @@
 	import {
 		getAllDataTypes as getAllDataTypesQuery,
 		searchUnits as searchUnitsQuery
-	} from '$apis/sindit-backend/metamodel'
+	} from '$apis/sindit-backend/metamodel';
 
 	// Props /** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
@@ -21,16 +27,15 @@
 	const propertiesState = getPropertiesState();
 	const connectionsState = getConnectionsState();
 
-    // Modal metadata - data input
-    const metadata = $modalStore[0].meta;
+	// Modal metadata - data input
+	const metadata = $modalStore[0].meta;
 	if (!metadata) throw new Error('Metadata missing from modal settings.');
-    if (!metadata.nodeId) throw new Error('Metadata nodeId missing from modal settings.');
+	if (!metadata.nodeId) throw new Error('Metadata nodeId missing from modal settings.');
 
-    const node = nodesState.getAbstractAssetNode(metadata.nodeId);
+	const node = nodesState.getAbstractAssetNode(metadata.nodeId);
 	if (!node) throw new Error('Node not found in nodes state.');
 
 	const connections = connectionsState.getAllConnectionNodes();
-
 
 	$: isFormValid = false;
 	$: isBaseFormValid = false;
@@ -40,7 +45,7 @@
 	let buttonTextSubmit = 'Submit';
 	let propertyNodeUri: string;
 
-	$: searchQueryPropertyUnits = ''
+	$: searchQueryPropertyUnits = '';
 	let propertyUnits: ReturnedDataTypeSearchUnits[] = [];
 	$: propertyUnits;
 	let propertyDataTypes: ReturnedDataTypeAllDataTypes[];
@@ -52,7 +57,7 @@
 		propertyDescription: '',
 		propertyDataTypeUri: '',
 		propertyUnitUri: '',
-        connectionNodeUri: '',
+		connectionNodeUri: '',
 		nodeType: propertyNodeTypes[0],
 		streamingTopic: '',
 		streamingPath: '',
@@ -60,17 +65,18 @@
 	};
 
 	$: {
-        isBaseFormValid = (
-            (propertyData.propertyName != '') && (propertyData.propertyDataTypeUri != '') &&
-            (propertyData.propertyUnitUri != '') && (isValidPropertyNodeType(propertyData.nodeType))
-        );
+		isBaseFormValid =
+			propertyData.propertyName != '' &&
+			propertyData.propertyDataTypeUri != '' &&
+			propertyData.propertyUnitUri != '' &&
+			isValidPropertyNodeType(propertyData.nodeType);
 		if (propertyData.nodeType === 'AbstractAssetProperty') {
-			isFormValid = isBaseFormValid && (propertyData.propertyValue != '');
+			isFormValid = isBaseFormValid && propertyData.propertyValue != '';
 		} else if (propertyData.nodeType === 'StreamingProperty') {
-			isStreamingFormValid = (
-				(propertyData.streamingTopic != '') && (propertyData.streamingPath != '') &&
-				(propertyData.connectionNodeUri != '')
-			);
+			isStreamingFormValid =
+				propertyData.streamingTopic != '' &&
+				propertyData.streamingPath != '' &&
+				propertyData.connectionNodeUri != '';
 			isFormValid = isBaseFormValid && isStreamingFormValid;
 		} else {
 			isFormValid = false;
@@ -100,7 +106,7 @@
 			streamingTopic: propertyData.streamingTopic,
 			streamingPath: propertyData.streamingPath,
 			propertyValue: propertyData.propertyValue
-		}
+		};
 		if (isFirstSubmit) {
 			await createNewProperty(propertyNodeType, assetNodeId, propertyNode);
 			isFirstSubmit = false;
@@ -109,9 +115,17 @@
 		}
 	}
 
-	async function createNewProperty(propertyNodeType: PropertyNodeType, assetNodeId: string, propertyNode: any) {
+	async function createNewProperty(
+		propertyNodeType: PropertyNodeType,
+		assetNodeId: string,
+		propertyNode: any
+	) {
 		// Only invoke on first form submit
-		const property_uri = await propertiesState.createProperty(propertyNodeType, assetNodeId, propertyNode);
+		const property_uri = await propertiesState.createProperty(
+			propertyNodeType,
+			assetNodeId,
+			propertyNode
+		);
 
 		if (!property_uri) {
 			const title = 'Error';
@@ -130,7 +144,11 @@
 		}
 	}
 
-	async function updateProperty(propertyNodeType: PropertyNodeType, assetNodeId: string, propertyNode: any) {
+	async function updateProperty(
+		propertyNodeType: PropertyNodeType,
+		assetNodeId: string,
+		propertyNode: any
+	) {
 		const property = propertiesState.getProperty(propertyNodeUri);
 		let new_property = Object.assign({}, property);
 
@@ -140,21 +158,23 @@
 				new_property.description = propertyNode.description;
 				if (propertyNode.propertyDataType.uri != '') {
 					if (!new_property.propertyDataType) {
-						new_property.propertyDataType = {uri: propertyNode.propertyDataType.uri};
+						new_property.propertyDataType = { uri: propertyNode.propertyDataType.uri };
 					} else {
 						new_property.propertyDataType.uri = propertyNode.propertyDataType.uri;
 					}
 				}
 				if (propertyNode.propertyUnit.uri != '') {
 					if (!new_property.propertyUnit) {
-						new_property.propertyUnit = {uri: propertyNode.propertyUnit.uri};
+						new_property.propertyUnit = { uri: propertyNode.propertyUnit.uri };
 					} else {
 						new_property.propertyUnit.uri = propertyNode.propertyUnit.uri;
 					}
 				}
 				if (propertyNode.propertyConnection.uri != '') {
 					if (!new_property.propertyConnection) {
-						new_property.propertyConnection = {uri: propertyNode.propertyConnection.uri};
+						new_property.propertyConnection = {
+							uri: propertyNode.propertyConnection.uri
+						};
 					} else {
 						new_property.propertyConnection.uri = propertyNode.propertyConnection.uri;
 					}
@@ -196,10 +216,9 @@
 		}
 	}
 
-
 	async function handleSearchPropertyUnits() {
-		propertyUnits = await searchUnitsQuery(searchQueryPropertyUnits)
-		propertyData.propertyUnitUri = propertyUnits[0]?.uri
+		propertyUnits = await searchUnitsQuery(searchQueryPropertyUnits);
+		propertyData.propertyUnitUri = propertyUnits[0]?.uri;
 	}
 
 	onMount(async () => {
@@ -223,11 +242,16 @@
 		<form class="modal-form {cForm}">
 			<label class="label">
 				<div class="double-column">
-                	<div>Property name</div>
+					<div>Property name</div>
 					<div>Property value data type</div>
 				</div>
 				<div class="double-column">
-					<input class="input" type="text" bind:value={propertyData.propertyName} placeholder="Temperature..."/>
+					<input
+						class="input"
+						type="text"
+						bind:value={propertyData.propertyName}
+						placeholder="Temperature..."
+					/>
 					<div>
 						<label class="label">
 							<select class="input" bind:value={propertyData.propertyDataTypeUri}>
@@ -243,13 +267,24 @@
 			</label>
 			<label class="label">
 				<div>Property description</div>
-				<input class="input" type="text" bind:value={propertyData.propertyDescription} placeholder="Temperature at floor 2..." />
+				<input
+					class="input"
+					type="text"
+					bind:value={propertyData.propertyDescription}
+					placeholder="Temperature at floor 2..."
+				/>
 			</label>
 			<label class="label">
 				<div>Property units</div>
 				<div class="search-then-dropdown">
 					<div class="input-container w-1/3">
-						<input class="input" type="text" bind:value={searchQueryPropertyUnits} placeholder="Search units..." on:input={handleSearchPropertyUnits}>
+						<input
+							class="input"
+							type="text"
+							bind:value={searchQueryPropertyUnits}
+							placeholder="Search units..."
+							on:input={handleSearchPropertyUnits}
+						/>
 					</div>
 					<div class="dropdown-container w-2/3">
 						<select class="input" bind:value={propertyData.propertyUnitUri}>
@@ -270,23 +305,38 @@
 					{/each}
 				</select>
 			</label>
-			{#if (propertyData.nodeType === 'AbstractAssetProperty')}
+			{#if propertyData.nodeType === 'AbstractAssetProperty'}
 				<div class="property-type-container">
 					<label class="label">
 						<div>Property value</div>
-						<input class="input" type="text" bind:value={propertyData.propertyValue} placeholder="Enter some property value..."/>
+						<input
+							class="input"
+							type="text"
+							bind:value={propertyData.propertyValue}
+							placeholder="Enter some property value..."
+						/>
 					</label>
 				</div>
-			{:else if (propertyNodeTypes.includes(propertyData.nodeType) && propertyData.nodeType !== propertyNodeTypes[0])}
+			{:else if propertyNodeTypes.includes(propertyData.nodeType) && propertyData.nodeType !== propertyNodeTypes[0]}
 				<div class="property-type-container">
-					{#if (propertyData.nodeType === 'StreamingProperty')}
+					{#if propertyData.nodeType === 'StreamingProperty'}
 						<label class="label">
 							<div>Streaming topic</div>
-							<input class="input" type="text" bind:value={propertyData.streamingTopic} placeholder="#"/>
+							<input
+								class="input"
+								type="text"
+								bind:value={propertyData.streamingTopic}
+								placeholder="#"
+							/>
 						</label>
 						<label class="label">
 							<div>Streaming path</div>
-							<input class="input" type="text" bind:value={propertyData.streamingPath} placeholder="json/path/to/key"/>
+							<input
+								class="input"
+								type="text"
+								bind:value={propertyData.streamingPath}
+								placeholder="json/path/to/key"
+							/>
 						</label>
 					{/if}
 				</div>
@@ -296,6 +346,7 @@
 						{#each connections as connection}
 							<option value={connection.id}>{connection.connectionName}</option>
 						{/each}
+					</select>
 				</div>
 			{/if}
 		</form>
@@ -316,31 +367,30 @@
 	</div>
 {/if}
 
-
 <style>
 	.input-container {
-	  display: flex;
-	  align-items: center;
+		display: flex;
+		align-items: center;
 	}
 	.error-symbol {
-	  margin-left: 8px;
-	  color: red;
-	  position: absolute;
-	  pointer-events: none;
-	  z-index: 1;
+		margin-left: 8px;
+		color: red;
+		position: absolute;
+		pointer-events: none;
+		z-index: 1;
 	}
 	.search-then-dropdown {
-	  display: flex;
-	  flex-direction: row;
-	  justify-content: start;
-	  width: 100%;
-	  gap: 5px;
+		display: flex;
+		flex-direction: row;
+		justify-content: start;
+		width: 100%;
+		gap: 5px;
 	}
 	.double-column {
-	  display: flex;
-	  flex-direction: row;
-	  justify-content: space-between;
-	  gap: 5px;
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		gap: 5px;
 	}
 	.property-type-container {
 		margin-left: 50px;
@@ -354,7 +404,7 @@
 		gap: 10px;
 	}
 	.button-row {
-	  display: flex;
-	  gap: 5px;
+		display: flex;
+		gap: 5px;
 	}
 </style>

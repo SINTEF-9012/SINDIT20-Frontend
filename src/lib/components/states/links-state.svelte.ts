@@ -8,39 +8,43 @@ export class Links {
 	links = writable<Link[]>([]);
 	relationships = writable<Relationship[]>([]);
 	private toastState: ReturnType<typeof getToastState>;
-    private nodesState: ReturnType<typeof getNodesState>;
+	private nodesState: ReturnType<typeof getNodesState>;
 
 	constructor() {
 		this.toastState = getToastState();
-        this.nodesState = getNodesState();
+		this.nodesState = getNodesState();
 	}
 
 	destroy() {
-        // this.deleteAllLinks();
+		// this.deleteAllLinks();
 		this.links.set([]);
 		this.relationships.set([]);
-    }
+	}
 
 	// Create a new link
 	async createLink(
-        linkDescription: string,
-        linkWeight: number,
-        linkDirection: LinkDirection,
-        sourceNodeId: string,
-        targetNodeId: string,
+		linkDescription: string,
+		linkWeight: number,
+		linkDirection: LinkDirection,
+		sourceNodeId: string,
+		targetNodeId: string
 	): Promise<void> {
 		const newLink: Link = {
 			id: crypto.randomUUID(),
 			linkDescription,
-            linkWeight,
-            linkDirection,
-            sourceNodeId,
-            targetNodeId
+			linkWeight,
+			linkDirection,
+			sourceNodeId,
+			targetNodeId
 		};
-        const sourceNode = this.nodesState.getAbstractAssetNode(sourceNodeId);
-        const targetNode = this.nodesState.getAbstractAssetNode(targetNodeId);
+		const sourceNode = this.nodesState.getAbstractAssetNode(sourceNodeId);
+		const targetNode = this.nodesState.getAbstractAssetNode(targetNodeId);
 		this.links.update((links) => [...links, newLink]);
-		this.toastState.add('Link created', `Link "${newLink.linkDescription}" created from "${sourceNode?.nodeName}" to "${targetNode?.nodeName}"`, 'info');
+		this.toastState.add(
+			'Link created',
+			`Link "${newLink.linkDescription}" created from "${sourceNode?.nodeName}" to "${targetNode?.nodeName}"`,
+			'info'
+		);
 
 		return Promise.resolve();
 	}

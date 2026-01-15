@@ -12,7 +12,7 @@ export class ToastState {
 	toastToTimoutMap = new Map<string, Timeout>();
 
 	constructor() {
-		console.log("ToastState initialized");
+		console.log('ToastState initialized');
 	}
 
 	destroy() {

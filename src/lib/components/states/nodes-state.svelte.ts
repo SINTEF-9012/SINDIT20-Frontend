@@ -4,17 +4,13 @@ import type {
 	SINDITKG,
 	VisualizableNode,
 	NodeUri,
-	Relationship,
+	Relationship
 } from '$lib/types';
 import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { writable, get } from 'svelte/store';
 import { getNodeIdFromBackendUri as utilsGetNodeIdFromBackendUri } from '$lib/utils';
-import {
-	createAbstractNode as createAbstractNodeQuery,
-} from '$apis/sindit-backend/kg';
-
-
+import { createAbstractNode as createAbstractNodeQuery } from '$apis/sindit-backend/kg';
 
 export class Nodes {
 	// Store for all visualizable nodes (excludes Connection)
@@ -28,9 +24,9 @@ export class Nodes {
 		this.toastState = getToastState();
 	}
 
-    destroy() {
-        this.deleteAllNodes();
-    }
+	destroy() {
+		this.deleteAllNodes();
+	}
 
 	// Generate random position for new nodes - using wider range for better initial spread
 	private generateRandomPosition(): { x: number; y: number } {
@@ -58,7 +54,7 @@ export class Nodes {
 			position,
 			nodeType: 'AbstractAsset',
 			assetProperties,
-			assetType,
+			assetType
 		};
 	}
 
@@ -90,7 +86,7 @@ export class Nodes {
 			propertyUnit,
 			propertyValue,
 			propertyValueTimestamp,
-			position,
+			position
 		};
 	}
 
@@ -110,7 +106,7 @@ export class Nodes {
 			label,
 			assets,
 			nodeType: 'SINDITKG',
-			position,
+			position
 		};
 	}
 
@@ -122,44 +118,46 @@ export class Nodes {
 	// Keep backward compatibility
 	getAllAbstractAssetNodes(): AbstractAsset[] {
 		const allNodes = get(this.visualizableNodes);
-		return allNodes.filter(node => node.nodeType === 'AbstractAsset') as AbstractAsset[];
+		return allNodes.filter((node) => node.nodeType === 'AbstractAsset') as AbstractAsset[];
 	}
 
 	// Add a visualizable node
 	addVisualizableNode(node: VisualizableNode) {
 		// Ensure the node has a valid position
-		if (!node.position ||
+		if (
+			!node.position ||
 			node.position.x === undefined ||
 			node.position.y === undefined ||
 			isNaN(node.position.x) ||
-			isNaN(node.position.y)) {
+			isNaN(node.position.y)
+		) {
 			node.position = this.generateRandomPosition();
 		}
 
-		this.visualizableNodes.update(nodes => [...nodes, node]);
+		this.visualizableNodes.update((nodes) => [...nodes, node]);
 
 		// Keep assets in sync for backward compatibility
 		if (node.nodeType === 'AbstractAsset') {
-			this.assets.update(assets => [...assets, node as AbstractAsset]);
+			this.assets.update((assets) => [...assets, node as AbstractAsset]);
 		}
 	}
 
 	// Get a node by id
 	getNodeById(id: string): VisualizableNode | undefined {
 		const nodes = get(this.visualizableNodes);
-		return nodes.find(node => node.id === id);
+		return nodes.find((node) => node.id === id);
 	}
 
 	// Get AbstractAsset node by id (backward compatibility)
 	getAbstractAssetNode(id: string): AbstractAsset | undefined {
 		const node = this.getNodeById(id);
-		return node && node.nodeType === 'AbstractAsset' ? node as AbstractAsset : undefined;
+		return node && node.nodeType === 'AbstractAsset' ? (node as AbstractAsset) : undefined;
 	}
 
 	// Update a node by id
 	updateNode(id: string, updatedNode: VisualizableNode) {
-		this.visualizableNodes.update(nodes => {
-			const index = nodes.findIndex(node => node.id === id);
+		this.visualizableNodes.update((nodes) => {
+			const index = nodes.findIndex((node) => node.id === id);
 			if (index !== -1) {
 				updatedNode.id = id;
 				nodes[index] = updatedNode;
@@ -169,8 +167,8 @@ export class Nodes {
 
 		// Keep assets in sync for backward compatibility
 		if (updatedNode.nodeType === 'AbstractAsset') {
-			this.assets.update(assets => {
-				const index = assets.findIndex(asset => asset.id === id);
+			this.assets.update((assets) => {
+				const index = assets.findIndex((asset) => asset.id === id);
 				if (index !== -1) {
 					assets[index] = updatedNode as AbstractAsset;
 				}
@@ -180,11 +178,14 @@ export class Nodes {
 	}
 
 	// Update a node's position (used by D3 force layout)
-	updateNodePosition(id: string, position: { x: number; y: number; fx?: number | null; fy?: number | null }) {
+	updateNodePosition(
+		id: string,
+		position: { x: number; y: number; fx?: number | null; fy?: number | null }
+	) {
 		const node = this.getNodeById(id);
 		if (node) {
-			this.visualizableNodes.update(nodes => {
-				const index = nodes.findIndex(n => n.id === id);
+			this.visualizableNodes.update((nodes) => {
+				const index = nodes.findIndex((n) => n.id === id);
 				if (index !== -1) {
 					nodes[index] = {
 						...nodes[index],
@@ -202,27 +203,33 @@ export class Nodes {
 	// Delete a node by id
 	deleteNode(id: string) {
 		const nodes = get(this.visualizableNodes);
-		const nodeToDelete = nodes.find(node => node.id === id);
+		const nodeToDelete = nodes.find((node) => node.id === id);
 
 		if (!nodeToDelete) {
 			this.toastState.add('Node not found', `Node "${id}" not found`, 'error');
 			return;
 		}
 
-		this.visualizableNodes.update(nodes => nodes.filter(node => node.id !== id));
+		this.visualizableNodes.update((nodes) => nodes.filter((node) => node.id !== id));
 
 		// Keep assets in sync for backward compatibility
 		if (nodeToDelete.nodeType === 'AbstractAsset') {
-			this.assets.update(assets => assets.filter(asset => asset.id !== id));
+			this.assets.update((assets) => assets.filter((asset) => asset.id !== id));
 		}
 
-		this.toastState.add('Node deleted', `${nodeToDelete.nodeType} Node "${id}" has been deleted`, 'info');
+		this.toastState.add(
+			'Node deleted',
+			`${nodeToDelete.nodeType} Node "${id}" has been deleted`,
+			'info'
+		);
 	}
 
 	deleteAllAbstractAssets() {
 		this.assets.set([]);
 		// Also remove from visualizable nodes
-		this.visualizableNodes.update(nodes => nodes.filter(node => node.nodeType !== 'AbstractAsset'));
+		this.visualizableNodes.update((nodes) =>
+			nodes.filter((node) => node.nodeType !== 'AbstractAsset')
+		);
 	}
 
 	deleteAllNodes() {
@@ -244,28 +251,29 @@ export class Nodes {
 		propertyValueTimestamp?: string
 	): StreamingProperty {
 		const newNode = this.streamingPropertyNodeObject(
-			id, propertyName, description, streamingTopic, streamingPath,
-			propertyConnection, propertyDataType, propertyUnit, propertyValue, propertyValueTimestamp
+			id,
+			propertyName,
+			description,
+			streamingTopic,
+			streamingPath,
+			propertyConnection,
+			propertyDataType,
+			propertyUnit,
+			propertyValue,
+			propertyValueTimestamp
 		);
 		this.addVisualizableNode(newNode);
 		return newNode;
 	}
 
-	addSINDITKGNode(
-		id: string,
-		label: string,
-		uri: string,
-		assets?: NodeUri[]
-	): SINDITKG {
+	addSINDITKGNode(id: string, label: string, uri: string, assets?: NodeUri[]): SINDITKG {
 		const newNode = this.sinditKGNodeObject(id, label, uri, assets);
 		this.addVisualizableNode(newNode);
 		return newNode;
 	}
 
 	// Add a new asset node to the state (backward compatibility)
-	addAsset<T extends AbstractAsset>(
-		asset: T
-	) {
+	addAsset<T extends AbstractAsset>(asset: T) {
 		this.addVisualizableNode(asset);
 	}
 
@@ -277,7 +285,14 @@ export class Nodes {
 		assetProperties: NodeUri[],
 		assetType?: string
 	): AbstractAsset {
-		const newAsset = this.abstractAssetNodeObject(nodeName, description, assetProperties, undefined, id, assetType);
+		const newAsset = this.abstractAssetNodeObject(
+			nodeName,
+			description,
+			assetProperties,
+			undefined,
+			id,
+			assetType
+		);
 		this.addVisualizableNode(newAsset);
 		return newAsset;
 	}
@@ -290,9 +305,9 @@ export class Nodes {
 			return;
 		}
 		if (!asset.assetProperties) {
-			asset.assetProperties = [{uri: property_uri}];
+			asset.assetProperties = [{ uri: property_uri }];
 		} else {
-			asset.assetProperties.push({uri: property_uri});
+			asset.assetProperties.push({ uri: property_uri });
 		}
 		this.updateAbstractAssetNode(id, asset);
 	}
@@ -301,7 +316,7 @@ export class Nodes {
 	async createAbstractAssetNode(
 		nodeName: string,
 		description: string,
-		position: { x: number; y: number },
+		position: { x: number; y: number }
 	) {
 		// assume assetProperties is empty
 		// do not send in id, as this will then be generated
@@ -347,35 +362,35 @@ export class Nodes {
 
 		const allNodes = get(this.visualizableNodes);
 
-	// First, create links from explicit relationships
-	relationships.forEach(relationship => {
-		// Skip relationships with missing source or target
-		if (!relationship.relationshipSource || !relationship.relationshipTarget) {
-			console.warn('Skipping relationship with missing source or target:', relationship);
-			return;
-		}
+		// First, create links from explicit relationships
+		relationships.forEach((relationship) => {
+			// Skip relationships with missing source or target
+			if (!relationship.relationshipSource || !relationship.relationshipTarget) {
+				console.warn('Skipping relationship with missing source or target:', relationship);
+				return;
+			}
 
-		const sourceId = utilsGetNodeIdFromBackendUri(relationship.relationshipSource.uri);
-		const targetId = utilsGetNodeIdFromBackendUri(relationship.relationshipTarget.uri);
+			const sourceId = utilsGetNodeIdFromBackendUri(relationship.relationshipSource.uri);
+			const targetId = utilsGetNodeIdFromBackendUri(relationship.relationshipTarget.uri);
 
 			// Check if both nodes exist in the graph
-			const sourceNode = allNodes.find(n => n.id === sourceId);
-			const targetNode = allNodes.find(n => n.id === targetId);
+			const sourceNode = allNodes.find((n) => n.id === sourceId);
+			const targetNode = allNodes.find((n) => n.id === targetId);
 
 			if (sourceNode && targetNode) {
 				// Map relationship type to link weight (higher weight = more important)
 				const weightMap: Record<string, number> = {
-					'consistsOf': 4,
-					'partOf': 4,
-					'connectedTo': 3,
-					'dependsOn': 3,
-					'monitors': 3,
-					'controls': 3,
-					'derivedFrom': 2,
-					'simulates': 2,
-					'uses': 2,
-					'communicatesWith': 2,
-					'isTypeOf': 2
+					consistsOf: 4,
+					partOf: 4,
+					connectedTo: 3,
+					dependsOn: 3,
+					monitors: 3,
+					controls: 3,
+					derivedFrom: 2,
+					simulates: 2,
+					uses: 2,
+					communicatesWith: 2,
+					isTypeOf: 2
 				};
 
 				const weight = weightMap[relationship.relationshipType] || 2;
@@ -392,18 +407,19 @@ export class Nodes {
 		});
 
 		// Create links between AbstractAssets and their properties
-		allNodes.forEach(node => {
+		allNodes.forEach((node) => {
 			if (node.nodeType === 'AbstractAsset' && node.assetProperties) {
-				node.assetProperties.forEach(propertyRef => {
+				node.assetProperties.forEach((propertyRef) => {
 					// Find the corresponding property node (support all property types)
 					const propertyId = utilsGetNodeIdFromBackendUri(propertyRef.uri);
-					const propertyNode = allNodes.find(n =>
-						(n.nodeType === 'AbstractAssetProperty' ||
-						 n.nodeType === 'StreamingProperty' ||
-						 n.nodeType === 'TimeseriesProperty' ||
-						 n.nodeType === 'S3ObjectProperty' ||
-						 n.nodeType === 'PropertyCollection') &&
-						n.id === propertyId
+					const propertyNode = allNodes.find(
+						(n) =>
+							(n.nodeType === 'AbstractAssetProperty' ||
+								n.nodeType === 'StreamingProperty' ||
+								n.nodeType === 'TimeseriesProperty' ||
+								n.nodeType === 'S3ObjectProperty' ||
+								n.nodeType === 'PropertyCollection') &&
+							n.id === propertyId
 					);
 
 					if (propertyNode) {
@@ -423,12 +439,11 @@ export class Nodes {
 
 			// Create links between SINDITKG and its assets
 			if (node.nodeType === 'SINDITKG' && node.assets) {
-				node.assets.forEach(assetRef => {
+				node.assets.forEach((assetRef) => {
 					// Find the corresponding asset node
 					const assetId = utilsGetNodeIdFromBackendUri(assetRef.uri);
-					const assetNode = allNodes.find(n =>
-						n.nodeType === 'AbstractAsset' &&
-						n.id === assetId
+					const assetNode = allNodes.find(
+						(n) => n.nodeType === 'AbstractAsset' && n.id === assetId
 					);
 
 					if (assetNode) {
@@ -448,9 +463,7 @@ export class Nodes {
 
 			// Create links between PropertyCollection and its contained properties
 			if (node.nodeType === 'PropertyCollection' && node.collectionProperties) {
-
 				node.collectionProperties.forEach((propertyRef, index) => {
-
 					// Handle both Property objects and NodeUri references
 					let propertyId: string | null = null;
 
@@ -465,14 +478,14 @@ export class Nodes {
 					}
 
 					if (propertyId) {
-
-						const propertyNode = allNodes.find(n =>
-							(n.nodeType === 'AbstractAssetProperty' ||
-							 n.nodeType === 'StreamingProperty' ||
-							 n.nodeType === 'TimeseriesProperty' ||
-							 n.nodeType === 'S3ObjectProperty' ||
-							 n.nodeType === 'PropertyCollection') &&
-							n.id === propertyId
+						const propertyNode = allNodes.find(
+							(n) =>
+								(n.nodeType === 'AbstractAssetProperty' ||
+									n.nodeType === 'StreamingProperty' ||
+									n.nodeType === 'TimeseriesProperty' ||
+									n.nodeType === 'S3ObjectProperty' ||
+									n.nodeType === 'PropertyCollection') &&
+								n.id === propertyId
 						);
 
 						if (propertyNode) {
@@ -485,14 +498,16 @@ export class Nodes {
 								linkDirection: 'right'
 							});
 						} else {
-							allNodes.filter(n =>
-								n.nodeType === 'AbstractAssetProperty' ||
-								n.nodeType === 'StreamingProperty' ||
-								n.nodeType === 'TimeseriesProperty' ||
-								n.nodeType === 'S3ObjectProperty' ||
-								n.nodeType === 'PropertyCollection'
-							).forEach(n => {
-							});
+							allNodes
+								.filter(
+									(n) =>
+										n.nodeType === 'AbstractAssetProperty' ||
+										n.nodeType === 'StreamingProperty' ||
+										n.nodeType === 'TimeseriesProperty' ||
+										n.nodeType === 'S3ObjectProperty' ||
+										n.nodeType === 'PropertyCollection'
+								)
+								.forEach((n) => {});
 						}
 					} else {
 					}
@@ -509,12 +524,14 @@ export class Nodes {
 		let hasChanges = false;
 
 		// Only set initial positions for nodes that don't have one
-		nodes.forEach(node => {
-			if (!node.position ||
-			    node.position.x === undefined ||
-			    node.position.y === undefined ||
-			    isNaN(node.position.x) ||
-			    isNaN(node.position.y)) {
+		nodes.forEach((node) => {
+			if (
+				!node.position ||
+				node.position.x === undefined ||
+				node.position.y === undefined ||
+				isNaN(node.position.x) ||
+				isNaN(node.position.y)
+			) {
 				// Initialize with random positions - D3 force simulation will handle the layout
 				node.position = this.generateRandomPosition();
 				hasChanges = true;
@@ -534,7 +551,6 @@ export class Nodes {
 
 		return nodes; // Return the nodes for convenience
 	}
-
 
 	// Placeholder for force re-layout - This will be handled by D3 in the component
 	forceReLayout() {

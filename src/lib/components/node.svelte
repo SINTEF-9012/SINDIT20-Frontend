@@ -1,8 +1,5 @@
 <script lang="ts">
-	import type {
-		VisualizableNode,
-		Property,
-	} from '$lib/types';
+	import type { VisualizableNode, Property } from '$lib/types';
 	import { getNodesState } from './states/nodes-state.svelte';
 	import { getPropertiesState } from './states/properties.svelte';
 	import { selectedNodes, selectedNodeId, nodeSize } from '$lib/stores';
@@ -42,19 +39,22 @@
 		console.log(`[getNodeDisplayName] Type: ${node.nodeType}, ID: ${node.id}`);
 		console.log(`[getNodeDisplayName] Full node:`, node);
 		console.log(`[getNodeDisplayName] node.propertyName =`, (node as any).propertyName);
-		console.log(`[getNodeDisplayName] typeof propertyName =`, typeof (node as any).propertyName);
+		console.log(
+			`[getNodeDisplayName] typeof propertyName =`,
+			typeof (node as any).propertyName
+		);
 		console.log(`[getNodeDisplayName] All keys in node:`, Object.keys(node));
 
-	switch (node.nodeType) {
-		case 'AbstractAsset':
-			displayName = node.nodeName;
-			console.log(`  -> AbstractAsset nodeName: ${displayName}`);
-			break;
-		case 'AbstractAssetProperty':
-			displayName = node.propertyName;
-			console.log(`  -> AbstractAssetProperty propertyName: ${displayName}`);
-			break;
-		case 'StreamingProperty':
+		switch (node.nodeType) {
+			case 'AbstractAsset':
+				displayName = node.nodeName;
+				console.log(`  -> AbstractAsset nodeName: ${displayName}`);
+				break;
+			case 'AbstractAssetProperty':
+				displayName = node.propertyName;
+				console.log(`  -> AbstractAssetProperty propertyName: ${displayName}`);
+				break;
+			case 'StreamingProperty':
 				displayName = node.propertyName;
 				console.log(`  -> StreamingProperty propertyName: ${displayName}`);
 				break;
@@ -80,7 +80,11 @@
 		}
 
 		if (!displayName || displayName === 'undefined') {
-			console.warn('Node missing display name - returning ID or Unknown:', { nodeType: node.nodeType, id: node.id, node });
+			console.warn('Node missing display name - returning ID or Unknown:', {
+				nodeType: node.nodeType,
+				id: node.id,
+				node
+			});
 			return node.id || 'Unknown';
 		}
 
@@ -130,7 +134,7 @@
 		offset.x = event.clientX - node.position.x * zoomLevel;
 		offset.y = event.clientY - node.position.y * zoomLevel;
 		window.addEventListener('mousemove', move);
-        window.addEventListener('mouseup', stopMoving);
+		window.addEventListener('mouseup', stopMoving);
 	}
 
 	function onKeyDown(event: KeyboardEvent) {
@@ -149,10 +153,9 @@
 		if (moving && node.position) {
 			node.position.x = (event.clientX - offset.x) / zoomLevel;
 			node.position.y = (event.clientY - offset.y) / zoomLevel;
-			node = {...node};
+			node = { ...node };
 		}
 	}
-
 
 	function dblclick() {
 		const thisNode = nodesState.getAbstractAssetNode(node.id);
@@ -168,7 +171,7 @@
 
 	function onClickInfoButton() {
 		selectedNodeId.set(node.id);
-		drawerStore.open({id: 'info-drawer-node'});
+		drawerStore.open({ id: 'info-drawer-node' });
 	}
 
 	function toggleProperties() {
@@ -184,11 +187,13 @@
 		modalStore.trigger(createNewNodeProperty);
 	}
 
-    onMount(() => {
+	onMount(() => {
 		console.log(`[NODE MOUNTED] Type: ${node.nodeType}, ID: ${node.id}`);
 		console.log(`[NODE MOUNTED] Has propertyName:`, (node as any).propertyName);
 		console.log(`[NODE MOUNTED] Display name will be:`, getNodeDisplayName(node));
-		console.log(`[NODE MOUNTED] nodeSize=${nodeSize}, threshold=${threshold}, will show text=${nodeSize >= threshold}`);
+		console.log(
+			`[NODE MOUNTED] nodeSize=${nodeSize}, threshold=${threshold}, will show text=${nodeSize >= threshold}`
+		);
 		// Only load properties for AbstractAsset nodes
 		if (node.nodeType === 'AbstractAsset') {
 			const property_uris = node.assetProperties;
@@ -203,7 +208,7 @@
 				};
 			}
 		}
-    });
+	});
 </script>
 
 <svelte:window on:mouseup={stopMoving} />
@@ -216,24 +221,28 @@
 	tabindex="0"
 	role="button"
 	class="node {nodeColor}"
-	style="transform: translate({node.position?.x || 0 - nodeSize / 2}px, {node.position?.y || 0 - nodeSize / 2}px); width: {nodeSize}px; height: {nodeSize}px;"
+	style="transform: translate({node.position?.x || 0 - nodeSize / 2}px, {node.position?.y ||
+		0 - nodeSize / 2}px); width: {nodeSize}px; height: {nodeSize}px;"
 >
 	{#if nodeSize >= threshold}
 		<div class="grid-cols-1 gap-1">
 			<div class="text-center">
-				<span class="text-gray-700 font-medium" style="font-size: {fontSizeTitle}">{getNodeDisplayName(node)}</span>
+				<span class="text-gray-700 font-medium" style="font-size: {fontSizeTitle}"
+					>{getNodeDisplayName(node)}</span
+				>
 			</div>
 		</div>
 	{/if}
-	<button class="node-info variant-soft-primary"
-			on:click={onClickInfoButton}>
+	<button class="node-info variant-soft-primary" on:click={onClickInfoButton}>
 		<InfoIcon />
 	</button>
 
 	{#if node.nodeType === 'AbstractAsset'}
 		<div>
-			<button class="node-properties-settings variant-soft-primary"
-					on:click={toggleProperties}>
+			<button
+				class="node-properties-settings variant-soft-primary"
+				on:click={toggleProperties}
+			>
 				<SettingsIcon />
 			</button>
 		</div>
@@ -243,7 +252,10 @@
 					<NodeProperties {property} propertyValue={property.propertyValue} />
 				{/each}
 				<div>
-					<button class="add-node-property variant-soft-primary" on:click={handleAddPropertyToNode}>
+					<button
+						class="add-node-property variant-soft-primary"
+						on:click={handleAddPropertyToNode}
+					>
 						<PlusCircleIcon /> <span>New property</span>
 					</button>
 				</div>
@@ -270,7 +282,6 @@
 		</div>
 	{/if}
 </div>
-
 
 <style>
 	.node {

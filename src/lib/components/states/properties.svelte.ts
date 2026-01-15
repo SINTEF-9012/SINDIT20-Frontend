@@ -3,468 +3,511 @@ import { env } from '$env/dynamic/public';
 import { writable, get } from 'svelte/store';
 import { getToastState } from './toast-state.svelte';
 import type {
-    Property,
-    AbstractAssetProperty,
-    DatabaseProperty,
-    StreamingProperty,
-    S3ObjectProperty,
-    PropertyNodeType,
-    NodeUri
+	Property,
+	AbstractAssetProperty,
+	DatabaseProperty,
+	StreamingProperty,
+	S3ObjectProperty,
+	PropertyNodeType,
+	NodeUri
 } from '$lib/types';
 import {
-    createAbstractPropertyNode as createAbstractAssetPropertyQuery,
-    createStreamingPropertyNode as createStreamingPropertyQuery,
-    createS3PropertyNode as createS3PropertyQuery,
-    addPropertyToAssetNode as addPropertyToAssetNodeQuery,
-    updateNode as updateNodeQuery
+	createAbstractPropertyNode as createAbstractAssetPropertyQuery,
+	createStreamingPropertyNode as createStreamingPropertyQuery,
+	createS3PropertyNode as createS3PropertyQuery,
+	addPropertyToAssetNode as addPropertyToAssetNodeQuery,
+	updateNode as updateNodeQuery
 } from '$apis/sindit-backend/kg';
 
 export class Properties {
-    properties = writable<Property[]>([]); // PropertyNodes
-    private toastState: ReturnType<typeof getToastState>;
+	properties = writable<Property[]>([]); // PropertyNodes
+	private toastState: ReturnType<typeof getToastState>;
 
-    constructor() {
-        this.toastState = getToastState();
-    }
+	constructor() {
+		this.toastState = getToastState();
+	}
 
-    destroy() {
-        this.properties.set([]);
-        this.toastState.destroy();
-    }
+	destroy() {
+		this.properties.set([]);
+		this.toastState.destroy();
+	}
 
-    // Streaming functionality removed - the /kg/stream API is experimental
+	// Streaming functionality removed - the /kg/stream API is experimental
 
-    private propertyObject(
+	private propertyObject(
 		propertyName: string,
 		description: string,
 		propertyDataTypeURI?: string,
 		propertyUnitURI?: string,
 		id?: string,
-        propertyValue?: string,
-        propertyValueTimestamp?: string,
+		propertyValue?: string,
+		propertyValueTimestamp?: string
 	): Property {
 		if (!id) {
 			id = crypto.randomUUID();
 		}
 		return {
 			id,
-            nodeType: 'Property',
+			nodeType: 'Property',
 			propertyName,
 			description,
 			propertyDataType: {
-				uri: propertyDataTypeURI ?? '',
+				uri: propertyDataTypeURI ?? ''
 			},
 			propertyUnit: {
-				uri: propertyUnitURI ?? '',
+				uri: propertyUnitURI ?? ''
 			},
-            propertyValue,
-            propertyValueTimestamp,
+			propertyValue,
+			propertyValueTimestamp
 		};
 	}
 
-    private abstractAssetPropertyObject(
-        propertyName: string,
-        description: string,
-        propertyDataTypeURI: string,
-        propertyUnitURI: string,
-        id?: string,
-        propertyValue?: string,
-        propertyValueTimestamp?: string,
-    ): AbstractAssetProperty {
-        const property = this.propertyObject(
-            propertyName,
-            description,
-            propertyDataTypeURI,
-            propertyUnitURI,
-            id,
-            propertyValue,
-            propertyValueTimestamp,
-        );
-        return {
-            ...property,
-            nodeType: 'AbstractAssetProperty',
-            propertyValue: propertyValue ?? '',
-        };
-    }
+	private abstractAssetPropertyObject(
+		propertyName: string,
+		description: string,
+		propertyDataTypeURI: string,
+		propertyUnitURI: string,
+		id?: string,
+		propertyValue?: string,
+		propertyValueTimestamp?: string
+	): AbstractAssetProperty {
+		const property = this.propertyObject(
+			propertyName,
+			description,
+			propertyDataTypeURI,
+			propertyUnitURI,
+			id,
+			propertyValue,
+			propertyValueTimestamp
+		);
+		return {
+			...property,
+			nodeType: 'AbstractAssetProperty',
+			propertyValue: propertyValue ?? ''
+		};
+	}
 
-    private databasePropertyObject(
-        query: string,
-        propertyName: string,
-        description: string,
-        propertyDataTypeURI: string,
-        propertyUnitURI: string,
-        connectionURI: string,
-        id?: string,
-        propertyValue?: string,
-        propertyValueTimestamp?: string,
-    ): DatabaseProperty {
-        const property = this.propertyObject(
-            propertyName,
-            description,
-            propertyDataTypeURI,
-            propertyUnitURI,
-            id,
-            propertyValue,
-            propertyValueTimestamp,
-        );
-        return {
-            ...property,
-            nodeType: 'DatabaseProperty',
-            propertyConnection: {
-                uri: connectionURI,
-            },
-            query,
-        };
-    }
+	private databasePropertyObject(
+		query: string,
+		propertyName: string,
+		description: string,
+		propertyDataTypeURI: string,
+		propertyUnitURI: string,
+		connectionURI: string,
+		id?: string,
+		propertyValue?: string,
+		propertyValueTimestamp?: string
+	): DatabaseProperty {
+		const property = this.propertyObject(
+			propertyName,
+			description,
+			propertyDataTypeURI,
+			propertyUnitURI,
+			id,
+			propertyValue,
+			propertyValueTimestamp
+		);
+		return {
+			...property,
+			nodeType: 'DatabaseProperty',
+			propertyConnection: {
+				uri: connectionURI
+			},
+			query
+		};
+	}
 
-    private streamingPropertyObject(
-        streamingTopic: string,
-        streamingPath: string,
-        propertyName: string,
-        description: string,
-        propertyDataTypeURI: string,
-        propertyUnitURI: string,
-        connectionURI: string,
-        id?: string,
-        propertyValue?: string,
-        propertyValueTimestamp?: string,
-    ): StreamingProperty {
-        const property = this.propertyObject(
-            propertyName,
-            description,
-            propertyDataTypeURI,
-            propertyUnitURI,
-            id,
-            propertyValue,
-            propertyValueTimestamp,
-        );
-        return {
-            ...property,
-            nodeType: 'StreamingProperty',
-            streamingTopic,
-            streamingPath,
-            propertyConnection: {
-                uri: connectionURI,
-            },
-        };
-    }
+	private streamingPropertyObject(
+		streamingTopic: string,
+		streamingPath: string,
+		propertyName: string,
+		description: string,
+		propertyDataTypeURI: string,
+		propertyUnitURI: string,
+		connectionURI: string,
+		id?: string,
+		propertyValue?: string,
+		propertyValueTimestamp?: string
+	): StreamingProperty {
+		const property = this.propertyObject(
+			propertyName,
+			description,
+			propertyDataTypeURI,
+			propertyUnitURI,
+			id,
+			propertyValue,
+			propertyValueTimestamp
+		);
+		return {
+			...property,
+			nodeType: 'StreamingProperty',
+			streamingTopic,
+			streamingPath,
+			propertyConnection: {
+				uri: connectionURI
+			}
+		};
+	}
 
-    private s3PropertyObject(
-        bucket: string,
-        key: string,
-        connectionURI: string,
-        propertyName: string,
-        description: string,
-        id?: string,
-        propertyValue?: string,
-        propertyValueTimestamp?: string,
-    ): S3ObjectProperty {
-        const property = this.propertyObject(
-            propertyName,
-            description,
-            undefined,
-            undefined,
-            id,
-            propertyValue,
-            propertyValueTimestamp,
-        );
-        return {
-            ...property,
-            nodeType: 'S3ObjectProperty',
-            propertyConnection: {
-                uri: connectionURI,
-            },
-            bucket,
-            key,
-        };
-    }
+	private s3PropertyObject(
+		bucket: string,
+		key: string,
+		connectionURI: string,
+		propertyName: string,
+		description: string,
+		id?: string,
+		propertyValue?: string,
+		propertyValueTimestamp?: string
+	): S3ObjectProperty {
+		const property = this.propertyObject(
+			propertyName,
+			description,
+			undefined,
+			undefined,
+			id,
+			propertyValue,
+			propertyValueTimestamp
+		);
+		return {
+			...property,
+			nodeType: 'S3ObjectProperty',
+			propertyConnection: {
+				uri: connectionURI
+			},
+			bucket,
+			key
+		};
+	}
 
-    getAllProperties() {
-        return get(this.properties);
-    }
+	getAllProperties() {
+		return get(this.properties);
+	}
 
-    getProperty(id: string): Property | AbstractAssetProperty | DatabaseProperty | StreamingProperty | S3ObjectProperty | undefined {
-        const properties = get(this.properties);
-        return properties.find((node) => node.id === id);
-    }
+	getProperty(
+		id: string
+	):
+		| Property
+		| AbstractAssetProperty
+		| DatabaseProperty
+		| StreamingProperty
+		| S3ObjectProperty
+		| undefined {
+		const properties = get(this.properties);
+		return properties.find((node) => node.id === id);
+	}
 
-    updateProperty(new_property: Property) {
-        const properties = get(this.properties);
-        const property = properties.find((node) => node.id === new_property.id);
-        if (!property) {
-            throw new Error(`Property with ID '${new_property.id}' not found`);
-        } else {
-            this.properties.update((properties) => properties.map((node) => (node.id === new_property.id ? new_property : node)));
-        }
-    }
+	updateProperty(new_property: Property) {
+		const properties = get(this.properties);
+		const property = properties.find((node) => node.id === new_property.id);
+		if (!property) {
+			throw new Error(`Property with ID '${new_property.id}' not found`);
+		} else {
+			this.properties.update((properties) =>
+				properties.map((node) => (node.id === new_property.id ? new_property : node))
+			);
+		}
+	}
 
-    updatePropertyBackend(new_property: Property) {
-        try {
-            updateNodeQuery(new_property);
-        } catch (error) {
-            this.toastState.add('Failed to update property node', error as string, 'error');
-        }
-    }
+	updatePropertyBackend(new_property: Property) {
+		try {
+			updateNodeQuery(new_property);
+		} catch (error) {
+			this.toastState.add('Failed to update property node', error as string, 'error');
+		}
+	}
 
-    deleteAllProperties() {
-        this.properties.set([]);
-    }
+	deleteAllProperties() {
+		this.properties.set([]);
+	}
 
-    deleteProperty(id: string) {
-        this.properties.update((properties) => properties.filter((node) => node.id !== id));
-    }
+	deleteProperty(id: string) {
+		this.properties.update((properties) => properties.filter((node) => node.id !== id));
+	}
 
-    addProperty<T extends Property>(
-        property: T
-    ) {
-        this.properties.update((properties) => [...properties, property]);
-    }
+	addProperty<T extends Property>(property: T) {
+		this.properties.update((properties) => [...properties, property]);
+	}
 
-    addPropertyNode(class_type: PropertyNodeType, node: any) {
-        let propertyName = '';
-        if (node.propertyName) {
-            propertyName = node.propertyName;
-        } else {
-            propertyName = node.label;
-        }
-        if (class_type === 'AbstractAssetProperty') {
-            this.addAbstractAssetProperty(node.uri, propertyName, node.description, node.propertyDataType?.uri, node.propertyUnit?.uri, node.propertyValue, node.propertyValueTimestamp);
-        } else if (class_type === 'StreamingProperty') {
-            this.addStreamingProperty(node.uri, node.streamingTopic, node.streamingPath, propertyName, node.propertyDescription, node.propertyDataType?.uri, node.propertyUnit?.uri, node.propertyConnection.uri, node.propertyValue, node.propertyValueTimestamp);
-        } else if ( class_type === 'S3ObjectProperty' ) {
-            this.addS3Property(node.uri, node.bucket, node.key, propertyName, node.description, node.propertyConnection.uri, node.propertyValue, node.propertyValueTimestamp);
-        }
-        else if (class_type === 'PropertyCollection') {
-            // Add PropertyCollection to properties state so lookups and UI can resolve labels
-            const propertyName = node.propertyName || node.label || node.uri || 'PropertyCollection';
-            const newProperty = {
-                id: node.uri,
-                nodeType: 'PropertyCollection',
-                propertyName,
-                description: node.description || node.propertyDescription || '',
-                collectionProperties: node.collectionProperties || [],
-            } as any;
-            this.addProperty(newProperty);
-        }
-        else {
-            throw new Error(`Invalid property node type '${class_type}'`);
-        }
-    }
+	addPropertyNode(class_type: PropertyNodeType, node: any) {
+		let propertyName = '';
+		if (node.propertyName) {
+			propertyName = node.propertyName;
+		} else {
+			propertyName = node.label;
+		}
+		if (class_type === 'AbstractAssetProperty') {
+			this.addAbstractAssetProperty(
+				node.uri,
+				propertyName,
+				node.description,
+				node.propertyDataType?.uri,
+				node.propertyUnit?.uri,
+				node.propertyValue,
+				node.propertyValueTimestamp
+			);
+		} else if (class_type === 'StreamingProperty') {
+			this.addStreamingProperty(
+				node.uri,
+				node.streamingTopic,
+				node.streamingPath,
+				propertyName,
+				node.propertyDescription,
+				node.propertyDataType?.uri,
+				node.propertyUnit?.uri,
+				node.propertyConnection.uri,
+				node.propertyValue,
+				node.propertyValueTimestamp
+			);
+		} else if (class_type === 'S3ObjectProperty') {
+			this.addS3Property(
+				node.uri,
+				node.bucket,
+				node.key,
+				propertyName,
+				node.description,
+				node.propertyConnection.uri,
+				node.propertyValue,
+				node.propertyValueTimestamp
+			);
+		} else if (class_type === 'PropertyCollection') {
+			// Add PropertyCollection to properties state so lookups and UI can resolve labels
+			const propertyName = node.propertyName || node.label || node.uri || 'PropertyCollection';
+			const newProperty = {
+				id: node.uri,
+				nodeType: 'PropertyCollection',
+				propertyName,
+				description: node.description || node.propertyDescription || '',
+				collectionProperties: node.collectionProperties || []
+			} as any;
+			this.addProperty(newProperty);
+		} else {
+			throw new Error(`Invalid property node type '${class_type}'`);
+		}
+	}
 
-    createProperty(class_type: PropertyNodeType, assetNodeId: string, node: any) {
-        if (class_type === 'AbstractAssetProperty') {
-            return this.createAbstractAssetProperty(assetNodeId, node.propertyName, node.description, node.propertyDataType.uri, node.propertyUnit.uri, node.propertyValue);
-        } else if (class_type === 'StreamingProperty') {
-            return this.createStreamingProperty(assetNodeId, node.streamingTopic, node.streamingPath, node.propertyName, node.description, node.propertyDataType.uri, node.propertyUnit.uri, node.propertyConnection.uri);
-        } else {
-            throw new Error(`Invalid property node type '${class_type}'`);
-        }
-    }
+	createProperty(class_type: PropertyNodeType, assetNodeId: string, node: any) {
+		if (class_type === 'AbstractAssetProperty') {
+			return this.createAbstractAssetProperty(
+				assetNodeId,
+				node.propertyName,
+				node.description,
+				node.propertyDataType.uri,
+				node.propertyUnit.uri,
+				node.propertyValue
+			);
+		} else if (class_type === 'StreamingProperty') {
+			return this.createStreamingProperty(
+				assetNodeId,
+				node.streamingTopic,
+				node.streamingPath,
+				node.propertyName,
+				node.description,
+				node.propertyDataType.uri,
+				node.propertyUnit.uri,
+				node.propertyConnection.uri
+			);
+		} else {
+			throw new Error(`Invalid property node type '${class_type}'`);
+		}
+	}
 
-    addAbstractAssetProperty(
-        id: string,
-        propertyName: string,
-        description: string,
-        propertyDataTypeURI: string,
-        propertyUnitURI: string,
-        propertyValue?: string,
-        propertyValueTimestamp?: string,
-    ) {
-        const newProperty = this.abstractAssetPropertyObject(
-            propertyName,
-            description,
-            propertyDataTypeURI,
-            propertyUnitURI,
-            id,
-            propertyValue,
-            propertyValueTimestamp,
-        );
-        this.addProperty(newProperty);
-    }
+	addAbstractAssetProperty(
+		id: string,
+		propertyName: string,
+		description: string,
+		propertyDataTypeURI: string,
+		propertyUnitURI: string,
+		propertyValue?: string,
+		propertyValueTimestamp?: string
+	) {
+		const newProperty = this.abstractAssetPropertyObject(
+			propertyName,
+			description,
+			propertyDataTypeURI,
+			propertyUnitURI,
+			id,
+			propertyValue,
+			propertyValueTimestamp
+		);
+		this.addProperty(newProperty);
+	}
 
-    async addStreamingProperty(
-        id: string,
-        streamingTopic: string,
-        streamingPath: string,
-        propertyName: string,
-        description: string,
-        propertyDataTypeURI: string,
-        propertyUnitURI: string,
-        connectionURI: string,
-        propertyValue?: string,
-        propertyValueTimestamp?: string,
-    ) {
-        const newProperty = this.streamingPropertyObject(
-            streamingTopic,
-            streamingPath,
-            propertyName,
-            description,
-            propertyDataTypeURI,
-            propertyUnitURI,
-            connectionURI,
-            id,
-            propertyValue,
-            propertyValueTimestamp,
-        );
-        this.addProperty(newProperty);
-        // Streaming functionality removed - the /kg/stream API is experimental
-    }
+	async addStreamingProperty(
+		id: string,
+		streamingTopic: string,
+		streamingPath: string,
+		propertyName: string,
+		description: string,
+		propertyDataTypeURI: string,
+		propertyUnitURI: string,
+		connectionURI: string,
+		propertyValue?: string,
+		propertyValueTimestamp?: string
+	) {
+		const newProperty = this.streamingPropertyObject(
+			streamingTopic,
+			streamingPath,
+			propertyName,
+			description,
+			propertyDataTypeURI,
+			propertyUnitURI,
+			connectionURI,
+			id,
+			propertyValue,
+			propertyValueTimestamp
+		);
+		this.addProperty(newProperty);
+		// Streaming functionality removed - the /kg/stream API is experimental
+	}
 
-    async addS3Property(
-        id: string,
-        bucket: string,
-        key: string,
-        propertyName: string,
-        description: string,
-        connectionURI: string,
-        propertyValue?: string,
-        propertyValueTimestamp?: string,
-    ) {
-        const newProperty = this.s3PropertyObject(
-            bucket,
-            key,
-            connectionURI,
-            propertyName,
-            description,
-            id,
-            propertyValue,
-            propertyValueTimestamp,
-        );
-        this.addProperty(newProperty);
-    }
+	async addS3Property(
+		id: string,
+		bucket: string,
+		key: string,
+		propertyName: string,
+		description: string,
+		connectionURI: string,
+		propertyValue?: string,
+		propertyValueTimestamp?: string
+	) {
+		const newProperty = this.s3PropertyObject(
+			bucket,
+			key,
+			connectionURI,
+			propertyName,
+			description,
+			id,
+			propertyValue,
+			propertyValueTimestamp
+		);
+		this.addProperty(newProperty);
+	}
 
-    async createAbstractAssetProperty(
-        assetNodeId: string,
-        propertyName: string,
-        description: string,
-        propertyDataTypeURI: string,
-        propertyUnitURI: string,
-        propertyValue?: string,
-        propertyValueTimestamp?: string,
-    ) {
-        const newProperty = this.abstractAssetPropertyObject(
-            propertyName,
-            description,
-            propertyDataTypeURI,
-            propertyUnitURI,
-            undefined,
-            propertyValue,
-            propertyValueTimestamp,
-        );
-        let ok = true;
-        try {
-            this.addProperty(newProperty);
-            await createAbstractAssetPropertyQuery(newProperty);
-            await addPropertyToAssetNodeQuery(assetNodeId, newProperty.id);
-            // Property needs to be added to the asset node outside this function! (See create-new-node-property.svelte)
-        } catch (error) {
-            this.toastState.add('Failed to create property node', error as string, 'error');
-            this.deleteProperty(newProperty.id);
-            ok = false;
-        }
-        if (ok)
-            return newProperty.id;
-        else
-            return undefined;
-    }
+	async createAbstractAssetProperty(
+		assetNodeId: string,
+		propertyName: string,
+		description: string,
+		propertyDataTypeURI: string,
+		propertyUnitURI: string,
+		propertyValue?: string,
+		propertyValueTimestamp?: string
+	) {
+		const newProperty = this.abstractAssetPropertyObject(
+			propertyName,
+			description,
+			propertyDataTypeURI,
+			propertyUnitURI,
+			undefined,
+			propertyValue,
+			propertyValueTimestamp
+		);
+		let ok = true;
+		try {
+			this.addProperty(newProperty);
+			await createAbstractAssetPropertyQuery(newProperty);
+			await addPropertyToAssetNodeQuery(assetNodeId, newProperty.id);
+			// Property needs to be added to the asset node outside this function! (See create-new-node-property.svelte)
+		} catch (error) {
+			this.toastState.add('Failed to create property node', error as string, 'error');
+			this.deleteProperty(newProperty.id);
+			ok = false;
+		}
+		if (ok) return newProperty.id;
+		else return undefined;
+	}
 
-    async createStreamingProperty(
-        assetNodeId: string,
-        streamingTopic: string,
-        streamingPath: string,
-        propertyName: string,
-        description: string,
-        propertyDataTypeURI: string,
-        propertyUnitURI: string,
-        connectionURI: string,
-        propertyValue?: string,
-        propertyValueTimestamp?: string,
-    ) {
-        const newProperty = this.streamingPropertyObject(
-            streamingTopic,
-            streamingPath,
-            propertyName,
-            description,
-            propertyDataTypeURI,
-            propertyUnitURI,
-            connectionURI,
-            undefined,
-            propertyValue,
-            propertyValueTimestamp,
-        );
-        let ok = true;
-        try {
-            this.addProperty(newProperty);
-            await createStreamingPropertyQuery(newProperty);
-            await addPropertyToAssetNodeQuery(assetNodeId, newProperty.id);
-            // Property needs to be added to the asset node outside this function! (See create-new-node-property.svelte)
-        } catch (error) {
-            this.toastState.add('Failed to create property node', error as string, 'error');
-            this.deleteProperty(newProperty.id);
-            ok = false;
-        }
-        if (ok)
-            return newProperty.id;
-        else
-            return undefined;
-    }
+	async createStreamingProperty(
+		assetNodeId: string,
+		streamingTopic: string,
+		streamingPath: string,
+		propertyName: string,
+		description: string,
+		propertyDataTypeURI: string,
+		propertyUnitURI: string,
+		connectionURI: string,
+		propertyValue?: string,
+		propertyValueTimestamp?: string
+	) {
+		const newProperty = this.streamingPropertyObject(
+			streamingTopic,
+			streamingPath,
+			propertyName,
+			description,
+			propertyDataTypeURI,
+			propertyUnitURI,
+			connectionURI,
+			undefined,
+			propertyValue,
+			propertyValueTimestamp
+		);
+		let ok = true;
+		try {
+			this.addProperty(newProperty);
+			await createStreamingPropertyQuery(newProperty);
+			await addPropertyToAssetNodeQuery(assetNodeId, newProperty.id);
+			// Property needs to be added to the asset node outside this function! (See create-new-node-property.svelte)
+		} catch (error) {
+			this.toastState.add('Failed to create property node', error as string, 'error');
+			this.deleteProperty(newProperty.id);
+			ok = false;
+		}
+		if (ok) return newProperty.id;
+		else return undefined;
+	}
 
-    async createS3Property(
-        assetNodeId: string,
-        bucket: string,
-        key: string,
-        propertyName: string,
-        description: string,
-        connectionURI: string,
-        propertyValue?: string,
-        propertyValueTimestamp?: string,
-    ) {
-        const newProperty = this.s3PropertyObject(
-            bucket,
-            key,
-            connectionURI,
-            propertyName,
-            description,
-            undefined,
-            propertyValue,
-            propertyValueTimestamp,
-        );
-        let ok = true;
-        try {
-            this.addProperty(newProperty);
-            await createS3PropertyQuery(newProperty);
-            await addPropertyToAssetNodeQuery(assetNodeId, newProperty.id);
-            // Property needs to be added to the asset node outside this function! (See create-new-node-property.svelte)
-        } catch (error) {
-            this.toastState.add('Failed to create property node', error as string, 'error');
-            this.deleteProperty(newProperty.id);
-            ok = false;
-        }
-        if (ok)
-            return newProperty.id;
-        else
-            return undefined;
-    }
+	async createS3Property(
+		assetNodeId: string,
+		bucket: string,
+		key: string,
+		propertyName: string,
+		description: string,
+		connectionURI: string,
+		propertyValue?: string,
+		propertyValueTimestamp?: string
+	) {
+		const newProperty = this.s3PropertyObject(
+			bucket,
+			key,
+			connectionURI,
+			propertyName,
+			description,
+			undefined,
+			propertyValue,
+			propertyValueTimestamp
+		);
+		let ok = true;
+		try {
+			this.addProperty(newProperty);
+			await createS3PropertyQuery(newProperty);
+			await addPropertyToAssetNodeQuery(assetNodeId, newProperty.id);
+			// Property needs to be added to the asset node outside this function! (See create-new-node-property.svelte)
+		} catch (error) {
+			this.toastState.add('Failed to create property node', error as string, 'error');
+			this.deleteProperty(newProperty.id);
+			ok = false;
+		}
+		if (ok) return newProperty.id;
+		else return undefined;
+	}
 
-    // Get properties by their IDs
-    getProperties(ids: NodeUri[]): Property[] {
-        const properties = get(this.properties);
-        //const uris = ids.map((id) => getNodeIdFromBackendUri(id.uri));
-        // Normalize IDs: for backend API URIs, strip API base; for ontology URIs, strip protocol; otherwise return as-is
-        const API_BASE_URI = env.PUBLIC_SINDIT_BACKEND_API_BASE_URI;
-        const normalizeUriToId = (uri: string): string => {
-            if (API_BASE_URI && uri.startsWith(API_BASE_URI)) {
-                return uri.slice(API_BASE_URI.length);
-            }
-            if (uri.startsWith('http://') || uri.startsWith('https://')) {
-                return uri.replace(/^https?:\/\//, '');
-            }
-            return uri;
-        };
-        const idsNormalized = ids.map((id) => normalizeUriToId(id.uri));
-        return properties.filter((property) => idsNormalized.includes(property.id));
-    }
-
+	// Get properties by their IDs
+	getProperties(ids: NodeUri[]): Property[] {
+		const properties = get(this.properties);
+		//const uris = ids.map((id) => getNodeIdFromBackendUri(id.uri));
+		// Normalize IDs: for backend API URIs, strip API base; for ontology URIs, strip protocol; otherwise return as-is
+		const API_BASE_URI = env.PUBLIC_SINDIT_BACKEND_API_BASE_URI;
+		const normalizeUriToId = (uri: string): string => {
+			if (API_BASE_URI && uri.startsWith(API_BASE_URI)) {
+				return uri.slice(API_BASE_URI.length);
+			}
+			if (uri.startsWith('http://') || uri.startsWith('https://')) {
+				return uri.replace(/^https?:\/\//, '');
+			}
+			return uri;
+		};
+		const idsNormalized = ids.map((id) => normalizeUriToId(id.uri));
+		return properties.filter((property) => idsNormalized.includes(property.id));
+	}
 }
 
 // Unique key to store the state in the Svelte context
