@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/public';
+import { authenticatedFetch } from '$lib/api-client';
 
 // Workspaces - SINDIT API endpoints
 const API_BASE_URL = '/api/proxy';
@@ -8,12 +9,8 @@ export async function getWorkspace(): Promise<{workspace_uri: string}> {
     const endpoint = 'get';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
     console.log("getCurrentWorkspace GET:", url)
-    const response = await fetch(url);
+    const response = await authenticatedFetch(url);
     if (!response.ok) {
-        // Remove toast logic from here; handle in Svelte page/component
-        if (response.status === 401) {
-            throw new Error('NOT_AUTHENTICATED');
-        }
         throw new Error(`Error performing GET request ${url}`);
     }
     return response.json();
@@ -23,12 +20,8 @@ export async function listWorkspaces() {
     const endpoint = 'list';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
     console.log("listWorkspaces GET:", url)
-    const response = await fetch(url);
+    const response = await authenticatedFetch(url);
     if (!response.ok) {
-        // Remove toast logic from here; handle in Svelte page/component
-        if (response.status === 401) {
-            throw new Error('NOT_AUTHENTICATED');
-        }
         throw new Error(`Error performing GET request ${url}`);
     }
     return response.json();
@@ -39,19 +32,15 @@ export async function switchWorkspace(
 ) {
     const endpoint = 'switch';
     const base_url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    const url = `${base_url}?workspace_uri=${encodeURIComponent(workspaceUri)}`
+    const url = `${base_url}?workspace_name=${encodeURIComponent(workspaceUri)}`
     console.log("switchWorkspace POST:", url)
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
     });
     if (!response.ok) {
-        // Remove toast logic from here; handle in Svelte page/component
-        if (response.status === 401) {
-            throw new Error('NOT_AUTHENTICATED');
-        }
         throw new Error(`Error performing POST request ${url}`);
     }
     return response.json();

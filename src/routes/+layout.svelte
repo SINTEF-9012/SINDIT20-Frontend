@@ -17,7 +17,7 @@
 	import InfoDrawerLink from '$lib/components/info-drawer-link.svelte';
 	import type { ModalComponent } from '@skeletonlabs/skeleton';
 	import { isBackendRunning, selectedWorkspace, isWorkspaceSelected, backendNodesData } from '$lib/stores';
-	import { getNodes as getNodesBackendQuery } from '$apis/sindit-backend/kg';
+	import { getAllNodes as getNodesBackendQuery } from '$apis/sindit-backend/kg';
 	import { addNodesToStates, getCurrentWorkspace, checkBackendRunningStatus } from '$lib/utils';
 	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -308,7 +308,7 @@
 <!-- Sign-in Modal -->
 {#if showSignInModal && !$isAuthenticated}
   <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in" role="button" tabindex="0" on:click={() => showSignInModal = false} on:keydown={(e) => e.key === 'Escape' && (showSignInModal = false)}>
-    <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 w-96 max-w-full flex flex-col gap-5 relative" role="dialog">
+    <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 w-96 max-w-full flex flex-col gap-5 relative" role="dialog" on:click|stopPropagation>
       <button class="absolute top-4 right-4 text-slate-500 hover:text-red-500" on:click={() => showSignInModal = false} aria-label="Close">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>

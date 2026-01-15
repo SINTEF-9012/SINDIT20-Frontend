@@ -13,7 +13,7 @@
         selectedWorkspace,
     } from '$lib/stores';
     import {
-        getNodes as getNodesBackendQuery,
+        getAllNodes as getNodesBackendQuery,
     } from '$apis/sindit-backend/kg';
     import {
         switchWorkspace,
@@ -110,10 +110,14 @@
 
     async function getWorkspaces(): Promise<void> {
         try {
-            const workspace_uris = await listWorkspaces();
-            for (const uri of workspace_uris) {
-                const workspace = getWorkspaceDictFromUri(uri);
-                workspaces.push(workspace);
+            const workspaceList = await listWorkspaces();
+            console.log('Workspaces received:', workspaceList);
+            
+            // Backend returns array of workspace objects with name, uri, and is_default
+            if (Array.isArray(workspaceList)) {
+                workspaces = workspaceList;
+            } else {
+                console.error('Unexpected workspace response format:', workspaceList);
             }
         } catch (err) {
             if (err) console.error('Error listing workspaces:', err);
@@ -124,8 +128,6 @@
             }
             return;
         }
-        // trigger reactivity
-        workspaces = [...workspaces];
     }
 
 

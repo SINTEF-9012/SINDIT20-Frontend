@@ -1,18 +1,17 @@
 import { env } from '$env/dynamic/public';
 import type { ConnectionType, AbstractAssetProperty, StreamingProperty, S3Property } from '$lib/types';
 import { getBackendUri } from '$lib/utils';
+import { authenticatedFetch } from '$lib/api-client';
+import { fetchAllPages } from '$lib/pagination';
 
 const API_BASE_URL = '/api/proxy';
 const API_BASE_ENDPOINT = `${API_BASE_URL}?endpoint=kg`
 
-export async function getNodes() {
+export async function getNodes(depth: number = 1, skip: number = 0, limit: number = 10) {
     const endpoint = 'nodes';
-    const url = `${API_BASE_ENDPOINT}/${endpoint}`;
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?depth=${depth}&skip=${skip}&limit=${limit}`;
     console.log("getNodes GET:", url)
-    const response = await fetch(url);
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
+    const response = await authenticatedFetch(url);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -26,10 +25,7 @@ export async function getNode(
     const uri = getBackendUri(nodeId);
     const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}&depth=${depth}`;
     console.log("getNode GET:", url)
-    const response = await fetch(url);
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
+    const response = await authenticatedFetch(url);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -47,16 +43,13 @@ export async function updateNode(node: any, overwrite: boolean = true) {
     const url = `${API_BASE_ENDPOINT}/${endpoint}?overwrite=${doOverwrite}`;
     node.id = getBackendUri(node.id);
     console.log("updateNode POST:", url, node)
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(node)
     });
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -68,33 +61,62 @@ export async function deleteNode(nodeId: string): Promise<Response> {
     const uri = getBackendUri(nodeId);
     const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}`;
     console.log("deleteNode DELETE:", url)
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json'
         }
     });
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
     if (!response.ok) {
         throw new Error(`Error performing DELETE request ${response.statusText}`);
     }
     return response;
 }
 
-export async function getNodesByClass(nodeClass: string) {
+export async function getNodesByClass(nodeClass: string, depth: number = 1, skip: number = 0, limit: number = 10) {
     const endpoint = 'nodes_by_type';
-    const url = `${API_BASE_ENDPOINT}/${endpoint}?type_uri=${encodeURIComponent(nodeClass)}`;
+    const url = `${API_BASE_ENDPOINT}/${endpoint}?type_uri=${encodeURIComponent(nodeClass)}&depth=${depth}&skip=${skip}&limit=${limit}`;
     console.log("getNodesByClass GET:", url)
-    const response = await fetch(url);
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
+    const response = await authenticatedFetch(url);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
     return response.json();
+}
+
+/**
+ * Fetch ALL nodes from the knowledge graph by automatically handling pagination.
+ * This will make multiple requests until all nodes are retrieved.
+ * 
+ * @param depth - Depth of node relations to fetch (default: 1)
+ * @param pageSize - Number of nodes to fetch per request (default: 100)
+ * @returns Promise resolving to array of all nodes
+ */
+export async function getAllNodes(depth: number = 1, pageSize: number = 100) {
+    console.log("getAllNodes: fetching all nodes with pagination")
+    return fetchAllPages(
+        (d, skip, limit) => getNodes(d, skip, limit),
+        depth,
+        pageSize
+    );
+}
+
+/**
+ * Fetch ALL nodes of a specific type by automatically handling pagination.
+ * This will make multiple requests until all nodes of the type are retrieved.
+ * 
+ * @param nodeClass - The class/type URI of nodes to fetch
+ * @param depth - Depth of node relations to fetch (default: 1)
+ * @param pageSize - Number of nodes to fetch per request (default: 100)
+ * @returns Promise resolving to array of all nodes of the specified type
+ */
+export async function getAllNodesByClass(nodeClass: string, depth: number = 1, pageSize: number = 100) {
+    console.log(`getAllNodesByClass: fetching all nodes of type ${nodeClass} with pagination`)
+    return fetchAllPages(
+        (d, skip, limit) => getNodesByClass(nodeClass, d, skip, limit),
+        depth,
+        pageSize
+    );
 }
 
 
@@ -110,16 +132,13 @@ export async function createAbstractNode(
         assetProperties: []
     }
     console.log("createAbstractNode POST:", url, data)
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(data)
     });
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -140,16 +159,13 @@ export async function addPropertyToAssetNode(
     }
     asset.assetProperties.push({ uri: getBackendUri(propertyURI) });
     console.log("addPropertyToAssetNode POST:", url, asset)
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(asset)
     });
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -193,16 +209,13 @@ export async function createAbstractPropertyNode(
         };
     }
     console.log("createAbstractPropertyNode POST:", url, data)
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
         method: 'POST',
         headers: {
         'Content-Type': 'application/json'
     },
         body: JSON.stringify(data)
     });
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -246,16 +259,13 @@ export async function createStreamingPropertyNode(
         };
     }
     console.log("createStreamingPropertyNode POST:", url, data)
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
         method: 'POST',
         headers: {
         'Content-Type': 'application/json'
     },
         body: JSON.stringify(data)
     });
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -283,16 +293,13 @@ export async function createS3PropertyNode(
         key: newProperty.key,
     }
     console.log("createS3PropertyNode POST:", url, data)
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
         method: 'POST',
         headers: {
         'Content-Type': 'application/json'
     },
         body: JSON.stringify(data)
     });
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
     if (!response.ok) {
         throw new Error(`Error performing POST request ${response.statusText}`);
     }
@@ -315,16 +322,13 @@ export async function createConnectionNode(
         type: connectionType
     }
     console.log("createConnectionNode POST:", url, data)
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
     },
         body: JSON.stringify(data)
     });
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
     if (!response.ok) {
         throw new Error('Error performing POST request');
     }
@@ -340,15 +344,12 @@ export async function streamData(
     const uri = id; // getBackendUri(id);
     const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}`;
     console.log("streamData GET:", url)
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
         }
     });
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }
@@ -373,15 +374,12 @@ export async function streamDataReader(
     const uri = id; // getBackendUri(id);
     const url = `${API_BASE_ENDPOINT}/${endpoint}?node_uri=${encodeURIComponent(uri)}`;
     console.log("streamData GET:", url)
-    const response = await fetch(url, {
+    const response = await authenticatedFetch(url, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
         }
     });
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     }

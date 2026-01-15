@@ -106,28 +106,43 @@ export function addNodesToStates(
     });
 }
 
-export function getWorkspaceDictFromUri(workspaceUri: string): Workspace {
-    let workspaceName = workspaceUri.split('#')[1] as string
+export function getWorkspaceDictFromUri(workspaceUri: string | any): Workspace {
+    // Handle case where workspaceUri might be an object instead of a string
+    const uriString = typeof workspaceUri === 'string' ? workspaceUri : (workspaceUri?.uri || String(workspaceUri));
+    
+    let workspaceName = uriString.split('#')[1] as string
     if (workspaceName === '' || workspaceName === undefined) {
-        workspaceName = workspaceUri;
+        workspaceName = uriString;
     }
     return {
         name: workspaceName,
-        uri: workspaceUri,
+        uri: uriString,
     };
 }
 
 export async function getCurrentWorkspace(): Promise<Workspace> {
-    const workspace = await getWorkspace();
-    if (!workspace.workspace_uri) {
+    const response = await getWorkspace();
+    console.log('getCurrentWorkspace response:', response);
+    
+    // Check if response is already a Workspace object with name/uri
+    if (response && typeof response === 'object' && 'name' in response && 'uri' in response) {
+        const workspace = response as Workspace;
+        selectedWorkspace.set(workspace.name);
+        isWorkspaceSelected.set(true);
+        return workspace;
+    }
+    
+    // Otherwise handle legacy format with workspace_uri
+    if (!response.workspace_uri) {
         selectedWorkspace.set('');
         isWorkspaceSelected.set(false);
+        return { name: '', uri: '' };
     } else {
-        const workspaceDict = getWorkspaceDictFromUri(workspace.workspace_uri);
+        const workspaceDict = getWorkspaceDictFromUri(response.workspace_uri);
         selectedWorkspace.set(workspaceDict.name);
         isWorkspaceSelected.set(true);
+        return workspaceDict;
     }
-    return getWorkspaceDictFromUri(workspace.workspace_uri);
 }
 
 

@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/public';
+import { authenticatedFetch } from '$lib/api-client';
 
 // Workspaces - SINDIT API endpoints
 const SINDIT_API_BASE_URL = env.PUBLIC_SINDIT_BACKEND_API;
@@ -30,10 +31,7 @@ export async function refreshConnections(): Promise<boolean> {
     const endpoint = 'refresh';
     const url = `${API_BASE_ENDPOINT}/${endpoint}`;
     console.log("refreshConnections GET:", url)
-    const response = await fetch(url);
-    if (response.status === 401) {
-        throw new Error('NOT_AUTHENTICATED');
-    }
+    const response = await authenticatedFetch(url);
     if (!response.ok) {
         throw new Error(`Error performing GET request ${url}`);
     } else if (response.status === 200) {

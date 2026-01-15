@@ -24,7 +24,8 @@ export class AuthState {
 				try {
 					const user = JSON.parse(savedUser);
 					this.user.set(user);
-					this.isAuthenticated.set(true);
+					// Validate token before setting authenticated
+					this.validateSession();
 				} catch {}
 			}
 		}
@@ -59,6 +60,27 @@ export class AuthState {
 			this.isAuthenticated.set(false);
 		} finally {
 			this.loading.set(false);
+		}
+	}
+
+	async validateSession() {
+		try {
+			// Call a lightweight endpoint to verify the token is still valid
+			const res = await fetch('/api/proxy?endpoint=ws/get', {
+				method: 'GET'
+			});
+			if (res.ok) {
+				this.isAuthenticated.set(true);
+			} else {
+				throw new Error('Session invalid');
+			}
+		} catch {
+			// Token invalid, clear state
+			this.user.set(null);
+			this.isAuthenticated.set(false);
+			if (browser) {
+				localStorage.removeItem('sindit_auth_user');
+			}
 		}
 	}
 

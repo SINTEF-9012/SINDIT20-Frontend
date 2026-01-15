@@ -5,6 +5,7 @@
 export type Workspace = {
 	name: string;
 	uri: string;
+	is_default?: boolean;
 };
 
 // Toast messages
