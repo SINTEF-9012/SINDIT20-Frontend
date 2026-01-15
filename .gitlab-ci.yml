@@ -134,30 +134,36 @@ docker-build:
 push-to-github:
   stage: build
   image: alpine:latest
+  retry: 2
   before_script:
-    - apk add --no-cache git git-subtree openssh
+    - apk add --no-cache git git-subtree
     - git config --global user.email "ci@sindit.com"
     - git config --global user.name "SINDIT CI"
 
-    # Clone the current GitLab branch (either 'main' or 'sindit-frontend')
-    - git clone --branch $CI_COMMIT_BRANCH $CI_REPOSITORY_URL project
-    - cd project
+    # Setup credential helper for secure token usage
+    - echo "https://$GITHUB_TOKEN@github.com" > ~/.git-credentials
+    - git config --global credential.helper store
 
-    # Set ROOTDIR relative to the Git repo root
-    - export ROOTDIR="projects/sindit-frontend"
-
-    # Set GitHub remote (will override if it already exists)
-    - |
-      if git remote | grep -q github; then
-        git remote set-url github https://$GITHUB_TOKEN@github.com/SINTEF-9012/SINDIT20-Frontend.git
-      else
-        git remote add github https://$GITHUB_TOKEN@github.com/SINTEF-9012/SINDIT20-Frontend.git
-      fi
+    # Use existing repository checkout
+    - cd $CI_PROJECT_DIR
   script:
-    # Create a new branch from the subtree at $ROOTDIR
-    - git subtree split --prefix=$ROOTDIR -b subtree-sindit-frontend
+    # Set variables
+    - export ROOTDIR="projects/sindit-frontend"
+    - export BRANCH_NAME="subtree-sindit-frontend-$CI_COMMIT_SHORT_SHA"
 
-    # Push the subtree branch to GitHub's main branch
-    - git push github subtree-sindit-frontend:main --force
+    # Create subtree branch from the frontend subdirectory
+    - git subtree split --prefix=$ROOTDIR -b $BRANCH_NAME
+
+    # Add GitHub remote (ignore error if already exists)
+    - git remote add github https://github.com/SINTEF-9012/SINDIT20-Frontend.git || true
+
+    # Push to GitHub with lease protection to avoid overwriting unexpected changes
+    - git push github $BRANCH_NAME:main --force-with-lease
+
+    # Cleanup the temporary branch
+    - git branch -D $BRANCH_NAME
+  after_script:
+    # Remove credentials file for security
+    - rm -f ~/.git-credentials
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit-frontend"
