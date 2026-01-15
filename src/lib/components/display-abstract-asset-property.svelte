@@ -16,7 +16,7 @@
 
 <div class="abstract-properties border variant-ghost-tertiary">
     <div class="prop">
-        <label for={"name-" + idSuffix}>PropetyName:</label>
+        <label for={"name-" + idSuffix}>PropertyName:</label>
         <input type="input" id={"name-" + idSuffix} name={"name-" + idSuffix} bind:value={inputForm.propertyName} class="input text-white">
     </div>
     <div class="prop">
@@ -27,6 +27,24 @@
         <label for={"value-" + idSuffix}>Value:</label>
         <input type="input" id={"value-" + idSuffix} name={"value-" + idSuffix} bind:value={inputForm.propertyValue} class="input text-white">
     </div>
+    {#if property.propertyDataType}
+    <div class="prop">
+        <label for={"dataType-" + idSuffix}>Data Type:</label>
+        <input type="input" id={"dataType-" + idSuffix} name={"dataType-" + idSuffix} value={property.propertyDataType?.uri || property.propertyDataType} readonly class="input text-white">
+    </div>
+    {/if}
+    {#if property.propertyUnit}
+    <div class="prop">
+        <label for={"unit-" + idSuffix}>Unit:</label>
+        <input type="input" id={"unit-" + idSuffix} name={"unit-" + idSuffix} value={property.propertyUnit?.uri || property.propertyUnit} readonly class="input text-white">
+    </div>
+    {/if}
+    {#if property.propertySemanticID}
+    <div class="prop">
+        <label for={"semanticID-" + idSuffix}>Semantic ID:</label>
+        <input type="input" id={"semanticID-" + idSuffix} name={"semanticID-" + idSuffix} value={typeof property.propertySemanticID === 'object' ? property.propertySemanticID.uri : property.propertySemanticID} readonly class="input text-white">
+    </div>
+    {/if}
 </div>
 
 

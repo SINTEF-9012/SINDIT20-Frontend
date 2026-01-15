@@ -30,11 +30,17 @@
 
     async function onRefreshConnections() {
         try {
+            // First, trigger backend to refresh connections
             await refreshConnectionsQuery();
-            // Reload connections from backend into state
-            connectionsState.updateConnectionsFromBackend();
+            toastState.add('Refresh Triggered', 'Refreshing connections from sources...', 'info');
+
+            // Wait a bit for backend to complete refresh
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Then reload connections from backend into state
+            await connectionsState.updateConnectionsFromBackend();
             connections = connectionsState.connections;
-            toastState.add('Connections Refreshed', 'Connections list has been refreshed.', 'info');
+            toastState.add('Connections Refreshed', 'Connections list has been updated.', 'success');
         } catch (err) {
             if (err instanceof Error && err.message === 'NOT_AUTHENTICATED') {
                 toastState.add('Authentication Required', 'You must sign in to refresh connections.', 'error');

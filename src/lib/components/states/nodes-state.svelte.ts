@@ -354,14 +354,14 @@ export class Nodes {
 			console.warn('Skipping relationship with missing source or target:', relationship);
 			return;
 		}
-		
+
 		const sourceId = utilsGetNodeIdFromBackendUri(relationship.relationshipSource.uri);
 		const targetId = utilsGetNodeIdFromBackendUri(relationship.relationshipTarget.uri);
-			
+
 			// Check if both nodes exist in the graph
 			const sourceNode = allNodes.find(n => n.id === sourceId);
 			const targetNode = allNodes.find(n => n.id === targetId);
-			
+
 			if (sourceNode && targetNode) {
 				// Map relationship type to link weight (higher weight = more important)
 				const weightMap: Record<string, number> = {
@@ -377,9 +377,9 @@ export class Nodes {
 					'communicatesWith': 2,
 					'isTypeOf': 2
 				};
-				
+
 				const weight = weightMap[relationship.relationshipType] || 2;
-				
+
 				links.push({
 					id: `relationship-${relationship.id}`,
 					sourceNodeId: sourceId,

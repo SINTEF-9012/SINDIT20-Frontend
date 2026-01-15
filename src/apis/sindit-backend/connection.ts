@@ -28,15 +28,16 @@ export async function backendHealthCheck(): Promise<boolean> {
 }
 
 export async function refreshConnections(): Promise<boolean> {
-    const endpoint = 'refresh';
-    const url = `${API_BASE_ENDPOINT}/${endpoint}`;
-    console.log("refreshConnections GET:", url)
-    const response = await authenticatedFetch(url);
+    const url = '/api/proxy?endpoint=connections/refresh';
+    console.log("refreshConnections POST:", url)
+    const response = await authenticatedFetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
     if (!response.ok) {
-        throw new Error(`Error performing GET request ${url}`);
-    } else if (response.status === 200) {
-        return true;
-    } else {
-        return false;
+        throw new Error(`Error performing POST request ${url}`);
     }
+    return true;
 }

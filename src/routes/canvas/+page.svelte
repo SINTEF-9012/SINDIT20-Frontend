@@ -13,6 +13,7 @@
 	import { JSONEditor } from 'svelte-jsoneditor'
 	import { modeCurrent } from '@skeletonlabs/skeleton';
 	import { backendNodesData } from '$lib/stores'
+	import { getNodeIdFromBackendUri } from '$lib/utils';
 	import ToolboxSidebar from './ToolboxSidebar.svelte';
 	import * as d3 from 'd3';
 
@@ -71,18 +72,31 @@
 	let createNodeModeMetadata: {toolName: string, operationMode: string};
 	let selectedCanvasPosition = { x: 0, y: 0 };
 	let selectedNodesIds: string[] = [];
-	createNodeMode.subscribe((value) => isCreateNodeMode = value);
-	createLinkMode.subscribe((value) => isCreateLinkMode = value);
-	createConnectionMode.subscribe((value) => isCreateConnectionMode = value);
-	modalMetadata.subscribe((value) => createNodeModeMetadata = value);
-	selectedNodes.subscribe((value) => selectedNodesIds = value);
 
+	// Store reference to SVG for updating node selection visuals (must be declared before subscriptions)
+	let svgElement: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
+	let jsonEditor: any = null; // Reference to JSONEditor instance (must be declared before subscriptions)
+
+	// JSON Editor state (must be declared before subscriptions)
 	let isResizing = false;
     let startX: number;
     let pageWidth: number;
     let canvasWidth: number;
     let editorWidth: number;
     let showJSONEditor = true;
+
+	// Subscriptions
+	createNodeMode.subscribe((value) => isCreateNodeMode = value);
+	createLinkMode.subscribe((value) => isCreateLinkMode = value);
+	createConnectionMode.subscribe((value) => isCreateConnectionMode = value);
+	modalMetadata.subscribe((value) => createNodeModeMetadata = value);
+	selectedNodes.subscribe((value) => {
+		selectedNodesIds = value;
+		// Update visual highlighting when selection changes
+		updateNodeSelectionVisuals();
+		// Navigate to selected node in JSON editor
+		navigateToNodeInEditor(value);
+	});
     $: content = {
         text: undefined, // can be used to pass a stringified JSON document instead
         json: $backendNodesData,
@@ -252,6 +266,83 @@
 	// Function to release all pinned nodes - declared here to be accessible to button click handlers
 	let releaseAllPinnedNodes = () => {};
 
+	// Function to navigate to selected node in JSON editor
+	function navigateToNodeInEditor(selectedNodeIds: string[]) {
+		// Skip if editor is hidden or not initialized
+		if (!showJSONEditor) {
+			return;
+		}
+
+		if (!jsonEditor) {
+			// Editor should be visible but not initialized yet - this is temporary during mounting
+			return;
+		}
+
+		if (selectedNodeIds.length === 0) {
+			return;
+		}
+
+		try {
+			// Get the first selected node ID
+			const selectedId = selectedNodeIds[0];
+
+			// Find the node in backendNodesData array
+			const nodeIndex = $backendNodesData.findIndex((node: any) => {
+				// Match by URI without the backend base URL
+				const nodeId = node.uri ? getNodeIdFromBackendUri(node.uri) : null;
+				return nodeId === selectedId || node.uri === selectedId;
+			});
+
+			if (nodeIndex !== -1) {
+				const path = [nodeIndex];
+
+				// First, collapse all other nodes to clean up the view
+				if (jsonEditor.collapse) {
+					try {
+						// Collapse each item in the array except the one we want to expand
+						for (let i = 0; i < $backendNodesData.length; i++) {
+							if (i !== nodeIndex) {
+								jsonEditor.collapse([i]).catch(() => {});
+							}
+						}
+					} catch (err) {
+						// Collapse not supported in this mode
+					}
+				}
+
+				// Expand the specific path to make it visible
+				if (jsonEditor.expand) {
+					jsonEditor.expand(path).catch(() => {});
+				}
+
+				// Select the node to highlight it
+				if (jsonEditor.select) {
+					jsonEditor.select(path).catch(() => {});
+				}
+
+				// Finally scroll to it with a small delay to ensure DOM is updated
+				setTimeout(() => {
+					if (jsonEditor.scrollTo) {
+						jsonEditor.scrollTo(path).catch(() => {});
+					}
+				}, 100);
+			}
+		} catch (error) {
+			// Silently fail - editor might be in an incompatible state
+		}
+	}
+
+	// Function to update node selection visuals in D3
+	function updateNodeSelectionVisuals() {
+		if (!svgElement) return; // SVG not initialized yet
+
+		// Update stroke width and color for all nodes based on selection state
+		svgElement.selectAll<SVGCircleElement, D3Node>('.node-circle')
+			.attr('stroke-width', (d: D3Node) => selectedNodesIds.includes(d.id) ? 5 : 1.5)
+			.attr('stroke', (d: D3Node) => selectedNodesIds.includes(d.id) ? '#ffd700' : '#ffffff')
+			.attr('stroke-opacity', (d: D3Node) => selectedNodesIds.includes(d.id) ? 1 : 0.6);
+	}
+
     function handleMouseDownEditorResize(event: MouseEvent) {
         isResizing = true;
         startX = event.clientX;
@@ -358,6 +449,9 @@
 				.attr('width', '100%')
 				.attr('height', '100%')
 				.attr('class', 'd3-force-graph');
+
+			// Store SVG reference for updating node selection visuals
+			svgElement = svg;
 
 			// Add tooltip container for node and link interactions
 			const tooltip = d3.select(svgContainer)
@@ -641,51 +735,75 @@
 						${originalNode.assetProperties ? `<div><strong>Properties:</strong> ${originalNode.assetProperties.length}</div>` : ''}
 					`;
 						break;
-					case 'PropertyCollection':
+				case 'PropertyCollection':
 						detailsHTML = `
 							<div><strong>ID:</strong> ${node.id}</div>
-							${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${originalNode.propertyDataType}</div>` : ''}
 							${originalNode.collectionProperties ? `<div><strong>Items:</strong> ${originalNode.collectionProperties.length}</div>` : ''}
-							${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
-						`;
-						break;
-					case 'AbstractAssetProperty':
-						detailsHTML = `
-							<div><strong>ID:</strong> ${node.id}</div>
 							${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
-							${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri || JSON.stringify(originalNode.propertyDataType) : originalNode.propertyDataType}</div>` : ''}
+							${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${originalNode.propertyValueTimestamp}</div>` : ''}
+							${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri : originalNode.propertyDataType}</div>` : ''}
+							${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${typeof originalNode.propertyUnit === 'object' ? originalNode.propertyUnit.uri : originalNode.propertyUnit}</div>` : ''}
+							${originalNode.propertySemanticID ? `<div><strong>Semantic ID:</strong> ${typeof originalNode.propertySemanticID === 'object' ? originalNode.propertySemanticID.uri : originalNode.propertySemanticID}</div>` : ''}
 							${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
 						`;
 						break;
-					case 'StreamingProperty':
-						detailsHTML = `
-							<div><strong>ID:</strong> ${node.id}</div>
-							${originalNode.streamingTopic ? `<div><strong>Topic:</strong> ${originalNode.streamingTopic}</div>` : ''}
-							${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
-						`;
+			case 'AbstractAssetProperty':
+					detailsHTML = `
+						<div><strong>ID:</strong> ${node.id}</div>
+						${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
+						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${originalNode.propertyValueTimestamp}</div>` : ''}
+						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri || JSON.stringify(originalNode.propertyDataType) : originalNode.propertyDataType}</div>` : ''}
+						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${typeof originalNode.propertyUnit === 'object' ? originalNode.propertyUnit.uri : originalNode.propertyUnit}</div>` : ''}
+						${originalNode.propertySemanticID ? `<div><strong>Semantic ID:</strong> ${typeof originalNode.propertySemanticID === 'object' ? originalNode.propertySemanticID.uri : originalNode.propertySemanticID}</div>` : ''}
+						${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+					`;
 						break;
-					case 'TimeseriesProperty':
-						detailsHTML = `
-							<div><strong>ID:</strong> ${node.id}</div>
-							${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
-							${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
-						`;
+			case 'StreamingProperty':
+					detailsHTML = `
+						<div><strong>ID:</strong> ${node.id}</div>
+						${originalNode.streamingTopic ? `<div><strong>Topic:</strong> ${originalNode.streamingTopic}</div>` : ''}
+						${originalNode.streamingPath ? `<div><strong>Path:</strong> ${originalNode.streamingPath}</div>` : ''}
+						${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
+						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${originalNode.propertyValueTimestamp}</div>` : ''}
+						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri : originalNode.propertyDataType}</div>` : ''}
+						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${typeof originalNode.propertyUnit === 'object' ? originalNode.propertyUnit.uri : originalNode.propertyUnit}</div>` : ''}
+						${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${typeof originalNode.propertyConnection === 'object' ? originalNode.propertyConnection.uri : originalNode.propertyConnection}</div>` : ''}
+						${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+					`;
+						break;
+			case 'TimeseriesProperty':
+					detailsHTML = `
+						<div><strong>ID:</strong> ${node.id}</div>
+						${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
+						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${originalNode.propertyValueTimestamp}</div>` : ''}
+						${originalNode.query ? `<div><strong>Query:</strong> ${originalNode.query}</div>` : ''}
+						${originalNode.timeseriesRetrievalMethod ? `<div><strong>Retrieval Method:</strong> ${originalNode.timeseriesRetrievalMethod}</div>` : ''}
+						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri : originalNode.propertyDataType}</div>` : ''}
+						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${typeof originalNode.propertyUnit === 'object' ? originalNode.propertyUnit.uri : originalNode.propertyUnit}</div>` : ''}
+						${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${typeof originalNode.propertyConnection === 'object' ? originalNode.propertyConnection.uri : originalNode.propertyConnection}</div>` : ''}
+						${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+					`;
 						break;
 				case 'S3ObjectProperty':
 					detailsHTML = `
 						<div><strong>ID:</strong> ${node.id}</div>
 						${originalNode.bucket ? `<div><strong>Bucket:</strong> ${originalNode.bucket}</div>` : ''}
 						${originalNode.key ? `<div><strong>Key:</strong> ${originalNode.key}</div>` : ''}
+						${originalNode.urlMode ? `<div><strong>URL Mode:</strong> ${originalNode.urlMode}</div>` : ''}
 						${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
+						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${originalNode.propertyValueTimestamp}</div>` : ''}
 						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri || JSON.stringify(originalNode.propertyDataType) : originalNode.propertyDataType}</div>` : ''}
+						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${typeof originalNode.propertyUnit === 'object' ? originalNode.propertyUnit.uri : originalNode.propertyUnit}</div>` : ''}
+						${originalNode.propertySemanticID ? `<div><strong>Semantic ID:</strong> ${typeof originalNode.propertySemanticID === 'object' ? originalNode.propertySemanticID.uri : originalNode.propertySemanticID}</div>` : ''}
 						${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${typeof originalNode.propertyConnection === 'object' ? originalNode.propertyConnection.uri : originalNode.propertyConnection}</div>` : ''}
 						${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
 					`;
 					break;
-					case 'SINDITKG':
+				case 'SINDITKG':
 						detailsHTML = `
 							<div><strong>URI:</strong> ${originalNode.uri || node.id}</div>
 							${originalNode.assets ? `<div><strong>Assets:</strong> ${originalNode.assets.length}</div>` : ''}
+							${originalNode.dataConnections ? `<div><strong>Data Connections:</strong> ${originalNode.dataConnections.length}</div>` : ''}
 						`;
 						break;
 					default:
@@ -852,10 +970,10 @@
 						default:
 							return '#95a5a6'; // Gray for unknown
 					}
-				})
-				.attr('stroke', '#ffffff') // Simple white border
-				.attr('stroke-width', (d: D3Node) => selectedNodesIds.includes(d.id) ? 3 : 1.5)
-				.attr('stroke-opacity', 0.6);
+			})
+			.attr('stroke', '#ffffff') // Simple white border
+			.attr('stroke-width', (d: D3Node) => selectedNodesIds.includes(d.id) ? 5 : 1.5)
+			.attr('stroke-opacity', 0.6);
 
 			// Add pin indicator for pinned nodes
 			nodeElements.filter((d: D3Node) => d.isPinned)
@@ -1638,7 +1756,6 @@
                         </div>
                         <div class="node-counts">
                             <span class="count-item">Nodes: {$visualizableNodes.length}</span>
-                            <span class="count-item">Links: {allLinks.length}</span>
                         </div>
                     </div>
 
@@ -1739,9 +1856,9 @@
                                 </svg>
                             </button>
                         </div>
-                        <div class="json-editor {darkMode} flex-1 min-h-0">
-                            <JSONEditor bind:content />
-                        </div>
+						<div class="json-editor {darkMode} flex-1 min-h-0">
+							<JSONEditor bind:this={jsonEditor} bind:content />
+						</div>
                     </div>
                 </div>
             {/if}

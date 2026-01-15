@@ -44,9 +44,40 @@ let selectedNodeIds: string[] = [];
 $: visualizableNodes = nodesState.visualizableNodes;
 $: abstractAssetNodes = nodesState.assets; // Keep for backward compatibility
 $: links = linksState.links;
+$: relationships = linksState.relationships;
 $: totalNodes = $visualizableNodes.length;
 $: totalLinks = $links.length;
 $: selectedNodesCount = selectedNodeIds.length;
+
+// Node type statistics
+$: nodeTypeStats = $visualizableNodes.reduce((acc, node) => {
+    const type = node.nodeType;
+    acc[type] = (acc[type] || 0) + 1;
+    return acc;
+}, {} as Record<string, number>);
+
+// Relationship type statistics
+$: relationshipTypeStats = $relationships.reduce((acc, rel) => {
+    const type = rel.relationshipType || 'Unknown';
+    acc[type] = (acc[type] || 0) + 1;
+    return acc;
+}, {} as Record<string, number>);
+
+// Get top node types (sorted by count)
+$: topNodeTypes = Object.entries(nodeTypeStats)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+// Get top relationship types (sorted by count)
+$: topRelationshipTypes = Object.entries(relationshipTypeStats)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+// Format relationship type for display (convert camelCase to readable)
+function formatRelationshipType(type: string): string {
+    // Split on capital letters and join with spaces
+    return type.replace(/([A-Z])/g, ' $1').trim();
+}
 
 // Search functionality
 $: filteredNodes = $visualizableNodes.filter(node =>
@@ -60,14 +91,18 @@ function getNodeDisplayName(node: VisualizableNode) {
     switch (node.nodeType) {
         case 'AbstractAsset':
             return node.nodeName;
+        case 'AbstractAssetProperty':
+            return node.propertyName;
         case 'StreamingProperty':
             return node.propertyName;
-        case 'SINDITKG':
-            return node.label;
+        case 'TimeseriesProperty':
+            return node.propertyName;
         case 'S3ObjectProperty':
             return node.propertyName;
         case 'PropertyCollection':
             return node.propertyName;
+        case 'SINDITKG':
+            return node.label;
     }
     // TypeScript exhaustiveness check - this should never be reached
     return (node as any).id || 'Unknown Node';
@@ -289,6 +324,7 @@ function enterConnectionCreationMode() {
 
                 {#if expandedSections.stats}
                     <div class="stats-container">
+                        <!-- Overview Stats -->
                         <div class="stat-item">
                             <div class="stat-icon">
                                 <DatabaseIcon size="16" />
@@ -301,16 +337,6 @@ function enterConnectionCreationMode() {
 
                         <div class="stat-item">
                             <div class="stat-icon">
-                                <LinkIcon size="16" />
-                            </div>
-                            <div class="stat-details">
-                                <span class="stat-value">{totalLinks}</span>
-                                <span class="stat-label">Total Links</span>
-                            </div>
-                        </div>
-
-                        <div class="stat-item">
-                            <div class="stat-icon">
                                 <ActivityIcon size="16" />
                             </div>
                             <div class="stat-details">
@@ -318,6 +344,32 @@ function enterConnectionCreationMode() {
                                 <span class="stat-label">Selected</span>
                             </div>
                         </div>
+
+                        <!-- Node Types Breakdown -->
+                        {#if topNodeTypes.length > 0}
+                            <div class="stat-category">
+                                <div class="stat-category-title">Node Types</div>
+                                {#each topNodeTypes as [type, count]}
+                                    <div class="stat-breakdown">
+                                        <span class="stat-breakdown-label">{type}</span>
+                                        <span class="stat-breakdown-value">{count}</span>
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
+
+                        <!-- Relationship Types Breakdown -->
+                        {#if topRelationshipTypes.length > 0}
+                            <div class="stat-category">
+                                <div class="stat-category-title">Relationships</div>
+                                {#each topRelationshipTypes as [type, count]}
+                                    <div class="stat-breakdown">
+                                        <span class="stat-breakdown-label">{formatRelationshipType(type)}</span>
+                                        <span class="stat-breakdown-value">{count}</span>
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
                     </div>
                 {/if}
             </div>
@@ -768,6 +820,61 @@ function enterConnectionCreationMode() {
 }
 
 :global(.dark) .stat-label {
+    color: #94a3b8;
+}
+
+.stat-category {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+}
+
+:global(.dark) .stat-category {
+    border-top-color: #475569;
+}
+
+.stat-category-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+:global(.dark) .stat-category-title {
+    color: #94a3b8;
+}
+
+.stat-breakdown {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 12px;
+}
+
+.stat-breakdown-label {
+    color: #374151;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+:global(.dark) .stat-breakdown-label {
+    color: #e2e8f0;
+}
+
+.stat-breakdown-value {
+    color: #6b7280;
+    font-weight: 600;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+:global(.dark) .stat-breakdown-value {
     color: #94a3b8;
 }
 

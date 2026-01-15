@@ -25,6 +25,9 @@
 	import { BriefcaseIcon, LinkIcon, Share2Icon, InfoIcon } from 'svelte-feather-icons';
 	import { page } from '$app/stores';
 
+	// Version from package.json
+	const APP_VERSION = '0.0.1';
+
 	// Check if backend is running
 	checkBackendRunningStatus();
 
@@ -89,7 +92,7 @@
 		try {
 			const nodes = await getNodesBackendQuery();
 			await addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
-			
+
 			// Fetch relationships after nodes are loaded
 			try {
 				const relationships = await getAllRelationships();
@@ -290,6 +293,9 @@
 						</button>
 					</div>
 				{/if}
+			</div>
+			<div class="flex items-center gap-3 text-sm px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/40 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+				<span class="font-medium">v{APP_VERSION}</span>
 			</div>
 			<div class="flex items-center gap-4">
 				{#if $isBackendRunning}

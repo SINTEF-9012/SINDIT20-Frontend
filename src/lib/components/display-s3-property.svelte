@@ -203,13 +203,27 @@
 
 <div class="s3-properties border variant-ghost-tertiary">
     <div class="prop">
-        <label for={"name-" + idSuffix}>PropetyName:</label>
+        <label for={"name-" + idSuffix}>PropertyName:</label>
         <input type="input" id={"name-" + idSuffix} name={"name-" + idSuffix} bind:value={inputForm.propertyName} class="input text-white">
     </div>
     <div class="prop">
         <label for={"description-" + idSuffix}>Description:</label>
         <input type="input" id={"description-" + idSuffix} name={"description-" + idSuffix} bind:value={inputForm.description} class="input text-white">
     </div>
+    <div class="prop">
+        <label for={"bucket-" + idSuffix}>Bucket:</label>
+        <input type="input" id={"bucket-" + idSuffix} name={"bucket-" + idSuffix} value={property.bucket} readonly class="input text-white">
+    </div>
+    <div class="prop">
+        <label for={"key-" + idSuffix}>Key:</label>
+        <input type="input" id={"key-" + idSuffix} name={"key-" + idSuffix} value={property.key} readonly class="input text-white">
+    </div>
+    {#if property.urlMode}
+    <div class="prop">
+        <label for={"urlMode-" + idSuffix}>URL Mode:</label>
+        <input type="input" id={"urlMode-" + idSuffix} name={"urlMode-" + idSuffix} value={property.urlMode} readonly class="input text-white">
+    </div>
+    {/if}
     <div class="prop">
         <label for={"value-" + idSuffix}>Value:</label>
         <input type="input" id={"value-" + idSuffix} name={"value-" + idSuffix} bind:value={inputForm.propertyValue} readonly class="input text-white">

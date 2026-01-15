@@ -66,6 +66,7 @@ export interface Property {
 	description: string;
 	propertyDataType?: NodeUri;
 	propertyUnit?: NodeUri;
+	propertySemanticID?: NodeUri | string;
 	propertyValue?: string;
 	propertyValueTimestamp?: string;
 	propertyConnection?: NodeUri;
@@ -81,6 +82,7 @@ export interface DatabaseProperty extends Property {
 	nodeType: 'DatabaseProperty';
 	propertyConnection: NodeUri;
 	query?: string;
+	propertyIdentifiers?: Record<string, any>;
 }
 
 export interface StreamingProperty extends Property {
@@ -104,6 +106,7 @@ export interface S3ObjectProperty extends Property {
 	propertyConnection: NodeUri;
 	bucket: string;
 	key: string;
+	urlMode?: string; // "upload" or "download"
 	position?: Position; // Add position for visualization
 }
 
@@ -118,6 +121,7 @@ export interface SINDITKG {
 	uri: string;
 	label: string;
 	assets?: NodeUri[];
+	dataConnections?: NodeUri[];
 	nodeType: 'SINDITKG';
 	position?: Position; // Add position for visualization
 }
