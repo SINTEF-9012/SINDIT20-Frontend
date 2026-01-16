@@ -3,17 +3,20 @@
 	import Node from '$lib/components/node.svelte';
 	import type { Node as NodeType, VisualizableNode } from '$lib/types';
 	import type { Link as LinkType } from '$lib/types';
-	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
-	import { getLinksState } from '$lib/components/states/links-state.svelte';
-	import { getDrawerStore } from '@skeletonlabs/skeleton';
+import { getNodesState } from '$lib/components/states/nodes-state.svelte';
+import { getLinksState } from '$lib/components/states/links-state.svelte';
+import { getPropertiesState } from '$lib/components/states/properties.svelte';
+import { getConnectionsState } from '$lib/components/states/connections.svelte';
+import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import Link from '$lib/components/nodes-link.svelte';
 	import { createNodeMode, createLinkMode, createConnectionMode, selectedNodes, modalMetadata } from '$lib/stores';
 	import type { ModalSettings } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { JSONEditor } from 'svelte-jsoneditor'
 	import { modeCurrent } from '@skeletonlabs/skeleton';
-	import { backendNodesData } from '$lib/stores'
-	import { getNodeIdFromBackendUri } from '$lib/utils';
+import { backendNodesData } from '$lib/stores'
+import { getNodeIdFromBackendUri, addNodesToStates } from '$lib/utils';
+import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/sindit-backend/kg';
 	import ToolboxSidebar from './ToolboxSidebar.svelte';
 	import * as d3 from 'd3';
 
@@ -61,6 +64,9 @@
 	let linksState = getLinksState();
 	$: explicitLinks = linksState.links;
 	$: relationships = linksState.relationships;
+
+	let propertiesState = getPropertiesState();
+	let connectionsState = getConnectionsState();
 
 	// Make implicit links reactive to visualizable nodes changes and relationships
 	$: implicitLinks = $visualizableNodes.length > 0 ? nodesState.generateImplicitLinks($relationships) : [];
@@ -265,6 +271,25 @@
 
 	// Function to release all pinned nodes - declared here to be accessible to button click handlers
 	let releaseAllPinnedNodes = () => {};
+
+	// Function to refresh data from backend
+	async function refreshData() {
+		try {
+			const nodes = await getNodesBackendQuery();
+			await addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
+
+			// Fetch relationships after nodes are loaded
+			try {
+				const relationships = await getAllRelationships();
+				linksState.setRelationships(relationships || []);
+			} catch (relError) {
+				console.warn('No relationships found or error loading relationships:', relError);
+				linksState.setRelationships([]);
+			}
+		} catch (error) {
+			console.error('Error refreshing workspace data:', error);
+		}
+	}
 
 	// Function to navigate to selected node in JSON editor
 	function navigateToNodeInEditor(selectedNodeIds: string[]) {
@@ -1761,6 +1786,11 @@
 
                     <div class="controls-right">
                         <button class="control-btn" title="Fit Graph to View" on:click={fitGraphToView}>
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                            </svg>
+                        </button>
+                        <button class="control-btn" title="Refresh Data" on:click={refreshData}>
                             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                                 <path d="M21 3v5h-5"/>

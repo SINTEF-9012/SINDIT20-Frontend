@@ -234,12 +234,10 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {#each filteredWorkspaces as workspace}
             <div class="group relative">
-              <button
+              <div
                 class="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 transform
                   {workspace.name === _selectedWorkspace ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'hover:border-blue-300 dark:hover:border-blue-600'}"
-                on:click={() => selectWorkspace(workspace)}
                 id={"workspace-" + workspace.name}
-                name={"workspace-" + workspace.name}
                 title={workspace.uri}
               >
                 <!-- Workspace Name -->
@@ -260,13 +258,16 @@
                   </div>
                 {/if}
 
-                <!-- Hover Indicator -->
-                <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                  </svg>
-                </div>
-              </button>
+                <!-- Switch Button (shown on hover) -->
+                {#if workspace.name !== _selectedWorkspace}
+                  <button
+                    class="absolute inset-x-0 bottom-0 w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-b-2xl transition-all duration-200 opacity-0 group-hover:opacity-100 transform translate-y-full group-hover:translate-y-0"
+                    on:click={() => selectWorkspace(workspace)}
+                  >
+                    Switch to this workspace
+                  </button>
+                {/if}
+              </div>
             </div>
           {/each}
         </div>

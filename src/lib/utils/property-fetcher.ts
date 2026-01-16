@@ -19,10 +19,25 @@ export class PropertyFetcher {
 	private readonly depth: number;
 	private readonly fetchedUris = new Set<string>();
 	private readonly fetchedNodes: BackendNode[] = [];
+	private readonly nodeCache = new Map<string, BackendNode>();
 
 	constructor(config: PropertyFetcherConfig = {}) {
 		this.maxIterations = config.maxIterations ?? 10;
 		this.depth = config.depth ?? 1;
+	}
+
+	/**
+	 * Populate the node cache with all available nodes
+	 * @param allNodes - All nodes that are already loaded
+	 */
+	populateCache(allNodes: BackendNode[]): void {
+		allNodes.forEach(node => {
+			if (isBackendNode(node)) {
+				this.nodeCache.set(node.uri, node);
+				this.fetchedUris.add(node.uri);
+			}
+		});
+		logger.info('PropertyFetcher cache populated', { cacheSize: this.nodeCache.size });
 	}
 
 	/**
@@ -46,14 +61,25 @@ export class PropertyFetcher {
 			logger.debug('Property fetching iteration', { iteration, queueSize: nodesToProcess.length });
 
 			const currentBatch = nodesToProcess.splice(0, nodesToProcess.length);
-			const referencedPropertyUris = this.collectPropertyUris(currentBatch);
+			const { cachedNodes, unfetchedUris } = this.collectPropertyUris(currentBatch);
 
-			if (referencedPropertyUris.size === 0) {
+			// Add cached nodes directly without fetching
+			cachedNodes.forEach(node => {
+				this.fetchedNodes.push(node);
+				nodesToProcess.push(node);
+			});
+
+			if (unfetchedUris.length === 0) {
 				break;
 			}
 
+			logger.info('Fetching missing property nodes', { 
+				cachedCount: cachedNodes.length, 
+				unfetchedCount: unfetchedUris.length 
+			});
+
 			// Fetch all properties in parallel
-			const newNodes = await this.fetchPropertiesInParallel(Array.from(referencedPropertyUris));
+			const newNodes = await this.fetchPropertiesInParallel(unfetchedUris);
 
 			// Add newly fetched nodes to processing queue and results
 			newNodes.forEach(node => {
@@ -71,9 +97,11 @@ export class PropertyFetcher {
 
 	/**
 	 * Collect all property URIs referenced by nodes
+	 * Returns cached nodes and URIs that need to be fetched
 	 */
-	private collectPropertyUris(nodes: BackendNode[]): Set<string> {
-		const propertyUris = new Set<string>();
+	private collectPropertyUris(nodes: BackendNode[]): { cachedNodes: BackendNode[], unfetchedUris: string[] } {
+		const cachedNodes: BackendNode[] = [];
+		const unfetchedUris: string[] = [];
 
 		nodes.forEach(node => {
 			try {
@@ -84,7 +112,13 @@ export class PropertyFetcher {
 					node.assetProperties.forEach((prop: unknown) => {
 						const uri = this.extractUri(prop);
 						if (uri && !this.fetchedUris.has(uri)) {
-							propertyUris.add(uri);
+							const cachedNode = this.nodeCache.get(uri);
+							if (cachedNode) {
+								cachedNodes.push(cachedNode);
+								this.fetchedUris.add(uri);
+							} else {
+								unfetchedUris.push(uri);
+							}
 						}
 					});
 				}
@@ -94,7 +128,13 @@ export class PropertyFetcher {
 					node.collectionProperties.forEach((prop: unknown) => {
 						const uri = this.extractUri(prop);
 						if (uri && !this.fetchedUris.has(uri)) {
-							propertyUris.add(uri);
+							const cachedNode = this.nodeCache.get(uri);
+							if (cachedNode) {
+								cachedNodes.push(cachedNode);
+								this.fetchedUris.add(uri);
+							} else {
+								unfetchedUris.push(uri);
+							}
 						}
 					});
 				}
@@ -103,7 +143,7 @@ export class PropertyFetcher {
 			}
 		});
 
-		return propertyUris;
+		return { cachedNodes, unfetchedUris };
 	}
 
 	/**

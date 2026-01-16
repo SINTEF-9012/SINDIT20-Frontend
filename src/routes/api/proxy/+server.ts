@@ -60,8 +60,21 @@ async function proxyToBackend({ endpoint, method, token, body }: { endpoint: str
 }
 
 async function handleProxy({ request, cookies, url, method }: { request: Request, cookies: any, url: URL, method: string }) {
-    const endpoint = url.searchParams.get('endpoint');
+    let endpoint = url.searchParams.get('endpoint');
     if (!endpoint) return json({ error: 'No endpoint specified' }, { status: 400 });
+
+    // Forward all other query parameters (except 'endpoint') to the backend
+    const otherParams = new URLSearchParams();
+    for (const [key, value] of url.searchParams.entries()) {
+        if (key !== 'endpoint') {
+            otherParams.append(key, value);
+        }
+    }
+    // Append other params to endpoint if any exist
+    if (otherParams.toString()) {
+        const separator = endpoint.includes('?') ? '&' : '?';
+        endpoint = `${endpoint}${separator}${otherParams.toString()}`;
+    }
 
     let token = cookies.get('api_token');
     // Use provided env for username/password if not in cookies

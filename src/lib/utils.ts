@@ -44,12 +44,26 @@ export async function addNodesToStates(
 	logger.info('Processing nodes from backend', { count: validNodes.length });
 	backendNodesData.set(nodes);
 
-	// Fetch all referenced property nodes recursively
-	const propertyFetcher = new PropertyFetcher({ maxIterations: 10, depth: 1 });
+	// Populate cache with all loaded nodes to avoid redundant fetches
+	const propertyFetcher = new PropertyFetcher({ maxIterations: 3, depth: 1 });
+	propertyFetcher.populateCache(validNodes);
+	
+	// Only fetch properties that aren't already in the loaded nodes
 	const fetchedProperties = await propertyFetcher.fetchAllProperties(validNodes);
 
-	// Combine original and fetched nodes
-	const allNodes = [...validNodes, ...fetchedProperties];
+	// Deduplicate by URI: create a map of all nodes
+	const nodeMap = new Map<string, BackendNode>();
+	for (const node of validNodes) {
+		nodeMap.set(node.uri, node);
+	}
+	for (const node of fetchedProperties) {
+		if (!nodeMap.has(node.uri)) {
+			nodeMap.set(node.uri, node);
+		}
+	}
+
+	// Convert map back to array
+	const allNodes = Array.from(nodeMap.values());
 	backendNodesData.set(allNodes);
 
 	logger.info('Processing all nodes including fetched properties', {
