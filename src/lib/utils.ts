@@ -47,7 +47,7 @@ export async function addNodesToStates(
 	// Populate cache with all loaded nodes to avoid redundant fetches
 	const propertyFetcher = new PropertyFetcher({ maxIterations: 3, depth: 1 });
 	propertyFetcher.populateCache(validNodes);
-	
+
 	// Only fetch properties that aren't already in the loaded nodes
 	const fetchedProperties = await propertyFetcher.fetchAllProperties(validNodes);
 

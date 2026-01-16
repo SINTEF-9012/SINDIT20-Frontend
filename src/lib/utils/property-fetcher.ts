@@ -73,9 +73,9 @@ export class PropertyFetcher {
 				break;
 			}
 
-			logger.info('Fetching missing property nodes', { 
-				cachedCount: cachedNodes.length, 
-				unfetchedCount: unfetchedUris.length 
+			logger.info('Fetching missing property nodes', {
+				cachedCount: cachedNodes.length,
+				unfetchedCount: unfetchedUris.length
 			});
 
 			// Fetch all properties in parallel
