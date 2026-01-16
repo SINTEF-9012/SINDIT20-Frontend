@@ -8,13 +8,12 @@ const API_BASE_URL = '/api/proxy';
 const API_BASE_ENDPOINT = `${API_BASE_URL}?endpoint=connection`;
 
 export async function backendHealthCheck(): Promise<boolean> {
-	const url = `${SINDIT_API_BASE_URL}/docs`;
+	const url = `${SINDIT_API_BASE_URL}/health/live`;
 	console.log('backendHealthCheck GET:', url);
 	try {
 		const response = await fetch(url);
-		if (!response.ok) {
-			throw new Error(`Error performing GET request ${url}`);
-		} else if (response.status === 200) {
+		// Health endpoint returns 204 No Content when healthy
+		if (response.status === 204) {
 			return true;
 		} else {
 			return false;

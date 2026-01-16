@@ -4,13 +4,10 @@
 // All frontend API calls should go through this endpoint for secure, centralized authentication and backend access.
 
 import { json } from '@sveltejs/kit';
-import { env as envPrivate } from '$env/dynamic/private';
 import { env as envPublic } from '$env/dynamic/public';
 
 // Workspaces - SINDIT API endpoints
 const API_BASE_URL = envPublic.PUBLIC_SINDIT_BACKEND_API;
-const API_USERNAME = envPrivate.PRIVATE_SINDIT_BACKEND_USRERNAME;
-const API_PASSWORD = envPrivate.PRIVATE_SINDIT_BACKEND_PASSWORD;
 
 async function getToken(username: string, password: string) {
     const response = await fetch(`${API_BASE_URL}/token`, {
