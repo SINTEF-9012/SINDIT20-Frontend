@@ -27,8 +27,11 @@
 	// Version from package.json
 	const APP_VERSION = '0.0.1';
 
-	// Check if backend is running
+	// Check if backend is running initially
 	checkBackendRunningStatus();
+
+	// Poll backend health every 10 seconds
+	let healthCheckInterval: ReturnType<typeof setInterval> | null = null;
 
 	// Initialize Stores
 	initializeStores();
@@ -108,6 +111,11 @@
 	}
 
 	onMount(() => {
+		// Start periodic health check
+		healthCheckInterval = setInterval(() => {
+			checkBackendRunningStatus();
+		}, 10000); // Check every 10 seconds
+
 		// React to backend running
 		const unsubBackend = isBackendRunning.subscribe((backendRunning) => {
 			if (backendRunning && $isAuthenticated) {
@@ -136,6 +144,10 @@
 	});
 
 	onDestroy(() => {
+		// Clear health check interval
+		if (healthCheckInterval) {
+			clearInterval(healthCheckInterval);
+		}
 		toastState.destroy();
 		nodesState.destroy();
 		connectionsState.destroy();
