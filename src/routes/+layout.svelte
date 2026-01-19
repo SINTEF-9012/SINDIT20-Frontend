@@ -107,7 +107,7 @@
 		}
 	}
 
-	onMount(() => {
+	onMount(async () => {
 		// Check backend health initially
 		checkBackendRunningStatus();
 
@@ -116,12 +116,6 @@
 			checkBackendRunningStatus();
 		}, 10000); // Check every 10 seconds
 
-		// React to backend running
-		const unsubBackend = isBackendRunning.subscribe((backendRunning) => {
-			if (backendRunning && $isAuthenticated) {
-				getCurrentWorkspace();
-			}
-		});
 		// React to workspace selection and backend running
 		let lastWorkspaceSelected = false;
 		const unsubWorkspace = isWorkspaceSelected.subscribe((workspaceSelected) => {
@@ -130,12 +124,26 @@
 			}
 			lastWorkspaceSelected = workspaceSelected;
 		});
+
+		// React to backend running
+		const unsubBackend = isBackendRunning.subscribe(async (backendRunning) => {
+			if (backendRunning && $isAuthenticated) {
+				await getCurrentWorkspace();
+			}
+		});
+
 		// Also react to backend running for workspace data
 		const unsubBackendForWorkspace = isBackendRunning.subscribe((backendRunning) => {
 			if (backendRunning && $isWorkspaceSelected && $isAuthenticated) {
 				loadWorkspaceData();
 			}
 		});
+
+		// Initial load: if backend is already running and user is authenticated, load workspace
+		if ($isBackendRunning && $isAuthenticated) {
+			await getCurrentWorkspace();
+		}
+
 		return () => {
 			unsubBackend();
 			unsubWorkspace();
@@ -172,7 +180,7 @@
 			signInLoading = false;
 			if ($isAuthenticated) {
 				showSignInModal = false;
-				goto('/');
+				goto('/workspaces');
 			}
 		}).catch((err) => {
 			signInLoading = false;

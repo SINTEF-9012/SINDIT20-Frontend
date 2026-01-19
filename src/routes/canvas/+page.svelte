@@ -275,6 +275,12 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 	// Function to refresh data from backend
 	async function refreshData() {
 		try {
+			// Clear all existing state data before loading new data
+			nodesState.deleteAllNodes();
+			propertiesState.deleteAllProperties();
+			connectionsState.deleteAllConnections();
+			linksState.setRelationships([]);
+
 			const nodes = await getNodesBackendQuery();
 			await addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
 
@@ -285,6 +291,14 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 			} catch (relError) {
 				console.warn('No relationships found or error loading relationships:', relError);
 				linksState.setRelationships([]);
+			}
+
+			// Update JSON editor content after data refresh
+			if (jsonEditor && jsonEditor.update) {
+				content = {
+					text: undefined,
+					json: $backendNodesData,
+				};
 			}
 		} catch (error) {
 			console.error('Error refreshing workspace data:', error);

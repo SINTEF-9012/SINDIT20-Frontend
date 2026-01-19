@@ -71,7 +71,6 @@
                 try {
                     const nodes = await getNodesBackendQuery();
                     await addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
-                    goto(`/canvas`);
                 } catch (err) {
                     if (err) console.error('Error loading workspace nodes:', err);
                     toastState.add('Error', 'Failed to load workspace nodes.', 'error');
