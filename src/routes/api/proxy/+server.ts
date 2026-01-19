@@ -76,6 +76,17 @@ async function handleProxy({ request, cookies, url, method }: { request: Request
         endpoint = `${endpoint}${separator}${otherParams.toString()}`;
     }
 
+    // Health check endpoint doesn't require authentication
+    if (endpoint.startsWith('health/')) {
+        try {
+            const backendRes = await proxyToBackend({ endpoint, method, token: '', body: undefined });
+            // Health endpoint returns 204 No Content when healthy
+            return new Response(null, { status: backendRes.status });
+        } catch (error) {
+            return new Response(null, { status: 503 });
+        }
+    }
+
     let token = cookies.get('api_token');
     // Use provided env for username/password if not in cookies
     const username = cookies.get('session_username');

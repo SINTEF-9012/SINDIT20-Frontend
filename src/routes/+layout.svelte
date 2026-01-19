@@ -27,9 +27,6 @@
 	// Version from package.json
 	const APP_VERSION = '0.0.1';
 
-	// Check if backend is running initially
-	checkBackendRunningStatus();
-
 	// Poll backend health every 10 seconds
 	let healthCheckInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -111,6 +108,9 @@
 	}
 
 	onMount(() => {
+		// Check backend health initially
+		checkBackendRunningStatus();
+
 		// Start periodic health check
 		healthCheckInterval = setInterval(() => {
 			checkBackendRunningStatus();

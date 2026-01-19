@@ -158,10 +158,8 @@ export function checkBackendRunningStatus(): void {
 	backendHealthCheckQuery()
 		.then((isRunning) => {
 			isBackendRunning.set(isRunning);
-			logger.info('Backend health check completed', { isRunning });
 		})
 		.catch((error) => {
-			logger.error('Backend health check failed', error);
 			isBackendRunning.set(false);
 		});
 }
