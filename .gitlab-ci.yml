@@ -46,7 +46,6 @@ check:
 
 npm-test:
   stage: test
-  extends: .base-rules
   image: node:23
   before_script:
     - cd projects/$PROJECT_NAME
@@ -63,10 +62,11 @@ npm-test:
       coverage_report:
         coverage_format: cobertura
         path: $ROOTDIR/coverage/cobertura-coverage.xml
+  rules:
+    - if: $CI_COMMIT_BRANCH == "sindit-frontend"
 
 sonarqube:
   stage: analysis
-  extends: .base-rules
   dependencies:
     - npm-test
   before_script:
@@ -86,6 +86,8 @@ sonarqube:
     - ls -la
     - sonar-scanner
   allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == "sindit-frontend"
 
 # Docker Build Instructions:
 # This job only runs when a Git tag is created.
