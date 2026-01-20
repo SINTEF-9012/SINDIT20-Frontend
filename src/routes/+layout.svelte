@@ -128,7 +128,11 @@
 		// React to backend running
 		const unsubBackend = isBackendRunning.subscribe(async (backendRunning) => {
 			if (backendRunning && $isAuthenticated) {
-				await getCurrentWorkspace();
+				const workspace = await getCurrentWorkspace();
+				// If workspace exists, load data immediately
+				if (workspace && workspace.name) {
+					await loadWorkspaceData();
+				}
 			}
 		});
 
@@ -141,7 +145,11 @@
 
 		// Initial load: if backend is already running and user is authenticated, load workspace
 		if ($isBackendRunning && $isAuthenticated) {
-			await getCurrentWorkspace();
+			const workspace = await getCurrentWorkspace();
+			// If workspace exists, load data immediately
+			if (workspace && workspace.name) {
+				await loadWorkspaceData();
+			}
 		}
 
 		return () => {

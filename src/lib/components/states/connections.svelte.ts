@@ -4,7 +4,7 @@ import { getContext, setContext } from 'svelte';
 import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { nodeClasses } from '$lib/stores';
 import {
-	getNodesByClass as getNodesByClassQuery,
+	getAllNodesByClass as getAllNodesByClassQuery,
 	createConnectionNode as createConnectionNodeQuery
 } from '$apis/sindit-backend/kg';
 
@@ -66,24 +66,12 @@ export class Connections {
 		this.connections.update((connections) => [...connections, connection]);
 	}
 
-	updateConnectionsFromBackend() {
+	async updateConnectionsFromBackend() {
 		const connections_node_class = nodeClasses['Connection'];
-		getNodesByClassQuery(connections_node_class).then((connections) => {
-			// update all connections by id
-			this.connections.update((oldConnections) => {
-				const updatedConnections = oldConnections.map((oldConnection) => {
-					const newConnection = connections.find(
-						(connection) => connection.id === oldConnection.id
-					);
-					if (newConnection) {
-						return newConnection; // update connection
-					} else {
-						return oldConnection; // keep old connection
-					}
-				});
-				return updatedConnections;
-			});
-		});
+		// Fetch ALL connections using pagination to ensure we get every connection
+		const connections = await getAllNodesByClassQuery(connections_node_class);
+		// Replace the entire connections list with the fresh data from backend
+		this.connections.set(connections);
 	}
 
 	updateConnection(id: string, updatedConnection: Connection) {
