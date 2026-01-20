@@ -79,6 +79,10 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 	let selectedCanvasPosition = { x: 0, y: 0 };
 	let selectedNodesIds: string[] = [];
 
+	// Layout type selection - load from localStorage if available
+	let layoutType: 'force' | 'tree' | 'radial' | 'circular' | 'grid' =
+		(typeof localStorage !== 'undefined' && localStorage.getItem('canvasLayoutType') as any) || 'force';
+
 	// Store reference to SVG for updating node selection visuals (must be declared before subscriptions)
 	let svgElement: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
 	let jsonEditor: any = null; // Reference to JSONEditor instance (must be declared before subscriptions)
@@ -272,9 +276,141 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 	// Function to release all pinned nodes - declared here to be accessible to button click handlers
 	let releaseAllPinnedNodes = () => {};
 
+	// Function to update graph - declared here so it's accessible to layout switcher
+	let updateGraphFunction = () => {};
+
+	// Function to apply different layout algorithms
+	function applyLayout() {
+		if (layoutType === 'force') {
+			// For force layout, just refresh the graph to get natural layout
+			if (updateGraphFunction) {
+				updateGraphFunction();
+				// Fit view after refresh completes
+				setTimeout(() => fitGraphToView(), 300);
+			}
+			return;
+		}
+
+		if (!simulation) {
+			console.log('No simulation available');
+			return;
+		}
+
+		const containerWidth = svgContainer?.clientWidth || 1000;
+		const containerHeight = svgContainer?.clientHeight || 800;
+
+		// Get the actual nodes from the simulation
+		const nodes = simulation.nodes() as D3Node[];
+
+		if (nodes.length === 0) {
+			console.log('No nodes in simulation');
+			return;
+		}
+
+		// Stop current simulation
+		simulation.stop();
+
+		// Apply the selected layout
+		switch (layoutType) {
+			case 'tree':
+				applyTreeLayout(nodes, containerWidth, containerHeight);
+				break;
+			case 'radial':
+				applyRadialLayout(nodes, containerWidth, containerHeight);
+				break;
+			case 'circular':
+				applyCircularLayout(nodes, containerWidth, containerHeight);
+				break;
+			case 'grid':
+				applyGridLayout(nodes, containerWidth, containerHeight);
+				break;
+		}
+
+		// For fixed layouts, use lower alpha and faster decay since positions are predetermined
+		simulation
+			.alpha(0.3)
+			.alphaDecay(0.05)
+			.velocityDecay(0.45)
+			.restart();
+
+		// Fit view to new layout after a short delay to let simulation settle
+		setTimeout(() => fitGraphToView(), 300);
+	}
+
+	function applyTreeLayout(nodes: D3Node[], width: number, height: number) {
+		// Simple tree layout - organize by node type vertically
+		const nodesByType = new Map<string, D3Node[]>();
+		nodes.forEach(node => {
+			const type = node.type || 'unknown';
+			if (!nodesByType.has(type)) nodesByType.set(type, []);
+			nodesByType.get(type)!.push(node);
+		});
+
+		const types = Array.from(nodesByType.keys());
+		const layerHeight = height / (types.length + 1);
+
+		types.forEach((type, typeIndex) => {
+			const typeNodes = nodesByType.get(type)!;
+			const nodeWidth = width / (typeNodes.length + 1);
+			typeNodes.forEach((node, nodeIndex) => {
+				node.x = nodeWidth * (nodeIndex + 1);
+				node.y = layerHeight * (typeIndex + 1);
+				node.fx = node.x;
+				node.fy = node.y;
+			});
+		});
+	}
+
+	function applyRadialLayout(nodes: D3Node[], width: number, height: number) {
+		const centerX = width / 2;
+		const centerY = height / 2;
+		const radius = Math.min(width, height) * 0.4;
+
+		nodes.forEach((node, i) => {
+			const angle = (i / nodes.length) * 2 * Math.PI;
+			node.x = centerX + radius * Math.cos(angle);
+			node.y = centerY + radius * Math.sin(angle);
+			node.fx = node.x;
+			node.fy = node.y;
+		});
+	}
+
+	function applyCircularLayout(nodes: D3Node[], width: number, height: number) {
+		const centerX = width / 2;
+		const centerY = height / 2;
+		const radius = Math.min(width, height) * 0.35;
+
+		nodes.forEach((node, i) => {
+			const angle = (i / nodes.length) * 2 * Math.PI - Math.PI / 2;
+			node.x = centerX + radius * Math.cos(angle);
+			node.y = centerY + radius * Math.sin(angle);
+			node.fx = node.x;
+			node.fy = node.y;
+		});
+	}
+
+	function applyGridLayout(nodes: D3Node[], width: number, height: number) {
+		const cols = Math.ceil(Math.sqrt(nodes.length));
+		const rows = Math.ceil(nodes.length / cols);
+		const cellWidth = width / (cols + 1);
+		const cellHeight = height / (rows + 1);
+
+		nodes.forEach((node, i) => {
+			const col = i % cols;
+			const row = Math.floor(i / cols);
+			node.x = cellWidth * (col + 1);
+			node.y = cellHeight * (row + 1);
+			node.fx = node.x;
+			node.fy = node.y;
+		});
+	}
+
 	// Function to refresh data from backend
 	async function refreshData() {
 		try {
+			// Remember current layout
+			const currentLayout = layoutType;
+
 			// Clear all existing state data before loading new data
 			nodesState.deleteAllNodes();
 			propertiesState.deleteAllProperties();
@@ -299,6 +435,15 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 					text: undefined,
 					json: $backendNodesData,
 				};
+			}
+
+			// Reapply the layout after data refresh if not force layout
+			if (currentLayout !== 'force') {
+				// Wait for the graph to update, then reapply the layout
+				setTimeout(() => {
+					layoutType = currentLayout;
+					applyLayout();
+				}, 500);
 			}
 		} catch (error) {
 			console.error('Error refreshing workspace data:', error);
@@ -445,6 +590,11 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 
 	let isLoadingCanvasData = false;
 
+	// Save layout type to localStorage when it changes
+	$: if (typeof localStorage !== 'undefined' && layoutType) {
+		localStorage.setItem('canvasLayoutType', layoutType);
+	}
+
 	// Reactive statement: Load data only when workspace changes or data hasn't been loaded yet
 	$: if ($selectedWorkspace && $canvasDataLoadedForWorkspace !== $selectedWorkspace) {
 		loadCanvasData();
@@ -470,6 +620,13 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 		canvas.addEventListener('click', handleCanvasClick);
 		canvas.addEventListener('dblclick', handleCanvasDoubleClick);
 		canvas.addEventListener('wheel', handleMouseWheel);
+
+		// Ensure data is loaded if we have a workspace
+		// Check both the flag and if nodes actually exist in the store
+		const hasNodes = $visualizableNodes.length > 0;
+		if ($selectedWorkspace && (!hasNodes || $canvasDataLoadedForWorkspace !== $selectedWorkspace)) {
+			loadCanvasData();
+		}
 
 		// Initialize D3 force simulation - runs on every mount
 		// Data loading is cached, so this won't reload data unless workspace changed
@@ -525,36 +682,38 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 		const UPDATE_THROTTLE = 100; // Minimum ms between store updates
 		// Declare nodes and links at function scope so they're accessible to all nested functions
 		let nodes: D3Node[] = [];
-		let links: D3Link[] = [];			// Create SVG container for the D3 graph
-			const svg = d3.select(svgContainer)
-				.append('svg')
-				.attr('width', '100%')
-				.attr('height', '100%')
-				.attr('class', 'd3-force-graph');
+		let links: D3Link[] = [];
 
-			// Store SVG reference for updating node selection visuals
-			svgElement = svg;
+		// Create SVG container for the D3 graph
+		const svg = d3.select(svgContainer)
+			.append('svg')
+			.attr('width', '100%')
+			.attr('height', '100%')
+			.attr('class', 'd3-force-graph');
 
-			// Add tooltip container for node and link interactions
-			const tooltip = d3.select(svgContainer)
-				.append('div')
-				.attr('class', 'graph-tooltip')
-				.style('opacity', 0)
-				.style('position', 'absolute')
-				.style('z-index', '999')
-				.style('background', 'rgba(15, 23, 42, 0.9)')
-				.style('color', 'white')
-				.style('padding', '8px 12px')
-				.style('border-radius', '6px')
-				.style('font-size', '12px')
-				.style('box-shadow', '0 4px 14px rgba(0, 0, 0, 0.3)')
-				.style('pointer-events', 'none')
-				.style('max-width', '280px')
-				.style('transition', 'opacity 0.2s ease');
+		// Store SVG reference for updating node selection visuals
+		svgElement = svg;
 
-			// Create container group with zoom behavior
-			const g = svg.append('g')
-				.attr('class', 'graph-container');
+		// Add tooltip container for node and link interactions
+		const tooltip = d3.select(svgContainer)
+			.append('div')
+			.attr('class', 'graph-tooltip')
+			.style('opacity', 0)
+			.style('position', 'absolute')
+			.style('z-index', '999')
+			.style('background', 'rgba(15, 23, 42, 0.9)')
+			.style('color', 'white')
+			.style('padding', '8px 12px')
+			.style('border-radius', '6px')
+			.style('font-size', '12px')
+			.style('box-shadow', '0 4px 14px rgba(0, 0, 0, 0.3)')
+			.style('pointer-events', 'none')
+			.style('max-width', '280px')
+			.style('transition', 'opacity 0.2s ease');
+
+		// Create container group with zoom behavior
+		const g = svg.append('g')
+			.attr('class', 'graph-container');
 
 		// Add zoom behavior
 		const zoom = d3.zoom<SVGSVGElement, unknown>()
@@ -1177,6 +1336,15 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 								nodesState.updateNodePosition(node.id, { x: node.x!, y: node.y! });
 							}
 
+							// Save the stabilized force layout positions
+							if (layoutType === 'force' && savedForcePositions.size === 0) {
+								savedForcePositions.clear();
+								for (const node of nodes) {
+									savedForcePositions.set(node.id, { x: node.x!, y: node.y! });
+								}
+								console.log('Saved force layout positions for', nodes.length, 'nodes');
+							}
+
 							return; // Skip further updates
 						} else {
 							// If nodes aren't all visible, restart the simulation
@@ -1464,51 +1632,59 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 			d.x = event.x;
 			d.y = event.y;
 
-			// If shift is held or node was already pinned, show the pin indicator
-			if (event.sourceEvent.shiftKey || d.isPinned) {
-				// Add visual indicator that node will be pinned
-				const nodeElement = d3.select(event.sourceEvent.target.closest('.node'));
-
-				if (nodeElement.select('.pin-indicator').empty()) {
-					nodeElement.append('text')
-						.attr('class', 'pin-indicator')
-						.attr('text-anchor', 'middle')
-						.attr('dy', -15)
-						.attr('font-size', '14px')
-						.text('📌');
-				}
-			}
+		// If node has fixed position (non-force layouts), update fixed coordinates too
+		if (d.fx !== null && d.fx !== undefined) {
+			d.fx = event.x;
+		}
+		if (d.fy !== null && d.fy !== undefined) {
+			d.fy = event.y;
 		}
 
-		function dragEnded(event: d3.D3DragEvent<SVGGElement, D3Node, any>, d: D3Node) {
-			if (!event.active) simulation.alphaTarget(0);
+		// If shift is held or node was already pinned, show the pin indicator
+		if (event.sourceEvent.shiftKey || d.isPinned) {
+			// Add visual indicator that node will be pinned
+			const nodeElement = d3.select(event.sourceEvent.target.closest('.node'));
 
-			// If shift was held during drag or node was already pinned, pin the node
-			if (event.sourceEvent.shiftKey || d.isPinned) {
-				d.fx = d.x;
-				d.fy = d.y;
-				d.isPinned = true;
-
-				// Update store with pinned state
-				nodesState.updateNodePosition(d.id, {
-					x: d.x!,
-					y: d.y!,
-					fx: d.x,
-					fy: d.y
-				});
-			} else {
-				// Just update position without pinning
-				nodesState.updateNodePosition(d.id, { x: d.x!, y: d.y! });
+			if (nodeElement.select('.pin-indicator').empty()) {
+				nodeElement.append('text')
+					.attr('class', 'pin-indicator')
+					.attr('text-anchor', 'middle')
+					.attr('dy', -15)
+					.attr('font-size', '14px')
+					.text('📌');
 			}
+		}
+	}
 
-			// Additional visual update (in case the simulation doesn't trigger another tick)
-			d3.select(event.sourceEvent.target.closest('.node'))
-				.attr('transform', `translate(${d.x || 0}, ${d.y || 0})`);
+	function dragEnded(event: d3.D3DragEvent<SVGGElement, D3Node, any>, d: D3Node) {
+		if (!event.active) simulation.alphaTarget(0);
+
+		// If shift was held during drag or node was already pinned, pin the node
+		if (event.sourceEvent.shiftKey || d.isPinned) {
+			d.fx = d.x;
+			d.fy = d.y;
+			d.isPinned = true;
+
+			// Update store with pinned state
+			nodesState.updateNodePosition(d.id, {
+				x: d.x!,
+				y: d.y!,
+				fx: d.x,
+				fy: d.y
+			});
+		} else {
+			// Just update position without pinning
+			nodesState.updateNodePosition(d.id, { x: d.x!, y: d.y! });
 		}
 
-		// Highlighting functions for connected nodes
-		function highlightConnections(nodeId: string) {
-			// Dim all nodes and links first
+		// Additional visual update (in case the simulation doesn't trigger another tick)
+		d3.select(event.sourceEvent.target.closest('.node'))
+			.attr('transform', `translate(${d.x || 0}, ${d.y || 0})`);
+	}
+
+	// Highlighting functions for connected nodes
+	function highlightConnections(nodeId: string) {
+		// Dim all nodes and links first
 			g.selectAll('.node-circle')
 				.attr('opacity', 0.3);
 
@@ -1564,23 +1740,24 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 		}
 
 		// Initial graph update
-		updateGraph();			// Explicitly start the simulation after initial update
+		updateGraph();
+		// Explicitly start the simulation after initial update
 		simulation.alpha(0.3).restart(); // Make sure simulation is started
 
 		// Set a failsafe timer to ensure simulation eventually stops
-			setTimeout(() => {
-				if (!isStable) {
-					isStable = true;
-					simulation.stop();
+		setTimeout(() => {
+			if (!isStable) {
+				isStable = true;
+				simulation.stop();
 
-					// Do one final position update
-					for (const node of nodes) {
-						if (node.x !== undefined && node.y !== undefined) {
-							nodesState.updateNodePosition(node.id, { x: node.x, y: node.y });
-						}
+				// Do one final position update
+				for (const node of nodes) {
+					if (node.x !== undefined && node.y !== undefined) {
+						nodesState.updateNodePosition(node.id, { x: node.x, y: node.y });
 					}
 				}
-			}, 8000); // 8 seconds max simulation time
+			}
+		}, 8000); // 8 seconds max simulation time
 
 		// Function to fit all nodes in view - assign to the outer variable
 		fitGraphToView = () => {
@@ -1697,8 +1874,18 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 			}, 50); // Short delay is enough since we already stopped the simulation
 		}
 
+		// Assign updateGraph to the module-level variable so it can be called from applyLayout
+		updateGraphFunction = updateGraph;
+
 		// Initial fit view to ensure all nodes are visible
 		setTimeout(fitGraphToView, 300);
+
+		// Apply saved layout if it's not force
+		if (layoutType !== 'force') {
+			setTimeout(() => {
+				applyLayout();
+			}, 500);
+		}
 
 		// Set up reactive update when nodes or links change with debounce
 		let updateTimer: ReturnType<typeof setTimeout> | null = null;
@@ -1855,6 +2042,16 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
                                 <path d="M3 21v-5h5"/>
                             </svg>
                         </button>
+                        <div class="layout-selector">
+                            <label for="layout-select" class="layout-label">Layout:</label>
+                            <select id="layout-select" bind:value={layoutType} on:change={() => applyLayout()} class="layout-select">
+                                <option value="force">Force</option>
+                                <option value="tree">Tree</option>
+                                <option value="radial">Radial</option>
+                                <option value="circular">Circular</option>
+                                <option value="grid">Grid</option>
+                            </select>
+                        </div>
                         <!-- <button class="control-btn" on:click={triggerReLayout} title="Re-organize Layout">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -2090,6 +2287,60 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
         opacity: 0;
         cursor: pointer;
         stroke-linecap: round;
+    }
+
+    /* Layout Selector Styles */
+    .layout-selector {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: 1rem;
+    }
+
+    .layout-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+    }
+
+    :global(.dark) .layout-label {
+        color: #94a3b8;
+    }
+
+    .layout-select {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        background: white;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .layout-select:hover {
+        border-color: #9ca3af;
+    }
+
+    .layout-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    :global(.dark) .layout-select {
+        background: #334155;
+        border-color: #475569;
+        color: #f1f5f9;
+    }
+
+    :global(.dark) .layout-select:hover {
+        border-color: #64748b;
+    }
+
+    :global(.dark) .layout-select:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
     }
 
     .canvas-page {
