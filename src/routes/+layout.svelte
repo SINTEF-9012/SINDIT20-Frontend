@@ -24,8 +24,8 @@
 	import { BriefcaseIcon, LinkIcon, Share2Icon, InfoIcon } from 'svelte-feather-icons';
 	import { page } from '$app/stores';
 
-	// Version from package.json
-	const APP_VERSION = '0.0.1';
+	// Version from package.json (injected at build time)
+	const APP_VERSION = __APP_VERSION__;
 
 	// Poll backend health every 10 seconds
 	let healthCheckInterval: ReturnType<typeof setInterval> | null = null;

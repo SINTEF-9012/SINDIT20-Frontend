@@ -11,6 +11,7 @@
     import {
 	    isWorkspaceSelected,
         selectedWorkspace,
+        backendNodesData,
     } from '$lib/stores';
     import {
         getAllNodes as getNodesBackendQuery,
@@ -66,6 +67,8 @@
             nodesState.deleteAllNodes();
             connectionsState.deleteAllConnections();
             propertiesState.deleteAllProperties();
+            // Clear the JSON editor data
+            backendNodesData.set([]);
             // Get all nodes in the selected workspace and add them to the nodes state
             setTimeout(async () => {
                 try {
