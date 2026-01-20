@@ -87,24 +87,13 @@
 		createNew: { ref: CreateNew },
 	};
 
-	async function loadWorkspaceData() {
-		try {
-			const nodes = await getNodesBackendQuery();
-			await addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
+	let hasLoadedWorkspace = false;
 
-			// Fetch relationships after nodes are loaded
-			try {
-				const relationships = await getAllRelationships();
-				// Store relationships in linksState for visualization (even if empty)
-				linksState.setRelationships(relationships || []);
-			} catch (relError) {
-				console.warn('No relationships found or error loading relationships:', relError);
-				// Initialize with empty array if there's an error
-				linksState.setRelationships([]);
-			}
-		} catch (error) {
-			console.error('Error loading workspace data:', error);
-		}
+	// Reactive statement: Load workspace info when backend is ready and authenticated
+	$: if ($isBackendRunning && $isAuthenticated && !hasLoadedWorkspace) {
+		getCurrentWorkspace().then(() => {
+			hasLoadedWorkspace = true;
+		});
 	}
 
 	onMount(async () => {
@@ -115,48 +104,6 @@
 		healthCheckInterval = setInterval(() => {
 			checkBackendRunningStatus();
 		}, 10000); // Check every 10 seconds
-
-		// React to workspace selection and backend running
-		let lastWorkspaceSelected = false;
-		const unsubWorkspace = isWorkspaceSelected.subscribe((workspaceSelected) => {
-			if (workspaceSelected && $isBackendRunning && $isAuthenticated) {
-				loadWorkspaceData();
-			}
-			lastWorkspaceSelected = workspaceSelected;
-		});
-
-		// React to backend running
-		const unsubBackend = isBackendRunning.subscribe(async (backendRunning) => {
-			if (backendRunning && $isAuthenticated) {
-				const workspace = await getCurrentWorkspace();
-				// If workspace exists, load data immediately
-				if (workspace && workspace.name) {
-					await loadWorkspaceData();
-				}
-			}
-		});
-
-		// Also react to backend running for workspace data
-		const unsubBackendForWorkspace = isBackendRunning.subscribe((backendRunning) => {
-			if (backendRunning && $isWorkspaceSelected && $isAuthenticated) {
-				loadWorkspaceData();
-			}
-		});
-
-		// Initial load: if backend is already running and user is authenticated, load workspace
-		if ($isBackendRunning && $isAuthenticated) {
-			const workspace = await getCurrentWorkspace();
-			// If workspace exists, load data immediately
-			if (workspace && workspace.name) {
-				await loadWorkspaceData();
-			}
-		}
-
-		return () => {
-			unsubBackend();
-			unsubWorkspace();
-			unsubBackendForWorkspace();
-		};
 	});
 
 	onDestroy(() => {

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import { getConnectionsState } from "$lib/components/states/connections.svelte";
     import type { Connection } from "$lib/types";
     import { deleteNode as deleteNodeQuery } from "$apis/sindit-backend/kg";
@@ -22,6 +23,11 @@
             filteredConnections = $connections.filter(conn => conn.connectionName.toLowerCase().includes(searchQuery.toLowerCase()));
         }
 	}
+
+    // Load connections data when the page mounts
+    onMount(async () => {
+        await connectionsState.updateConnectionsFromBackend();
+    });
 
     function handleDeleteConnection(event: MouseEvent, connection: Connection) {
         event.preventDefault();

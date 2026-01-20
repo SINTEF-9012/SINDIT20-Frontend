@@ -69,9 +69,33 @@ export class Connections {
 	async updateConnectionsFromBackend() {
 		const connections_node_class = nodeClasses['Connection'];
 		// Fetch ALL connections using pagination to ensure we get every connection
-		const connections = await getAllNodesByClassQuery(connections_node_class);
-		// Replace the entire connections list with the fresh data from backend
-		this.connections.set(connections);
+		const backendNodes = await getAllNodesByClassQuery(connections_node_class);
+
+		// Clear existing connections first
+		this.deleteAllConnections();
+
+		// Process each backend node and add to connections state
+		// This ensures proper transformation of backend data to Connection interface
+		backendNodes.forEach((node: any) => {
+			if (node.uri) {
+				const nodeId = node.uri.split('#').pop() || node.uri;
+				const description = node.connectionDescription || '';
+				const host = node.host || '';
+				const port = node.port || 0;
+				const type = node.type || '';
+				const isConnected = node.isConnected || false;
+
+				this.addConnectionNode(
+					nodeId,
+					node.label,
+					description,
+					host,
+					port,
+					type,
+					isConnected
+				);
+			}
+		});
 	}
 
 	updateConnection(id: string, updatedConnection: Connection) {

@@ -12,6 +12,7 @@
 	    isWorkspaceSelected,
         selectedWorkspace,
         backendNodesData,
+        canvasDataLoadedForWorkspace,
     } from '$lib/stores';
     import {
         getAllNodes as getNodesBackendQuery,
@@ -63,22 +64,16 @@
             await switchWorkspace(workspace.uri);
             _selectedWorkspace = workspace.name;
             selectedWorkspace.set(_selectedWorkspace);
-            // Delete all nodes in the current workspace
+            // Clear all state data - each page will load its own data when needed
             nodesState.deleteAllNodes();
             connectionsState.deleteAllConnections();
             propertiesState.deleteAllProperties();
             // Clear the JSON editor data
             backendNodesData.set([]);
-            // Get all nodes in the selected workspace and add them to the nodes state
-            setTimeout(async () => {
-                try {
-                    const nodes = await getNodesBackendQuery();
-                    await addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
-                } catch (err) {
-                    if (err) console.error('Error loading workspace nodes:', err);
-                    toastState.add('Error', 'Failed to load workspace nodes.', 'error');
-                }
-            }, 500);
+            // Reset canvas data loaded cache so it reloads on next visit
+            canvasDataLoadedForWorkspace.set('');
+
+            toastState.add('Workspace Switched', `Switched to workspace: ${workspace.name}`, 'success');
         } catch (err) {
             if (err) console.error('Error switching workspace:', err);
             if (err instanceof Error && err.message === 'NOT_AUTHENTICATED') {

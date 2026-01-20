@@ -37,7 +37,8 @@ export const selectedNodeId = writable('');
 export const nodeSize = 100;
 export const createNodeMode = writable(false);
 export const backendNodesData = writable<unknown[]>([]);
-
+// Track whether canvas data has been loaded for the current workspace
+export const canvasDataLoadedForWorkspace = writable<string>('');
 // links
 export const selectedLinkId = writable('');
 export const createLinkMode = writable(false);

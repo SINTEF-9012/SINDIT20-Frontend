@@ -14,7 +14,7 @@ import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { JSONEditor } from 'svelte-jsoneditor'
 	import { modeCurrent } from '@skeletonlabs/skeleton';
-import { backendNodesData } from '$lib/stores'
+import { backendNodesData, selectedWorkspace, canvasDataLoadedForWorkspace } from '$lib/stores'
 import { getNodeIdFromBackendUri, addNodesToStates } from '$lib/utils';
 import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/sindit-backend/kg';
 	import ToolboxSidebar from './ToolboxSidebar.svelte';
@@ -443,6 +443,13 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 		isToolboxCollapsed = !isToolboxCollapsed;
 	}
 
+	let isLoadingCanvasData = false;
+
+	// Reactive statement: Load data only when workspace changes or data hasn't been loaded yet
+	$: if ($selectedWorkspace && $canvasDataLoadedForWorkspace !== $selectedWorkspace) {
+		loadCanvasData();
+	}
+
 	onMount(() => {
 		const canvas = canvasRef;
 		const context = canvas.getContext('2d');
@@ -464,9 +471,45 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 		canvas.addEventListener('dblclick', handleCanvasDoubleClick);
 		canvas.addEventListener('wheel', handleMouseWheel);
 
-		// Initialize D3 force simulation
+		// Initialize D3 force simulation - runs on every mount
+		// Data loading is cached, so this won't reload data unless workspace changed
 		initializeD3ForceGraph();
 	});
+
+	// Load data specifically for canvas page
+	async function loadCanvasData() {
+		if (isLoadingCanvasData) {
+			return;
+		}
+
+		isLoadingCanvasData = true;
+		try {
+			// Clear existing state data before loading
+			nodesState.deleteAllNodes();
+			propertiesState.deleteAllProperties();
+			connectionsState.deleteAllConnections();
+			linksState.setRelationships([]);
+
+			const nodes = await getNodesBackendQuery();
+			await addNodesToStates(nodes, nodesState, propertiesState, connectionsState);
+
+			// Fetch relationships after nodes are loaded
+			try {
+				const relationships = await getAllRelationships();
+				linksState.setRelationships(relationships || []);
+			} catch (relError) {
+				console.warn('No relationships found or error loading relationships:', relError);
+				linksState.setRelationships([]);
+			}
+
+			// Mark that data has been loaded for this workspace
+			canvasDataLoadedForWorkspace.set($selectedWorkspace);
+		} catch (error) {
+			console.error('Error loading canvas data:', error);
+		} finally {
+			isLoadingCanvasData = false;
+		}
+	}
 
 	// Initialize D3 force simulation
 	function initializeD3ForceGraph() {
