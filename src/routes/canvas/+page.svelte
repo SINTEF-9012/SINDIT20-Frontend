@@ -1256,7 +1256,7 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 			lastUpdateTime = Date.now();
 
 			// Start simulation with moderate alpha for quicker stabilization
-			simulation.alpha(0.6).restart();
+			simulation.alpha(0.3).restart();
 
 			// Define the tick function to update positions on each simulation step
 			function ticked() {
