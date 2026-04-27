@@ -5,20 +5,11 @@ stages:
   - build
 
 variables:
-  # Set PROJECT_NAME to the name of the project folder.
-  # Do not touch the other variables.
-  PROJECT_NAME: sindit-frontend
-  ROOTDIR: $CI_PROJECT_DIR/projects/$PROJECT_NAME
-  RULES_CHANGES_PATH: $ROOTDIR/**/*
   CI_REGISTRY: gitlab.sintef.no:5050
   IMAGE_PATH: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
   DOCKER_TLS_CERTDIR: ''
   PUBLIC_SINDIT_BACKEND_API: http://0.0.0.0:9017
   PUBLIC_SINDIT_BACKEND_API_BASE_URI: http://
-
-before_script:
-  - cd projects/$PROJECT_NAME
-  - echo $SONAR_HOST_URL
 
 .base-rules:
   rules:
@@ -29,8 +20,6 @@ before_script:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: always
       allow_failure: false
-    # Run when triggered by parent pipeline
-    - if: $CI_PIPELINE_SOURCE == "parent_pipeline"
     # Avoid duplicate jobs on merge requests
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never
@@ -47,8 +36,7 @@ check:
 npm-test:
   stage: test
   image: node:23
-  before_script:
-    - cd projects/$PROJECT_NAME
+  extends: .base-rules
   script:
     - npm install
     - npm run coverage
@@ -57,47 +45,41 @@ npm-test:
     when: always
     expire_in: 1 weeks
     paths:
-      - $ROOTDIR/coverage
+      - coverage
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: $ROOTDIR/coverage/cobertura-coverage.xml
-  rules:
-    - if: $CI_COMMIT_BRANCH == "sindit-frontend"
+        path: coverage/cobertura-coverage.xml
 
 sonarqube:
   stage: analysis
+  extends: .base-rules
   dependencies:
     - npm-test
-  before_script:
-    - cd projects/$PROJECT_NAME
   image:
     name: sonarsource/sonar-scanner-cli:latest
     entrypoint: ['']
   variables:
-    SONAR_USER_HOME: $ROOTDIR/.sonar
+    SONAR_USER_HOME: .sonar
     GIT_DEPTH: '0'
   cache:
     key: $CI_JOB_NAME
     paths:
-      - $ROOTDIR/.sonar/cache
+      - .sonar/cache
   script:
     - pwd
     - ls -la
     - sonar-scanner
   allow_failure: true
-  rules:
-    - if: $CI_COMMIT_BRANCH == "sindit-frontend"
 
 # Docker Build Instructions:
-# This job only runs when a Git tag starting with "sindit-frontend-" is created.
+# This job only runs when a Git tag starting with "v" is created.
 # To trigger a Docker build:
-#   git tag sindit-frontend-1.0.0
-#   git push origin sindit-frontend-1.0.0
+#   git tag v1.0.0
+#   git push origin v1.0.0
 # The image will be tagged with: 1.0.0 (version without prefix) and latest
 docker-build:
   stage: build
-  extends: .base-rules
   image: docker:latest
   tags:
     - dind
@@ -109,14 +91,13 @@ docker-build:
     IMAGE_NAME: sindit-frontend
   allow_failure: false
   before_script:
-    - cd projects/$PROJECT_NAME
     - |
       echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
       -u $CI_REGISTRY_USER --password-stdin
     - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
     - docker buildx create --name mybuilder --use
-    # Extract version from tag (remove "sindit-frontend-" prefix)
-    - export IMAGE_VERSION=${CI_COMMIT_TAG#sindit-frontend-}
+    # Extract version from tag (remove "v" prefix)
+    - export IMAGE_VERSION=${CI_COMMIT_TAG#v}
   script: docker buildx build
     --push
     --platform linux/arm64/v8,linux/amd64
@@ -129,35 +110,4 @@ docker-build:
     -t $IMAGE_PATH/$IMAGE_NAME:$IMAGE_VERSION
     -t $IMAGE_PATH/$IMAGE_NAME:latest .
   rules:
-    - if: $CI_COMMIT_TAG =~ /^sindit-frontend-/
-
-push-to-github:
-  stage: build
-  image: alpine:latest
-  before_script:
-    - apk add --no-cache git git-subtree openssh
-    - git config --global user.email "ci@sindit.com"
-    - git config --global user.name "SINDIT CI"
-
-    # Clone the current GitLab branch (either 'main' or 'sindit-frontend')
-    - git clone --branch $CI_COMMIT_BRANCH $CI_REPOSITORY_URL project
-    - cd project
-
-    # Set ROOTDIR relative to the Git repo root
-    - export ROOTDIR="projects/sindit-frontend"
-
-    # Set GitHub remote (will override if it already exists)
-    - |
-      if git remote | grep -q github; then
-        git remote set-url github https://$GITHUB_TOKEN@github.com/SINTEF-9012/SINDIT20-Frontend.git
-      else
-        git remote add github https://$GITHUB_TOKEN@github.com/SINTEF-9012/SINDIT20-Frontend.git
-      fi
-  script:
-    # Create a new branch from the subtree at $ROOTDIR
-    - git subtree split --prefix=$ROOTDIR -b subtree-sindit-frontend
-
-    # Push the subtree branch to GitHub's main branch
-    - git push github subtree-sindit-frontend:main --force
-  rules:
-    - if: $CI_COMMIT_BRANCH == "sindit-frontend"
+    - if: $CI_COMMIT_TAG =~ /^v/

@@ -1,0 +1,25 @@
+# EditorConfig helps developers define and maintain consistent coding styles between different editors and IDEs
+# editorconfig.org
+
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+# Set 2-space indents for JS/TS/Svelte files
+[*.{js,jsx,ts,tsx,json,yml,yaml,html,scss,css,svelte}]
+indent_size = 2
+
+# Use tab indentation for Makefiles
+[Makefile]
+indent_style = tab
+
+# Use 2-space indentation for Markdown
+[*.md]
+indent_size = 2
+trim_trailing_whitespace = false
