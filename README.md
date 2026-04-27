@@ -1,6 +1,6 @@
-[![Quality Gate Status](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?branch=sindit&project=SINDIT-Frontend&metric=alert_status&token=sqb_da2a79b20ba8379cfa3492a1a8bb59674a2cda0d)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT-Frontend&branch=sindit)
-[![Coverage](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?branch=sindit-frontend&project=SINDIT-Frontend&metric=coverage&token=sqb_da2a79b20ba8379cfa3492a1a8bb59674a2cda0d)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT-Frontend&branch=sindit-frontend)
-[![Vulnerabilities](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?branch=sindit-frontend&project=SINDIT-Frontend&metric=vulnerabilities&token=sqb_da2a79b20ba8379cfa3492a1a8bb59674a2cda0d)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT-Frontend&branch=sindit-frontend)
+[![Quality Gate Status](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?branch=main&project=SINDIT-Frontend&metric=alert_status&token=sqb_da2a79b20ba8379cfa3492a1a8bb59674a2cda0d)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT-Frontend&branch=main)
+[![Coverage](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?branch=main&project=SINDIT-Frontend&metric=coverage&token=sqb_da2a79b20ba8379cfa3492a1a8bb59674a2cda0d)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT-Frontend&branch=main)
+[![Vulnerabilities](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?branch=main&project=SINDIT-Frontend&metric=vulnerabilities&token=sqb_da2a79b20ba8379cfa3492a1a8bb59674a2cda0d)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT-Frontend&branch=main)
 
 ![Static Badge](https://img.shields.io/badge/4.1-blue?style=flat&logo=svelte&label=svelte)
 ![Static Badge](https://img.shields.io/badge/2.10-blue?style=flat&label=skeletonlabs)
@@ -84,12 +84,12 @@ In this mode, the frontend is also available at http://localhost:5173.
 2. Login to gitlab container registry `docker login gitlab.sintef.no:5050 -u $DOCKER_USERNAME -p $CONTAINER_REGISTRY_READ`
 
 ```BASH
-docker run -p 5173:3000 --name sindit-frontend gitlab.sintef.no:5050/sct/sd/monorepo/sindit-frontend:latest
+docker run -p 5173:3000 --name sindit-frontend gitlab.sintef.no:5050/sct/sd/sindit/sindit-frontend:latest
 ```
 
 ## Run the backend
 
-Details about how to run the SINDIT backend is found in the project directory [monorepo/projects/sindit](https://gitlab.sintef.no/sct/sd/monorepo/-/blob/sindit/projects/sindit/README.md?ref_type=heads)
+Details about how to run the SINDIT backend is found in the [sindit backend repository](https://gitlab.sintef.no/sct/sd/sindit/sindit/-/blob/main/README.md).
 
 Or in the documentation: [sct.pages.sintef.no/sd/monorepo/sindit/sindit-backend](https://sct.pages.sintef.no/sd/monorepo/sindit/sindit-backend/)
 
