@@ -20,6 +20,8 @@ export async function authenticatedFetch(url: string, options?: RequestInit): Pr
 			// Clear authentication state
 			if (browser) {
 				localStorage.removeItem('sindit_auth_user');
+				// Notify the app to force sign-out (e.g. after backend restart)
+				window.dispatchEvent(new CustomEvent('sindit:unauthorized'));
 			}
 
 			// Redirect to home page

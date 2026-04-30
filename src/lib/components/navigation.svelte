@@ -8,10 +8,15 @@
 		BoxIcon,
 		CodesandboxIcon,
 		CodeIcon,
-		LinkIcon
+		LinkIcon,
+		GlobeIcon,
+		KeyIcon
 	} from 'svelte-feather-icons';
+	import { getAuthState } from '$lib/components/states/auth.svelte';
 
 	const drawerStore = getDrawerStore();
+	const authState = getAuthState();
+	const isAuthenticated = authState.isAuthenticated;
 
 	let width = 'w-50';
 
@@ -40,6 +45,7 @@
 		<InfoIcon size="24" />
 		<span class="icon-text text-primary-800 dark:text-primary-100">About</span>
 	</button>
+	{#if $isAuthenticated}
 	<button class="btn app-rail-anchor variant-glass-primary" on:click={() => onclick('/3d')}>
 		<BoxIcon size="24" />
 		<span class="icon-text text-primary-800 dark:text-primary-100">3D Model</span>
@@ -62,6 +68,21 @@
 		<LinkIcon size="24" />
 		<span class="icon-text text-primary-800 dark:text-primary-100">Connections</span>
 	</button>
+	<button
+		class="btn app-rail-anchor variant-glass-primary"
+		on:click={() => onclick('/dataspaces')}
+	>
+		<GlobeIcon size="24" />
+		<span class="icon-text text-primary-800 dark:text-primary-100">Dataspaces</span>
+	</button>
+	<button
+		class="btn app-rail-anchor variant-glass-primary"
+		on:click={() => onclick('/vault')}
+	>
+		<KeyIcon size="24" />
+		<span class="icon-text text-primary-800 dark:text-primary-100">Vault</span>
+	</button>
+	{/if}
 </div>
 
 <style>

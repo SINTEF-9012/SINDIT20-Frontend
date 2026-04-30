@@ -140,6 +140,20 @@ export interface Connection {
 	isConnected: boolean;
 }
 
+export interface DataspaceManagement {
+	id: string;
+	nodeType: 'DataspaceManagement';
+	endpoint: string;
+	dataspaceDescription?: string;
+	authenticationType?: string;
+	authenticationKeyPath?: string;
+	isActive?: boolean;
+	sinditApiBaseUrl?: string;
+	sinditWorkspaceUri?: string;
+	sinditCallbackKeyPath?: string;
+	dataspaceAssets?: NodeUri[];
+}
+
 // Links
 export interface Link {
 	id: string;
