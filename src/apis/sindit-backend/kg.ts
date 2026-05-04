@@ -44,13 +44,16 @@ export async function updateNode(node: any, overwrite: boolean = true) {
 		doOverwrite = 'false';
 	}
 	const url = `${API_BASE_ENDPOINT}/${endpoint}?overwrite=${doOverwrite}`;
-	node.id = getBackendUri(node.id);
+	// Resolve URI — prefer node.uri, fall back to node.id for backwards compat
+	const resolvedUri = getBackendUri(node.uri ?? node.id);
+	const { id: _id, nodeType: _nodeType, ...nodePayload } = node;
+	nodePayload.uri = resolvedUri;
 	const response = await authenticatedFetch(url, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify(node)
+		body: JSON.stringify(nodePayload)
 	});
 	if (!response.ok) {
 		throw new Error(`Error performing POST request ${response.statusText}`);

@@ -78,7 +78,7 @@ export class Connections {
 		// This ensures proper transformation of backend data to Connection interface
 		backendNodes.forEach((node: any) => {
 			if (node.uri) {
-				const nodeId = node.uri.split('#').pop() || node.uri;
+				const nodeId = node.uri;
 				const description = node.connectionDescription || '';
 				const host = node.host || '';
 				const port = node.port || 0;
@@ -144,7 +144,8 @@ export class Connections {
 		description: string,
 		host: string,
 		port: number,
-		connectionType: ConnectionType
+		connectionType: ConnectionType,
+		id?: string
 	) {
 		const newNode = this.connectionNodeObject(
 			nodeName,
@@ -152,7 +153,8 @@ export class Connections {
 			host,
 			port,
 			connectionType,
-			false
+			false,
+			id ?? null
 		);
 		try {
 			await createConnectionNodeQuery(

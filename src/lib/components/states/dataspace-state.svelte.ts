@@ -55,8 +55,7 @@ export class DataspacesState {
 			backendNodes.forEach((node: any) => {
 				const dataspace: DataspaceManagement = {
 					id: node.uri ?? node.id ?? crypto.randomUUID(),
-					nodeType: 'DataspaceManagement',
-					endpoint: node.endpoint ?? '',
+					nodeType: 'DataspaceManagement',				label: node.label ?? '',					endpoint: node.endpoint ?? '',
 					dataspaceDescription: node.dataspaceDescription ?? '',
 					authenticationType: node.authenticationType ?? '',
 					authenticationKeyPath: node.authenticationKeyPath ?? '',
@@ -128,6 +127,7 @@ export class DataspacesState {
 		const dataspace: DataspaceManagement = {
 			id: (created as any).uri ?? node.uri ?? (created as any).id ?? crypto.randomUUID(),
 			nodeType: 'DataspaceManagement',
+			label: (created as any).label ?? node.label ?? '',
 			endpoint: (created as any).endpoint ?? node.endpoint ?? '',
 			dataspaceDescription: (created as any).dataspaceDescription ?? node.dataspaceDescription ?? '',
 			authenticationType: (created as any).authenticationType ?? node.authenticationType ?? '',

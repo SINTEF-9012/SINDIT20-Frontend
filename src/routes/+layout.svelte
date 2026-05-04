@@ -80,7 +80,9 @@
 	import CreateNewNode from '$lib/modals/create-new-node.svelte';
 	import CreateNewNodeProperty from '$lib/modals/create-new-node-property.svelte';
 	import CreateNewConnection from '$lib/modals/create-new-connection.svelte';
+	import UpdateConnection from '$lib/modals/update-connection.svelte';
 	import CreateNewDataspace from '$lib/modals/create-new-dataspace.svelte';
+	import UpdateDataspace from '$lib/modals/update-dataspace.svelte';
 	import CreateNewLink from '$lib/modals/create-new-link.svelte';
 	import CreateNew from '$lib/modals/create-new.svelte';
 	import PublishToDataspace from '$lib/modals/publish-to-dataspace.svelte';
@@ -89,7 +91,9 @@
 		createNewNode: { ref: CreateNewNode },
 		createNewNodeProperty: { ref: CreateNewNodeProperty },
 		createNewConnection: { ref: CreateNewConnection },
+		updateConnection: { ref: UpdateConnection },
 		createNewDataspace: { ref: CreateNewDataspace },
+		updateDataspace: { ref: UpdateDataspace },
 		createNewLink: { ref: CreateNewLink },
 		createNew: { ref: CreateNew },
 		publishToDataspace: { ref: PublishToDataspace },

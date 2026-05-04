@@ -143,6 +143,7 @@ export interface Connection {
 export interface DataspaceManagement {
 	id: string;
 	nodeType: 'DataspaceManagement';
+	label?: string;
 	endpoint: string;
 	dataspaceDescription?: string;
 	authenticationType?: string;

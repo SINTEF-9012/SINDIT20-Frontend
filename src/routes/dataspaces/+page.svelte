@@ -4,7 +4,7 @@
 	import type { DataspaceManagement } from '$lib/types';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
-	import { RefreshCwIcon, CheckCircleIcon, XCircleIcon } from 'svelte-feather-icons';
+	import { RefreshCwIcon, CheckCircleIcon, XCircleIcon, Trash2Icon, Edit2Icon } from 'svelte-feather-icons';
 
 	const modalStore = getModalStore();
 	const dataspaceState = getDataspacesState();
@@ -23,6 +23,7 @@
 		} else {
 			filteredDataspaces = $dataspaces.filter(
 				(d) =>
+					(d.label ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
 					d.endpoint.toLowerCase().includes(searchQuery.toLowerCase()) ||
 					(d.dataspaceDescription ?? '').toLowerCase().includes(searchQuery.toLowerCase())
 			);
@@ -91,6 +92,10 @@
 		return asset?.uri ?? String(asset);
 	}
 
+	function onUpdateDataspace(dataspace: DataspaceManagement) {
+		modalStore.trigger({ type: 'component', component: 'updateDataspace', meta: { dataspace } });
+	}
+
 	function onPublish(dataspace: DataspaceManagement) {
 		const existingAssets = (dataspace.dataspaceAssets ?? []).map(getAssetUri);
 		modalStore.trigger({
@@ -120,7 +125,7 @@
 	<div class="container mx-auto px-6 py-12">
 		<!-- Header -->
 		<div class="text-center mb-12">
-			<h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent mb-4">
+			<h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-600 via-teal-600 to-sky-600 bg-clip-text text-transparent mb-4">
 				Dataspaces
 			</h1>
 			<p class="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
@@ -145,13 +150,13 @@
 							name="dataspace-search"
 							bind:value={searchQuery}
 							placeholder="Search dataspaces..."
-							class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+							class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
 						/>
 					</div>
 
 					<!-- Create Button -->
 					<button
-						class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto justify-center"
+						class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-teal-600 hover:from-cyan-600 hover:to-teal-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto justify-center"
 						on:click={onCreateDataspace}
 					>
 						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,7 +186,7 @@
 						</p>
 						{#if !searchQuery}
 							<button
-								class="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+								class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-teal-600 hover:from-cyan-600 hover:to-teal-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
 								on:click={onCreateDataspace}
 							>
 								Add Your First Dataspace
@@ -202,10 +207,9 @@
 										</svg>
 									</div>
 									<div class="min-w-0">
-										<h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 break-all">
-											{dataspace.id}
-										</h3>
-
+									<h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
+										{dataspace.label || dataspace.id}
+									</h3>
 									</div>
 								</div>
 
@@ -226,7 +230,13 @@
 							</div>
 
 							<!-- Details -->
-							<div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 mb-4 space-y-2 text-xs">							{#if dataspace.dataspaceDescription}
+						<div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 mb-4 space-y-2 text-xs">
+							<!-- URI -->
+							<div class="flex flex-col gap-0.5">
+								<span class="text-slate-500 dark:text-slate-400">URI</span>
+								<span class="font-mono font-medium text-slate-700 dark:text-slate-300 break-all">{dataspace.id}</span>
+							</div>
+							{#if dataspace.dataspaceDescription}
 								<div class="flex flex-col gap-0.5">
 									<span class="text-slate-500 dark:text-slate-400">Description</span>
 									<span class="font-medium text-slate-700 dark:text-slate-300">{dataspace.dataspaceDescription}</span>
@@ -292,6 +302,7 @@
 								<button
 									class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50 font-medium rounded-lg transition-all duration-200 text-sm"
 									on:click={() => onPublish(dataspace)}
+								title="Select data assets to publish to this dataspace"
 								>
 									<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -303,6 +314,7 @@
 									class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 font-medium rounded-lg transition-all duration-200 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
 									disabled={testingIds.has(dataspace.id)}
 									on:click={() => onTestConnection(dataspace)}
+								title="Test the connection to the dataspace endpoint"
 								>
 									{#if testingIds.has(dataspace.id)}
 										<RefreshCwIcon size="14" class="animate-spin" />
@@ -318,6 +330,7 @@
 									class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 font-medium rounded-lg transition-all duration-200 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
 									disabled={syncingIds.has(dataspace.id)}
 									on:click={() => onSync(dataspace)}
+								title="Pull/sync data assets from this dataspace"
 								>
 									{#if syncingIds.has(dataspace.id)}
 										<RefreshCwIcon size="14" class="animate-spin" />
@@ -328,9 +341,20 @@
 								</button>
 
 								<button
-									class="flex items-center justify-center px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 font-medium rounded-lg transition-all duration-200 text-sm"
-									on:click={() => onDelete(dataspace)}
+									class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 font-medium rounded-lg transition-all duration-200 text-sm"
+									on:click={() => onUpdateDataspace(dataspace)}
+								title="Edit this dataspace"
 								>
+									<Edit2Icon size="14" />
+									Update
+								</button>
+
+								<button
+									class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 font-medium rounded-lg transition-all duration-200 text-sm"
+									on:click={() => onDelete(dataspace)}
+								title="Remove this dataspace node"
+								>
+									<Trash2Icon size="14" />
 									Delete
 								</button>
 							</div>

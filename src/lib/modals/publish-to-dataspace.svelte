@@ -16,7 +16,14 @@
 	const dataspaceId = meta?.dataspaceId ?? '';
 	const existingAssetUris = new Set<string>(meta?.existingAssets ?? []);
 
-	type KGNode = { uri?: string; id?: string; nodeType?: string; label?: string; name?: string };
+	type KGNode = { uri?: string; id?: string; nodeType?: string; class_uri?: string; label?: string; name?: string };
+
+	function shortNodeType(nodeType: string | undefined): string {
+		if (!nodeType) return '';
+		// Extract the part after the last '#' or '/', which gives e.g. "AbstractAsset"
+		const afterHash = nodeType.split('#').pop() ?? nodeType;
+		return afterHash.split('/').pop() ?? afterHash;
+	}
 
 	let allNodes: KGNode[] = [];
 	let loading = true;
@@ -27,7 +34,7 @@
 	$: filtered = allNodes.filter((n) => {
 		const uri = n.uri ?? n.id ?? '';
 		const label = n.label ?? n.name ?? '';
-		const type = n.nodeType ?? '';
+		const type = n.class_uri ?? n.nodeType ?? '';
 		const q = searchQuery.toLowerCase();
 		return uri.toLowerCase().includes(q) || label.toLowerCase().includes(q) || type.toLowerCase().includes(q);
 	});
@@ -164,17 +171,19 @@
 							</div>
 							<!-- Content -->
 							<div class="flex-1 min-w-0">
-								{#if node.label || node.name}
-									<p class="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-										{node.label ?? node.name}
-									</p>
-								{/if}
+								<div class="flex items-center gap-2 flex-wrap">
+									{#if node.label || node.name}
+										<p class="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+											{node.label ?? node.name}
+										</p>
+									{/if}
+								{#if node.class_uri || node.nodeType}
+									<span class="flex-shrink-0 px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-[10px] font-medium rounded">
+										{shortNodeType(node.class_uri ?? node.nodeType)}
+										</span>
+									{/if}
+								</div>
 								<p class="text-xs font-mono text-slate-500 dark:text-slate-400 break-all">{uri}</p>
-								{#if node.nodeType}
-									<span class="inline-block mt-1 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] rounded">
-										{node.nodeType}
-									</span>
-								{/if}
 							</div>
 						</button>
 					</li>

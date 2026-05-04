@@ -83,6 +83,9 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 	let layoutType: 'force' | 'tree' | 'radial' | 'circular' | 'grid' =
 		(typeof localStorage !== 'undefined' && localStorage.getItem('canvasLayoutType') as any) || 'force';
 
+	// Saved positions from force layout stabilization
+	let savedForcePositions: Map<string, { x: number; y: number }> = new Map();
+
 	// Store reference to SVG for updating node selection visuals (must be declared before subscriptions)
 	let svgElement: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
 	let jsonEditor: any = null; // Reference to JSONEditor instance (must be declared before subscriptions)

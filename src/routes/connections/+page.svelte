@@ -3,9 +3,9 @@
     import { getConnectionsState } from "$lib/components/states/connections.svelte";
     import type { Connection } from "$lib/types";
     import { deleteNode as deleteNodeQuery } from "$apis/sindit-backend/kg";
-    import { refreshConnections as refreshConnectionsQuery } from "$apis/sindit-backend/connection";
+    import { refreshConnections as refreshConnectionsQuery, refreshConnectionByUri } from "$apis/sindit-backend/connection";
     import { getModalStore } from "@skeletonlabs/skeleton";
-    import { RefreshCwIcon, CheckCircleIcon, XCircleIcon } from "svelte-feather-icons";
+    import { RefreshCwIcon, CheckCircleIcon, XCircleIcon, ZapIcon, Edit2Icon, Trash2Icon } from "svelte-feather-icons";
     import { getToastState } from "$lib/components/states/toast-state.svelte";
 
     const modalStore = getModalStore();
@@ -64,11 +64,36 @@
         });
     }
 
+    function onUpdateConnection(connection: Connection) {
+        modalStore.trigger({
+            type: 'component',
+            component: 'updateConnection',
+            meta: { connection }
+        });
+    }
+
     async function onDeleteConnection(connection: Connection): Promise<void> {
         console.log("Deleting connection", connection);
         await deleteNodeQuery(connection.id);
         connectionsState.deleteConnection(connection.id);
         connections = connectionsState.connections;
+    }
+
+    let testingConnectionId: string | null = null;
+
+    async function onTestConnection(connection: Connection) {
+        testingConnectionId = connection.id;
+        try {
+            await refreshConnectionByUri(connection.id);
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            await connectionsState.updateConnectionsFromBackend();
+            connections = connectionsState.connections;
+            toastState.add('Connection Tested', `Status updated for "${connection.connectionName}".`, 'info');
+        } catch (err) {
+            toastState.add('Test Failed', 'Could not test connection.', 'error');
+        } finally {
+            testingConnectionId = null;
+        }
     }
 </script>
 
@@ -112,7 +137,7 @@
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
               </svg>
-              Create New
+              Create Connection
             </button>
             <button
               class="flex items-center gap-2 px-6 py-3 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex-1 sm:flex-none justify-center"
@@ -193,11 +218,19 @@
 
               <!-- Connection Details -->
               <div class="space-y-3 mb-6">
-                <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3">
-                  <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                    {connection.description || 'No description provided'}
-                  </p>
-                  <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 space-y-2 text-xs">
+                  <!-- URI -->
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-slate-500 dark:text-slate-400">URI</span>
+                    <span class="font-mono font-medium text-slate-700 dark:text-slate-300 break-all">{connection.id}</span>
+                  </div>
+                  {#if connection.description}
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-slate-500 dark:text-slate-400">Description</span>
+                    <span class="font-medium text-slate-700 dark:text-slate-300">{connection.description}</span>
+                  </div>
+                  {/if}
+                  <div class="grid grid-cols-2 gap-2">
                     <div class="flex flex-col">
                       <span class="text-slate-500 dark:text-slate-400">Host</span>
                       <span class="font-medium text-slate-700 dark:text-slate-300 truncate">
@@ -217,16 +250,37 @@
               <!-- Action Buttons -->
               <div class="flex gap-2">
                 <button
-                  class="flex-1 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 font-medium rounded-lg transition-all duration-200 text-sm"
-                  on:click={(event) => handleDeleteConnection(event, connection)}
+                  class="flex-1 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 font-medium rounded-lg transition-all duration-200 text-sm flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  on:click={() => onTestConnection(connection)}
+                  disabled={testingConnectionId === connection.id}
+                  title="Test connection"
                 >
-                  Delete
+                  {#if testingConnectionId === connection.id}
+                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                    </svg>
+                    Testing...
+                  {:else}
+                    <ZapIcon size="14" />
+                    Test
+                  {/if}
                 </button>
                 <button
-                  class="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 font-medium rounded-lg cursor-not-allowed text-sm"
-                  disabled
+                  class="flex-1 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 font-medium rounded-lg transition-all duration-200 text-sm flex items-center justify-center gap-1"
+                  on:click={() => onUpdateConnection(connection)}
+                  title="Edit this connection"
                 >
+                  <Edit2Icon size="14" />
                   Update
+                </button>
+                <button
+                  class="flex-1 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 font-medium rounded-lg transition-all duration-200 text-sm flex items-center justify-center gap-1"
+                  on:click={(event) => handleDeleteConnection(event, connection)}
+                  title="Delete this connection"
+                >
+                  <Trash2Icon size="14" />
+                  Delete
                 </button>
               </div>
             </div>

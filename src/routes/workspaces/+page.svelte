@@ -24,7 +24,6 @@
     import {
 	    addNodesToStates,
         getCurrentWorkspace,
-        getWorkspaceDictFromUri,
     } from '$lib/utils';
     import { getToastState } from '$lib/components/states/toast-state.svelte';
 
@@ -88,11 +87,20 @@
         modalStore.trigger(modalCreateNewDashboard);
     }
 
-    function createWorkspace(workspaceName: string) {
+    async function createWorkspace(workspaceName: string) {
         try {
-            switchWorkspace(workspaceName);
-            const workspace = getWorkspaceDictFromUri(workspaceName);
-            workspaces = [...workspaces, workspace];
+            await switchWorkspace(workspaceName);
+            // Reload list and get the now-active workspace from backend
+            await getWorkspaces();
+            const activeWorkspace = await getCurrentWorkspace();
+            _selectedWorkspace = activeWorkspace.name;
+            // Clear stale state so pages reload fresh for the new workspace
+            nodesState.deleteAllNodes();
+            connectionsState.deleteAllConnections();
+            propertiesState.deleteAllProperties();
+            backendNodesData.set([]);
+            canvasDataLoadedForWorkspace.set('');
+            toastState.add('Workspace Created', `Workspace "${activeWorkspace.name}" has been created and activated.`, 'success');
         } catch (err) {
             if (err) console.error('Error creating workspace:', err);
             if (err instanceof Error && err.message === 'NOT_AUTHENTICATED') {
@@ -149,7 +157,7 @@
   <div class="container mx-auto px-6 py-12">
     <!-- Header Section -->
     <div class="text-center mb-12">
-      <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
+      <h1 class="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent mb-4">
         Workspaces
       </h1>
     </div>
@@ -171,20 +179,20 @@
               name="workspace-search"
               bind:value={searchQuery}
               placeholder="Search workspaces..."
-              class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
             />
           </div>
 
           <!-- Action Buttons -->
           <div class="flex gap-3 w-full sm:w-auto">
             <button
-              class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex-1 sm:flex-none justify-center"
+              class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex-1 sm:flex-none justify-center"
               on:click={onCreateWorkspace}
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
               </svg>
-              Create New
+              Create Workspace
             </button>
             <button
               class="flex items-center gap-2 px-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 font-medium rounded-xl transition-all duration-200 cursor-not-allowed flex-1 sm:flex-none justify-center"
@@ -219,7 +227,7 @@
             </p>
             {#if !searchQuery}
               <button
-                class="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                class="px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 on:click={onCreateWorkspace}
               >
                 Create Your First Workspace
@@ -233,7 +241,7 @@
             <div class="group relative">
               <div
                 class="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 transform
-                  {workspace.name === _selectedWorkspace ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'hover:border-blue-300 dark:hover:border-blue-600'}"
+                  {workspace.name === _selectedWorkspace ? 'ring-2 ring-violet-500 bg-violet-50 dark:bg-violet-900/20' : 'hover:border-violet-300 dark:hover:border-violet-600'}"
                 id={"workspace-" + workspace.name}
                 title={workspace.uri}
               >
@@ -258,7 +266,7 @@
                 <!-- Switch Button (shown on hover) -->
                 {#if workspace.name !== _selectedWorkspace}
                   <button
-                    class="absolute inset-x-0 bottom-0 w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-b-2xl transition-all duration-200 opacity-0 group-hover:opacity-100 transform translate-y-full group-hover:translate-y-0"
+                    class="absolute inset-x-0 bottom-0 w-full py-3 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-medium rounded-b-2xl transition-all duration-200 opacity-0 group-hover:opacity-100 transform translate-y-full group-hover:translate-y-0"
                     on:click={() => selectWorkspace(workspace)}
                   >
                     Switch to this workspace

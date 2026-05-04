@@ -4,9 +4,9 @@
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import { getDataspacesState } from '$lib/components/states/dataspace-state.svelte';
-	import { getWorkspace } from '$apis/sindit-backend/workspace';
 	import { listSecretPaths } from '$apis/sindit-backend/vault';
-	import { env } from '$env/dynamic/public';
+	import type { DataspaceManagement } from '$lib/types';
+	import { createDataspaceManagement } from '$apis/sindit-backend/dataspace';
 
 	export let parent: SvelteComponent;
 
@@ -14,9 +14,11 @@
 	const toastState = getToastState();
 	const dataspaceState = getDataspacesState();
 
+	let dataspace: DataspaceManagement | null = null;
+	let vaultPaths: string[] = [];
+
 	let form = {
 		label: '',
-		uri: '',
 		endpoint: '',
 		dataspaceDescription: '',
 		authenticationType: '',
@@ -26,73 +28,40 @@
 		sinditCallbackKeyPath: ''
 	};
 
-	let vaultPaths: string[] = [];
-	let uriPrefix = '';
-	let uriManuallyEdited = false;
-
-	function slugify(text: string): string {
-		return text
-			.trim()
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, '-')
-			.replace(/^-+|-+$/g, '');
-	}
-
-	function onLabelInput() {
-		if (!uriManuallyEdited && uriPrefix) {
-			const slug = slugify(form.label) || 'dataspace';
-			form.uri = `${uriPrefix}${slug}`;
-		}
-	}
-
-	function onUriInput() {
-		uriManuallyEdited = true;
-	}
-
 	onMount(async () => {
-		try {
-			const workspaceResponse = await getWorkspace();
-			const wsUri: string =
-				(workspaceResponse as any)?.uri ??
-				(workspaceResponse as any)?.workspace_uri ??
-				'';
-			if (wsUri) {
-				form.sinditWorkspaceUri = wsUri;
-				// Derive namespace prefix: everything up to and including the last '#' or '/'
-				const sepIdx = Math.max(wsUri.lastIndexOf('#'), wsUri.lastIndexOf('/'));
-				uriPrefix = sepIdx >= 0 ? wsUri.substring(0, sepIdx + 1) : wsUri + '#';
-				form.uri = `${uriPrefix}dataspace`;
-			}
-		} catch (_) {
-			// non-critical — user can fill it in manually
-		}
-
-		try {
-			form.sinditApiBaseUrl = env.PUBLIC_SINDIT_BACKEND_API ?? '';
-		} catch (_) {
-			// non-critical
+		const ds = ($modalStore[0]?.meta?.dataspace ?? null) as DataspaceManagement | null;
+		if (ds) {
+			dataspace = ds;
+			form.label = ds.label ?? '';
+			form.endpoint = ds.endpoint ?? '';
+			form.dataspaceDescription = ds.dataspaceDescription ?? '';
+			form.authenticationType = ds.authenticationType ?? '';
+			form.authenticationKeyPath = ds.authenticationKeyPath ?? '';
+			form.sinditApiBaseUrl = ds.sinditApiBaseUrl ?? '';
+			form.sinditWorkspaceUri = ds.sinditWorkspaceUri ?? '';
+			form.sinditCallbackKeyPath = ds.sinditCallbackKeyPath ?? '';
 		}
 
 		try {
 			const result = await listSecretPaths();
 			vaultPaths = result.secret_paths ?? [];
 		} catch (_) {
-			// non-critical — user can type manually
+			// non-critical
 		}
 	});
 
 	$: isFormValid =
 		form.label.trim().length > 0 &&
-		form.uri.trim().length > 0 &&
 		form.endpoint.trim().length > 0 &&
-		form.sinditApiBaseUrl.trim().length > 0 &&
-		form.sinditCallbackKeyPath.trim().length > 0;
+		form.sinditApiBaseUrl.trim().length > 0;
 
-	async function handleCreate() {
-		if (!isFormValid) return;
+	async function handleUpdate() {
+		if (!isFormValid || !dataspace) return;
 		try {
-			await dataspaceState.create({
-				...(form.uri.trim() ? { uri: form.uri.trim() } : {}),			label: form.label.trim(),				endpoint: form.endpoint.trim(),
+			await createDataspaceManagement({
+				uri: dataspace.id,
+				label: form.label.trim(),
+				endpoint: form.endpoint.trim(),
 				dataspaceDescription: form.dataspaceDescription.trim() || undefined,
 				authenticationType: form.authenticationType.trim() || undefined,
 				authenticationKeyPath: form.authenticationKeyPath.trim() || undefined,
@@ -100,10 +69,14 @@
 				sinditWorkspaceUri: form.sinditWorkspaceUri.trim() || undefined,
 				sinditCallbackKeyPath: form.sinditCallbackKeyPath.trim() || undefined
 			});
-			toastState.add('Dataspace Created', `Dataspace "${form.endpoint}" has been created.`, 'info');
+			toastState.add('Dataspace Updated', `"${form.label}" has been updated.`, 'info');
 			modalStore.close();
+			// Refresh from backend so isActive reflects the connector restart
+			try {
+				await dataspaceState.updateDataspacesFromBackend();
+			} catch (_) { /* non-critical */ }
 		} catch (err) {
-			toastState.add('Error', `Failed to create dataspace: ${err instanceof Error ? err.message : err}`, 'error');
+			toastState.add('Error', `Failed to update dataspace: ${err instanceof Error ? err.message : err}`, 'error');
 		}
 	}
 
@@ -112,51 +85,35 @@
 	}
 </script>
 
-{#if $modalStore[0]}
+{#if $modalStore[0] && dataspace}
 	<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 w-full max-w-lg mx-auto">
-		<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">New Dataspace</h2>
+		<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">Update Dataspace</h2>
+		<p class="text-sm text-slate-500 dark:text-slate-400 font-mono mb-6 break-all">{dataspace.id}</p>
 
 		<div class="space-y-4">
 			<!-- Label -->
 			<div>
-				<label for="ds-label" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-ds-label" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Label <span class="text-red-500">*</span>
 				</label>
 				<input
-					id="ds-label"
-					name="ds-label"
+					id="upd-ds-label"
+					name="upd-ds-label"
 					type="text"
 					bind:value={form.label}
-					on:input={onLabelInput}
 					placeholder="My Dataspace"
-					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-				/>
-			</div>
-
-			<!-- Node URI -->
-			<div>
-				<label for="ds-uri" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-					Node URI <span class="text-red-500">*</span>
-				</label>
-				<input
-					id="ds-uri"
-					name="ds-uri"
-					type="text"
-					bind:value={form.uri}
-					on:input={onUriInput}
-					placeholder="http://sindit.sintef.no/2.0#MyDataspace"
 					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
 				/>
 			</div>
 
 			<!-- Endpoint -->
 			<div>
-				<label for="ds-endpoint" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-ds-endpoint" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Endpoint <span class="text-red-500">*</span>
 				</label>
 				<input
-					id="ds-endpoint"
-					name="ds-endpoint"
+					id="upd-ds-endpoint"
+					name="upd-ds-endpoint"
 					type="text"
 					bind:value={form.endpoint}
 					placeholder="https://dataspace.example.com"
@@ -166,12 +123,12 @@
 
 			<!-- Description -->
 			<div>
-				<label for="ds-description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-ds-description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Description
 				</label>
 				<input
-					id="ds-description"
-					name="ds-description"
+					id="upd-ds-description"
+					name="upd-ds-description"
 					type="text"
 					bind:value={form.dataspaceDescription}
 					placeholder="Optional description"
@@ -181,12 +138,12 @@
 
 			<!-- Authentication Type -->
 			<div>
-				<label for="ds-auth-type" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-ds-auth-type" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Authentication Type
 				</label>
 				<input
-					id="ds-auth-type"
-					name="ds-auth-type"
+					id="upd-ds-auth-type"
+					name="upd-ds-auth-type"
 					type="text"
 					bind:value={form.authenticationType}
 					placeholder="e.g. api_key, oauth2"
@@ -196,13 +153,13 @@
 
 			<!-- Auth Key Path -->
 			<div>
-				<label for="ds-auth-key" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-ds-auth-key" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Authentication Key Path
 				</label>
 				{#if vaultPaths.length > 0}
 					<select
-						id="ds-auth-key"
-						name="ds-auth-key"
+						id="upd-ds-auth-key"
+						name="upd-ds-auth-key"
 						bind:value={form.authenticationKeyPath}
 						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
 					>
@@ -213,8 +170,8 @@
 					</select>
 				{:else}
 					<input
-						id="ds-auth-key"
-						name="ds-auth-key"
+						id="upd-ds-auth-key"
+						name="upd-ds-auth-key"
 						type="text"
 						bind:value={form.authenticationKeyPath}
 						placeholder="/path/to/key"
@@ -225,12 +182,12 @@
 
 			<!-- SINDIT API Base URL -->
 			<div>
-				<label for="ds-sindit-url" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-ds-sindit-url" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					SINDIT API Base URL <span class="text-red-500">*</span>
 				</label>
 				<input
-					id="ds-sindit-url"
-					name="ds-sindit-url"
+					id="upd-ds-sindit-url"
+					name="upd-ds-sindit-url"
 					type="text"
 					bind:value={form.sinditApiBaseUrl}
 					placeholder="https://sindit.example.com"
@@ -240,63 +197,65 @@
 
 			<!-- SINDIT Workspace URI -->
 			<div>
-				<label for="ds-workspace-uri" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-ds-workspace-uri" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					SINDIT Workspace URI
 				</label>
 				<input
-					id="ds-workspace-uri"
-					name="ds-workspace-uri"
+					id="upd-ds-workspace-uri"
+					name="upd-ds-workspace-uri"
 					type="text"
 					bind:value={form.sinditWorkspaceUri}
-					placeholder="urn:sindit:workspace:..."
+					placeholder="http://sindit.sintef.no/2.0#workspace"
 					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
 				/>
 			</div>
 
 			<!-- Callback Key Path -->
 			<div>
-				<label for="ds-callback-key" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-					SINDIT Callback Key Path <span class="text-red-500">*</span>
+				<label for="upd-ds-callback-key" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+					Callback Key Path
 				</label>
 				{#if vaultPaths.length > 0}
 					<select
-						id="ds-callback-key"
-						name="ds-callback-key"
+						id="upd-ds-callback-key"
+						name="upd-ds-callback-key"
 						bind:value={form.sinditCallbackKeyPath}
 						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
 					>
-						<option value="">— select a vault path —</option>
+						<option value="">— none —</option>
 						{#each vaultPaths as path}
 							<option value={path}>{path}</option>
 						{/each}
 					</select>
 				{:else}
 					<input
-						id="ds-callback-key"
-						name="ds-callback-key"
+						id="upd-ds-callback-key"
+						name="upd-ds-callback-key"
 						type="text"
 						bind:value={form.sinditCallbackKeyPath}
-						placeholder="/path/to/callback/key"
+						placeholder="/path/to/callback-key"
 						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
 					/>
 				{/if}
 			</div>
 		</div>
 
-		<!-- Actions -->
-		<div class="flex gap-3 mt-8 justify-end">
+		<!-- Buttons -->
+		<div class="flex gap-3 mt-8">
 			<button
-				class="px-6 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all duration-200 font-medium"
+				type="button"
+				class="flex-1 px-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 font-medium rounded-xl transition-all duration-200"
 				on:click={handleCancel}
 			>
 				Cancel
 			</button>
 			<button
-				class="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+				type="button"
+				class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
 				disabled={!isFormValid}
-				on:click={handleCreate}
+				on:click={handleUpdate}
 			>
-				Create
+				Save Changes
 			</button>
 		</div>
 	</div>
