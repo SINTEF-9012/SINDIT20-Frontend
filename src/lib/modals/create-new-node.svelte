@@ -1,153 +1,186 @@
 <script lang="ts">
 	import type { SvelteComponent } from 'svelte';
-	import type { LogLevel, NodeType } from '$lib/types';
+	import { onMount } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
+	import { getWorkspace } from '$apis/sindit-backend/workspace';
+	import { getApiBaseUri } from '$lib/utils/uri';
 
-	// Props
-	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
 
 	const modalStore = getModalStore();
 	const toastState = getToastState();
 	const nodes = getNodesState();
 
-	// Modal metadata - data input
-	const metadata = $modalStore[0].meta;
-	if (!metadata) throw new Error('Metadata missing from modal settings.');
-	if (!metadata.name) throw new Error('Metadata name missing from modal settings.');
-	if (!metadata.mode) throw new Error('Metadata mode missing from modal settings.');
+	const position = $modalStore[0]?.meta?.position ?? null;
 
-	const mode = metadata.mode
-		.toLowerCase()
-		.replace(/-/g, ' ')
-		.replace(/\b\w/g, (c: string) => c.toUpperCase());
-	const nodeTypes: NodeType[] = ['AbstractAsset'];
-
-	$: isBaseFormValid = false;
-	$: isFormValid = false;
-
-	// Form Data - to be submitted
-	$: abstractAsset = {
-		nodeName: '',
-		nodeDescription: '',
-		nodeType: 'AbstractAsset'
+	let form = {
+		label: '',
+		uri: '',
+		description: ''
 	};
 
-	$: {
-		isBaseFormValid = abstractAsset.nodeName != '' && isValidNodeType(abstractAsset.nodeType);
-		if (abstractAsset.nodeType === 'AbstractAsset') {
-			isFormValid = isBaseFormValid;
-		} else {
-			isFormValid = false;
+	let uriPrefix = '';
+	let uriManuallyEdited = false;
+
+	function slugify(text: string): string {
+		return text.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+	}
+
+	function onLabelInput() {
+		if (!uriManuallyEdited && uriPrefix) {
+			const slug = slugify(form.label) || 'node';
+			form.uri = `${uriPrefix}${slug}`;
 		}
 	}
 
-	function isValidNodeType(value: any): boolean {
-		return nodeTypes.includes(value);
+	function onUriInput() {
+		uriManuallyEdited = true;
 	}
 
-	function isValidPort(value: any): boolean {
-		const port = parsePort(value);
-		return !isNaN(port) && port >= 999 && port <= 9999;
-	}
-
-	function parsePort(value: string): number {
-		const port = parseInt(value, 10);
-		return port;
-	}
-
-	// Create a new node in the knowledge graph
-	function createNewNode(): void {
-		let position = { x: Math.random() * 300, y: Math.random() * 300 };
-		let title = '';
-		let message = '';
-		let logLevel: LogLevel = 'info';
-		if (metadata.position) {
-			position = metadata.position;
+	onMount(async () => {
+		try {
+			const workspaceResponse = await getWorkspace();
+			const wsUri: string =
+				(workspaceResponse as any)?.uri ??
+				(workspaceResponse as any)?.workspace_uri ??
+				'';
+			if (wsUri) {
+				const sepIdx = Math.max(wsUri.lastIndexOf('#'), wsUri.lastIndexOf('/'));
+				uriPrefix = sepIdx >= 0 ? wsUri.substring(0, sepIdx + 1) : wsUri + '#';
+				form.uri = `${uriPrefix}node`;
+			}
+		} catch (_) {
+			try {
+				uriPrefix = getApiBaseUri();
+				form.uri = `${uriPrefix}node`;
+			} catch (_) {}
 		}
-		if (abstractAsset.nodeType === 'AbstractAsset') {
-			nodes.createAbstractAssetNode(
-				abstractAsset.nodeName,
-				abstractAsset.nodeDescription,
-				position
+	});
+
+	$: isFormValid = form.label.trim().length > 0 && form.uri.trim().length > 0;
+
+	async function handleCreate() {
+		if (!isFormValid) return;
+		try {
+			await nodes.createAbstractAssetNode(
+				form.label.trim(),
+				form.description.trim(),
+				position ?? { x: Math.random() * 800 + 100, y: Math.random() * 600 + 100 },
+				form.uri.trim()
 			);
-			title = `Successfully Created`;
-			message = `Created new node '${abstractAsset.nodeName}'`;
-		} else {
-			title = 'Error';
-			message = `Node type '${abstractAsset.nodeType}' not supported.`;
-			logLevel = 'error';
+			toastState.add('Node Created', `Node "${form.label}" has been created.`, 'info');
+			modalStore.close();
+		} catch (err) {
+			toastState.add(
+				'Error',
+				`Failed to create node: ${err instanceof Error ? err.message : err}`,
+				'error'
+			);
 		}
-		toastState.add(title, message, logLevel);
 	}
 
-	function onFormSubmit(): void {
-		// TODO: Create new item in the knowledge graph // this should be handled in separate func
-		if (metadata.mode === 'create' && metadata.name === 'node') createNewNode();
+	function handleCancel() {
 		modalStore.close();
 	}
 
-	function onClose(): void {
-		const title = 'Canceled';
-		const message = `Action '${metadata.mode}' '${metadata.name}' canceled`;
-		const logLevel: LogLevel = 'warning';
-		toastState.add(title, message, logLevel);
-		modalStore.close();
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Enter' && isFormValid) handleCreate();
+		if (event.key === 'Escape') handleCancel();
 	}
-
-	// Base Classes
-	const cBase = 'card p-4 w-modal shadow-xl space-y-4';
-	const cHeader = 'text-2xl font-bold';
-	const cForm = 'border border-surface-500 p-4 space-y-4 rounded-container-token';
 </script>
 
-<!-- @component This example creates a simple form modal. -->
-
 {#if $modalStore[0]}
-	<div class="modal-example-form {cBase}">
-		<header class={cHeader}>Create New Node</header>
-		<article>Create a new node in the knowledge graph</article>
-		<!-- Enable for debugging: -->
-		<form class="modal-form {cForm}">
-			<label class="label">
+	<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+	<div
+		role="dialog"
+		aria-modal="true"
+		class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 w-full max-w-lg mx-auto"
+		on:keydown={handleKeydown}
+	>
+		<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">New Node</h2>
+
+		<div class="space-y-4">
+			<!-- Label -->
+			<div>
+				<label
+					for="node-label"
+					class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+				>
+					Label <span class="text-red-500">*</span>
+				</label>
 				<input
-					class="input"
+					id="node-label"
+					name="node-label"
 					type="text"
-					bind:value={abstractAsset.nodeName}
-					placeholder="Enter {metadata.name} name..."
+					bind:value={form.label}
+					on:input={onLabelInput}
+					placeholder="My Sensor"
+					autofocus
+					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
 				/>
-			</label>
-			<label class="label">
+			</div>
+
+			<!-- Node URI -->
+			<div>
+				<label
+					for="node-uri"
+					class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+				>
+					Node URI <span class="text-red-500">*</span>
+				</label>
 				<input
-					class="input"
+					id="node-uri"
+					name="node-uri"
 					type="text"
-					bind:value={abstractAsset.nodeDescription}
-					placeholder="Description..."
+					bind:value={form.uri}
+					on:input={onUriInput}
+					placeholder="http://sindit.sintef.no/2.0#my-node"
+					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
 				/>
-			</label>
-			<label class="label">
-				<select class="input" bind:value={abstractAsset.nodeType}>
-					{#each nodeTypes as nodeType}
-						<option value={nodeType}>{nodeType}</option>
-					{/each}
-				</select>
-			</label>
-		</form>
-		<!-- prettier-ignore -->
-		<footer class="modal-footer {parent.regionFooter}">
-			<button class="btn {parent.buttonNeutral}" on:click={onClose}>{parent.buttonTextCancel}</button>
-			<button class="btn {parent.buttonPositive}" on:click={onFormSubmit} disabled={!isFormValid}>{parent.buttonTextSubmit}</button>
-		</footer>
+			</div>
+
+			<!-- Description -->
+			<div>
+				<label
+					for="node-description"
+					class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+				>
+					Description
+				</label>
+				<input
+					id="node-description"
+					name="node-description"
+					type="text"
+					bind:value={form.description}
+					placeholder="Optional description..."
+					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+				/>
+			</div>
+		</div>
+
+		<div class="flex justify-end gap-3 mt-8">
+			<button
+				type="button"
+				on:click={handleCancel}
+				class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+			>
+				Cancel
+			</button>
+			<button
+				type="button"
+				on:click={handleCreate}
+				disabled={!isFormValid}
+				class="px-4 py-2 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+			>
+				Create Node
+			</button>
+		</div>
 	</div>
 {/if}
 
 <style>
-	.input-container {
-		display: flex;
-		align-items: center;
-	}
 	.error-symbol {
 		margin-left: 8px;
 		color: red;

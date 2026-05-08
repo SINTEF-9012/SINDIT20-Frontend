@@ -49,8 +49,8 @@ export async function refreshConnections(): Promise<boolean> {
 	return true;
 }
 
-export async function refreshConnectionByUri(connectionUri: string): Promise<boolean> {
-	const url = `/api/proxy?endpoint=connection/refresh?connection_uri=${encodeURIComponent(connectionUri)}`;
+export async function refreshConnectionByUri(connectionUri: string, replace: boolean = false): Promise<boolean> {
+	const url = `/api/proxy?endpoint=connection/refresh?connection_uri=${encodeURIComponent(connectionUri)}&replace=${replace}`;
 	const response = await authenticatedFetch(url, {
 		method: 'POST',
 		headers: {

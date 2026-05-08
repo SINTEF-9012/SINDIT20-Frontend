@@ -210,7 +210,15 @@ export class Properties {
 
 	updatePropertyBackend(new_property: Property) {
 		try {
-			updateNodeQuery(new_property);
+			// Map frontend-only fields to backend field names before sending.
+			// Backend AbstractAssetProperty uses propertyDescription (not description)
+			// and does not accept position or nodeType (extra="forbid").
+			const { description, position: _position, nodeType: _nodeType, ...rest } = new_property as any;
+			const payload = {
+				...rest,
+				propertyDescription: description ?? ''
+			};
+			updateNodeQuery(payload);
 		} catch (error) {
 			this.toastState.add('Failed to update property node', error as string, 'error');
 		}

@@ -39,16 +39,31 @@ export const createNodeMode = writable(false);
 export const backendNodesData = writable<unknown[]>([]);
 // Track whether canvas data has been loaded for the current workspace
 export const canvasDataLoadedForWorkspace = writable<string>('');
+// Increment to trigger a full KG reload (used by RightPanel after create/update/delete)
+export const kgRefreshTrigger = writable<number>(0);
 // links
 export const selectedLinkId = writable('');
 export const createLinkMode = writable(false);
 
 // connections
 export const createConnectionMode = writable(false);
-export const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'S3']
+export const connectionTypes: ConnectionType[] = ['MQTT', 'InfluxDB', 'S3', 'PostgreSQL']
 
 // modals
 export const modalMetadata = writable({toolName: '', operationMode: ''});
 
 // 3D model
 export const selected3DModel = writable<GLTFModel>({name: '', path: ''});
+
+// Right panel (create/update node or relationship)
+export type RightPanelType = 'node' | 'relationship' | null;
+export type RightPanelMode = 'create' | 'update';
+
+export interface RightPanelState {
+    type: RightPanelType;
+    mode: RightPanelMode;
+    position?: { x: number; y: number };
+    data?: any;
+}
+
+export const rightPanelState = writable<RightPanelState>({ type: null, mode: 'create' });

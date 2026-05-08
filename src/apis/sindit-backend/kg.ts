@@ -2,12 +2,19 @@ import { env } from '$env/dynamic/public';
 import type {
 	ConnectionType,
 	AbstractAssetProperty,
+	DatabaseProperty,
 	StreamingProperty,
 	TimeseriesProperty,
-	S3Property,
-	Relationship
+	S3ObjectProperty,
+	PropertyCollection,
+	Relationship,
+	RelationshipNodeType
 } from '$lib/types';
-import { getBackendUri } from '$lib/utils';
+import {
+	getBackendUri,
+	getNodeIdFromBackendUri,
+	getNodeClassTypeFromBackendClassUri
+} from '$lib/utils';
 import { authenticatedFetch } from '$lib/api-client';
 import { fetchAllPages } from '$lib/pagination';
 
@@ -46,7 +53,8 @@ export async function updateNode(node: any, overwrite: boolean = true) {
 	const url = `${API_BASE_ENDPOINT}/${endpoint}?overwrite=${doOverwrite}`;
 	// Resolve URI — prefer node.uri, fall back to node.id for backwards compat
 	const resolvedUri = getBackendUri(node.uri ?? node.id);
-	const { id: _id, nodeType: _nodeType, ...nodePayload } = node;
+	// Strip frontend-only fields that backend models don't accept
+	const { id: _id, nodeType: _nodeType, position: _position, description: _description, ...nodePayload } = node;
 	nodePayload.uri = resolvedUri;
 	const response = await authenticatedFetch(url, {
 		method: 'POST',
@@ -181,6 +189,7 @@ export async function createAbstractPropertyNode(newProperty: AbstractAssetPrope
 		propertyDescription: string;
 		propertyValue?: string;
 		propertyValueTimestamp?: string;
+		propertySemanticID?: { uri: string };
 		propertyDataType?: { uri: string };
 		propertyUnit?: { uri: string };
 	} = {
@@ -194,6 +203,10 @@ export async function createAbstractPropertyNode(newProperty: AbstractAssetPrope
 	}
 	if (newProperty.propertyValueTimestamp) {
 		data.propertyValueTimestamp = newProperty.propertyValueTimestamp;
+	}
+	if (newProperty.propertySemanticID) {
+		const semId = newProperty.propertySemanticID;
+		data.propertySemanticID = { uri: typeof semId === 'string' ? semId : semId.uri };
 	}
 	if (newProperty.propertyDataType) {
 		data.propertyDataType = {
@@ -231,6 +244,7 @@ export async function createStreamingPropertyNode(newProperty: StreamingProperty
 		streamingTopic: string;
 		propertyValue?: string;
 		propertyValueTimestamp?: string;
+		propertySemanticID?: { uri: string };
 		propertyDataType?: { uri: string };
 		propertyUnit?: { uri: string };
 	} = {
@@ -242,6 +256,12 @@ export async function createStreamingPropertyNode(newProperty: StreamingProperty
 		streamingPath: newProperty.streamingPath,
 		streamingTopic: newProperty.streamingTopic
 	};
+	if (newProperty.propertyValue) data.propertyValue = newProperty.propertyValue;
+	if (newProperty.propertyValueTimestamp) data.propertyValueTimestamp = newProperty.propertyValueTimestamp;
+	if (newProperty.propertySemanticID) {
+		const semId = newProperty.propertySemanticID;
+		data.propertySemanticID = { uri: typeof semId === 'string' ? semId : semId.uri };
+	}
 	if (newProperty.propertyDataType) {
 		data.propertyDataType = {
 			uri: newProperty.propertyDataType.uri
@@ -275,11 +295,13 @@ export async function createTimeseriesPropertyNode(newProperty: TimeseriesProper
 		propertyDescription: string;
 		propertyConnection: { uri: string };
 		query?: string;
+		propertyIdentifiers?: Record<string, any>;
 		timeseriesIdentifiers?: Record<string, any>;
 		timeseriesRetrievalMethod?: string;
 		timeseriesTags?: Record<string, any>;
 		propertyValue?: string;
 		propertyValueTimestamp?: string;
+		propertySemanticID?: { uri: string };
 		propertyDataType?: { uri: string };
 		propertyUnit?: { uri: string };
 	} = {
@@ -300,6 +322,12 @@ export async function createTimeseriesPropertyNode(newProperty: TimeseriesProper
 	}
 	if (newProperty.timeseriesTags) {
 		data.timeseriesTags = newProperty.timeseriesTags;
+	}
+	if (newProperty.propertyValue) data.propertyValue = newProperty.propertyValue;
+	if (newProperty.propertyValueTimestamp) data.propertyValueTimestamp = newProperty.propertyValueTimestamp;
+	if (newProperty.propertySemanticID) {
+		const semId = newProperty.propertySemanticID;
+		data.propertySemanticID = { uri: typeof semId === 'string' ? semId : semId.uri };
 	}
 	if (newProperty.propertyDataType) {
 		data.propertyDataType = {
@@ -324,8 +352,54 @@ export async function createTimeseriesPropertyNode(newProperty: TimeseriesProper
 	return response.json();
 }
 
-export async function createS3PropertyNode(newProperty: S3Property) {
-	const endpoint = 's3_property';
+export async function createDatabasePropertyNode(newProperty: DatabaseProperty) {
+	const endpoint = 'database_property';
+	const url = `${API_BASE_ENDPOINT}/${endpoint}`;
+	const data: {
+		uri: string;
+		label: string;
+		propertyName: string;
+		propertyDescription: string;
+		query?: string;
+		propertyIdentifiers?: Record<string, any>;
+		propertyConnection?: { uri: string };
+		propertyValue?: string;
+		propertyValueTimestamp?: string;
+		propertySemanticID?: { uri: string };
+		propertyDataType?: { uri: string };
+		propertyUnit?: { uri: string };
+	} = {
+		uri: getBackendUri(newProperty.id),
+		label: newProperty.propertyName,
+		propertyName: newProperty.propertyName,
+		propertyDescription: newProperty.description
+	};
+	if (newProperty.query) data.query = newProperty.query;
+	if (newProperty.propertyIdentifiers) data.propertyIdentifiers = newProperty.propertyIdentifiers;
+	if (newProperty.propertyConnection?.uri) {
+		data.propertyConnection = { uri: getBackendUri(newProperty.propertyConnection.uri) };
+	}
+	if (newProperty.propertyValue) data.propertyValue = newProperty.propertyValue;
+	if (newProperty.propertyValueTimestamp) data.propertyValueTimestamp = newProperty.propertyValueTimestamp;
+	if (newProperty.propertySemanticID) {
+		const semId = newProperty.propertySemanticID;
+		data.propertySemanticID = { uri: typeof semId === 'string' ? semId : semId.uri };
+	}
+	if (newProperty.propertyDataType) data.propertyDataType = { uri: newProperty.propertyDataType.uri };
+	if (newProperty.propertyUnit) data.propertyUnit = { uri: newProperty.propertyUnit.uri };
+	const response = await authenticatedFetch(url, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data)
+	});
+	if (!response.ok) {
+		throw new Error(`Error performing POST request ${response.statusText}`);
+	}
+	return response.json();
+}
+
+export async function createS3PropertyNode(newProperty: S3ObjectProperty) {
+	const endpoint = 's3_object';
 	const url = `${API_BASE_ENDPOINT}/${endpoint}`;
 	const data: {
 		uri: string;
@@ -334,6 +408,13 @@ export async function createS3PropertyNode(newProperty: S3Property) {
 		propertyDescription: string;
 		bucket: string;
 		key: string;
+		urlMode?: string;
+		propertyConnection?: { uri: string };
+		propertyValue?: string;
+		propertyValueTimestamp?: string;
+		propertySemanticID?: { uri: string };
+		propertyDataType?: { uri: string };
+		propertyUnit?: { uri: string };
 	} = {
 		uri: getBackendUri(newProperty.id),
 		label: newProperty.propertyName,
@@ -342,11 +423,91 @@ export async function createS3PropertyNode(newProperty: S3Property) {
 		bucket: newProperty.bucket,
 		key: newProperty.key
 	};
+	if (newProperty.urlMode) data.urlMode = newProperty.urlMode;
+	if (newProperty.propertyConnection?.uri) {
+		data.propertyConnection = { uri: getBackendUri(newProperty.propertyConnection.uri) };
+	}
+	if (newProperty.propertyValue) data.propertyValue = newProperty.propertyValue;
+	if (newProperty.propertyValueTimestamp) data.propertyValueTimestamp = newProperty.propertyValueTimestamp;
+	if (newProperty.propertySemanticID) {
+		const semId = newProperty.propertySemanticID;
+		data.propertySemanticID = { uri: typeof semId === 'string' ? semId : semId.uri };
+	}
+	if (newProperty.propertyDataType) data.propertyDataType = { uri: newProperty.propertyDataType.uri };
+	if (newProperty.propertyUnit) data.propertyUnit = { uri: newProperty.propertyUnit.uri };
 	const response = await authenticatedFetch(url, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
 		},
+		body: JSON.stringify(data)
+	});
+	if (!response.ok) {
+		throw new Error(`Error performing POST request ${response.statusText}`);
+	}
+	return response.json();
+}
+
+export async function createSINDITKGNode(uri: string, label: string, assetIds?: string[], connectionIds?: string[]) {
+	const endpoint = 'sindit_kg';
+	const url = `${API_BASE_ENDPOINT}/${endpoint}`;
+	const data: any = {
+		uri: getBackendUri(uri),
+		label
+	};
+	if (assetIds && assetIds.length > 0) {
+		data.assets = assetIds.map((id) => ({ uri: getBackendUri(id) }));
+	}
+	if (connectionIds && connectionIds.length > 0) {
+		data.dataConnections = connectionIds.map((id) => ({ uri: getBackendUri(id) }));
+	}
+	const response = await authenticatedFetch(url, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data)
+	});
+	if (!response.ok) {
+		throw new Error(`Error performing POST request ${response.statusText}`);
+	}
+	return response.json();
+}
+
+export async function createPropertyCollectionNode(newProperty: PropertyCollection) {
+	const endpoint = 'property_collection';
+	const url = `${API_BASE_ENDPOINT}/${endpoint}`;
+	const data: {
+		uri: string;
+		label: string;
+		propertyName: string;
+		propertyDescription: string;
+		collectionProperties: any[];
+		propertyValue?: string;
+		propertyValueTimestamp?: string;
+		propertySemanticID?: { uri: string };
+		propertyDataType?: { uri: string };
+		propertyUnit?: { uri: string };
+	} = {
+		uri: getBackendUri(newProperty.id),
+		label: newProperty.propertyName,
+		propertyName: newProperty.propertyName,
+		propertyDescription: newProperty.description,
+		collectionProperties: newProperty.collectionProperties
+			? (newProperty.collectionProperties as any[]).map((p) =>
+					'uri' in p ? p : { uri: getBackendUri((p as any).id ?? p) }
+			  )
+			: []
+	};
+	if (newProperty.propertyValue) data.propertyValue = newProperty.propertyValue;
+	if (newProperty.propertyValueTimestamp) data.propertyValueTimestamp = newProperty.propertyValueTimestamp;
+	if (newProperty.propertySemanticID) {
+		const semId = newProperty.propertySemanticID;
+		data.propertySemanticID = { uri: typeof semId === 'string' ? semId : semId.uri };
+	}
+	if (newProperty.propertyDataType) data.propertyDataType = { uri: newProperty.propertyDataType.uri };
+	if (newProperty.propertyUnit) data.propertyUnit = { uri: newProperty.propertyUnit.uri };
+	const response = await authenticatedFetch(url, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(data)
 	});
 	if (!response.ok) {
@@ -361,11 +522,15 @@ export async function createConnectionNode(
 	description: string,
 	host: string,
 	port: number,
-	connectionType: ConnectionType
+	connectionType: ConnectionType,
+	username?: string,
+	passwordPath?: string,
+	tokenPath?: string,
+	configuration?: Record<string, unknown>
 ) {
 	const endpoint = 'connection';
 	const url = `${API_BASE_ENDPOINT}/${endpoint}`;
-	const data = {
+	const data: Record<string, unknown> = {
 		uri: getBackendUri(id),
 		label: connectionName,
 		connectionDescription: description,
@@ -373,6 +538,10 @@ export async function createConnectionNode(
 		port: port,
 		type: connectionType
 	};
+	if (username) data.username = username;
+	if (passwordPath) data.passwordPath = passwordPath;
+	if (tokenPath) data.tokenPath = tokenPath;
+	if (configuration && Object.keys(configuration).length > 0) data.configuration = configuration;
 	const response = await authenticatedFetch(url, {
 		method: 'POST',
 		headers: {
@@ -413,11 +582,17 @@ export async function getRelationships(skip: number = 0, limit: number = 10) {
  * @returns Promise resolving to array of all relationships
  */
 export async function getAllRelationships(pageSize: number = 100): Promise<Relationship[]> {
-	return fetchAllPages(
+	const raw = await fetchAllPages(
 		(d, skip, limit) => getRelationships(skip, limit),
 		1, // depth is not used for relationships, pass dummy value
 		pageSize
 	);
+	// Map backend fields (uri, class_uri) to frontend fields (id, nodeType)
+	return (raw as any[]).map((rel) => ({
+		...rel,
+		id: getNodeIdFromBackendUri(rel.uri),
+		nodeType: getNodeClassTypeFromBackendClassUri(rel.class_uri) as RelationshipNodeType
+	}));
 }
 
 /**
@@ -446,17 +621,31 @@ export async function getRelationshipsByNode(nodeId: string): Promise<Relationsh
 export async function createRelationship(relationship: Relationship) {
 	const endpoint = 'relationship';
 	const url = `${API_BASE_ENDPOINT}/${endpoint}`;
+	// Transform payload to match backend RDFModel: use uri instead of id, strip frontend-only fields
+	const { id, nodeType, class_uri: _classUri, ...relPayload } = relationship as any;
+	if (id) relPayload.uri = getBackendUri(id);
+	// Do NOT send class_uri — backend sets it from AbstractRelationship.CLASS_URI automatically
 	const response = await authenticatedFetch(url, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify(relationship)
+		body: JSON.stringify(relPayload)
 	});
 	if (!response.ok) {
 		throw new Error(`Error performing POST request ${response.statusText}`);
 	}
 	return response.json();
+}
+
+export async function deleteRelationship(relationshipId: string): Promise<void> {
+	const endpoint = 'relationship';
+	const uri = getBackendUri(relationshipId);
+	const url = `${API_BASE_ENDPOINT}/${endpoint}?relationship_uri=${encodeURIComponent(uri)}`;
+	const response = await authenticatedFetch(url, { method: 'DELETE' });
+	if (!response.ok) {
+		throw new Error(`Error deleting relationship: ${response.statusText}`);
+	}
 }
 
 // Experimental /kg/stream API - REMOVED

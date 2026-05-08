@@ -1,131 +1,227 @@
 <script lang="ts">
-	import { onMount, type SvelteComponent } from 'svelte';
-	import type { LogLevel, LinkDirection } from '$lib/types';
-	import type { Node as NodeType } from '$lib/types';
-	import { getModalStore, RangeSlider } from '@skeletonlabs/skeleton';
+	import type { SvelteComponent } from 'svelte';
+	import { onMount } from 'svelte';
+	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import { getNodesState } from '$lib/components/states/nodes-state.svelte';
 	import { getLinksState } from '$lib/components/states/links-state.svelte';
+	import { createRelationship } from '$apis/sindit-backend/kg';
+	import { getBackendUri } from '$lib/utils/uri';
 	import { selectedNodes } from '$lib/stores';
+	import type { RelationshipNodeType, VisualizableNode } from '$lib/types';
+	import { get } from 'svelte/store';
 
-	// Props
-	/** Exposes parent props to this component. */
 	export let parent: SvelteComponent;
 
 	const modalStore = getModalStore();
 	const toastState = getToastState();
-	const nodes = getNodesState();
-	const links = getLinksState();
+	const nodesState = getNodesState();
+	const linksState = getLinksState();
 
-	let source: NodeType;
-	let target: NodeType;
+	const RELATIONSHIP_OPTIONS: Array<{
+		nodeType: RelationshipNodeType;
+		relationshipType: string;
+		label: string;
+	}> = [
+		{ nodeType: 'ConsistOfRelationship', relationshipType: 'consistsOf', label: 'Consists Of' },
+		{ nodeType: 'PartOfRelationship', relationshipType: 'partOf', label: 'Part Of' },
+		{ nodeType: 'ConnectedToRelationship', relationshipType: 'connectedTo', label: 'Connected To' },
+		{ nodeType: 'DependsOnRelationship', relationshipType: 'dependsOn', label: 'Depends On' },
+		{ nodeType: 'DerivedFromRelationship', relationshipType: 'derivedFrom', label: 'Derived From' },
+		{ nodeType: 'MonitorsRelationship', relationshipType: 'monitors', label: 'Monitors' },
+		{ nodeType: 'ControlsRelationship', relationshipType: 'controls', label: 'Controls' },
+		{ nodeType: 'SimulatesRelationship', relationshipType: 'simulates', label: 'Simulates' },
+		{ nodeType: 'UsesRelationship', relationshipType: 'uses', label: 'Uses' },
+		{
+			nodeType: 'CommunicatesWithRelationship',
+			relationshipType: 'communicatesWith',
+			label: 'Communicates With'
+		},
+		{ nodeType: 'IsTypeOfRelationship', relationshipType: 'isTypeOf', label: 'Is Type Of' }
+	];
 
-	// Modal metadata - data input
-	const metadata = $modalStore[0].meta;
-	if (!metadata) throw new Error('Metadata missing from modal settings.');
-	if (!metadata.name) throw new Error('Metadata name missing from modal settings.');
-	if (!metadata.mode) throw new Error('Metadata mode missing from modal settings.');
-
-	const mode = metadata.mode
-		.toLowerCase()
-		.replace(/-/g, ' ')
-		.replace(/\b\w/g, (c: string) => c.toUpperCase());
-	const title = `${mode} new ${metadata.name}`;
-	let body = `${mode} a new ${metadata.name}`;
-
-	// Form Data - to be submitted
-	const formData = {
-		linkDescription: '',
-		linkWeight: 1,
-		linkDirection: 'none' as LinkDirection
-	};
-
-	// Create a new link between two selected nodes in the knowledge graph
-	function createNewLink(): void {
-		const linkDescription = formData.linkDescription;
-		const linkWeight = formData.linkWeight;
-		const linkDirection = formData.linkDirection;
-		const sourceNodeId = source.id;
-		const targetNodeId = target.id;
-
-		links.createLink(linkDescription, linkWeight, linkDirection, sourceNodeId, targetNodeId);
-		selectedNodes.set([]);
-	}
-
-	// We've created a custom submit function to pass the response and close the modal.
-	function onFormSubmit(): void {
-		// if ($modalStore[0].response) $modalStore[0].response(formData);
-		// TODO: Create new item in the knowledge graph // this should be handled in separate func
-		if (metadata.mode === 'create' && metadata.name === 'link') createNewLink();
-		modalStore.close();
-	}
-
-	function onClose(): void {
-		const title = 'Canceled';
-		const message = `Action '${metadata.mode}' '${metadata.name}' canceled`;
-		const logLevel: LogLevel = 'warning';
-		toastState.add(title, message, logLevel);
-		modalStore.close();
-	}
-
-	// Base Classes
-	const cBase = 'card p-4 w-modal shadow-xl space-y-4';
-	const cHeader = 'text-2xl font-bold';
-	const cForm = 'border border-surface-500 p-4 space-y-4 rounded-container-token';
+	let allNodes: VisualizableNode[] = [];
+	let sourceNodeId = '';
+	let targetNodeId = '';
+	let relationshipType = RELATIONSHIP_OPTIONS[0].nodeType;
+	let description = '';
 
 	onMount(() => {
-		const sourceNode = nodes.getAbstractAssetNode($selectedNodes[0]);
-		const targetNode = nodes.getAbstractAssetNode($selectedNodes[1]);
-		if (!sourceNode || !targetNode) {
-			const title = 'Error';
-			const message = 'Please select two nodes to create a link between.';
-			const logLevel: LogLevel = 'error';
-			toastState.add(title, message, logLevel);
-			modalStore.close();
-		} else {
-			source = sourceNode;
-			target = targetNode;
-			body += ` between ${source.nodeName} and ${target.nodeName} in the knowledge graph.`;
+		allNodes = nodesState.getAllVisualizableNodes();
+		// Pre-fill from selected nodes if exactly two are selected
+		const currentSelection = get(selectedNodes);
+		if (currentSelection.length >= 2) {
+			sourceNodeId = currentSelection[0];
+			targetNodeId = currentSelection[1];
+		} else if (currentSelection.length === 1) {
+			sourceNodeId = currentSelection[0];
 		}
 	});
+
+	function getNodeDisplayName(node: VisualizableNode): string {
+		if (node.nodeType === 'AbstractAsset') return node.nodeName;
+		if (node.nodeType === 'SINDITKG') return node.label;
+		return (node as any).propertyName ?? node.id;
+	}
+
+	$: selectedRelOption =
+		RELATIONSHIP_OPTIONS.find((r) => r.nodeType === relationshipType) ?? RELATIONSHIP_OPTIONS[0];
+	$: isFormValid =
+		sourceNodeId.length > 0 && targetNodeId.length > 0 && sourceNodeId !== targetNodeId;
+
+	async function handleCreate() {
+		if (!isFormValid) return;
+		const relId = crypto.randomUUID();
+		const sourceUri = getBackendUri(sourceNodeId);
+		const targetUri = getBackendUri(targetNodeId);
+		const rel: any = {
+			id: relId,
+			nodeType: selectedRelOption.nodeType,
+			relationshipType: selectedRelOption.relationshipType,
+			relationshipDescription: description.trim() || undefined,
+			relationshipSource: { uri: sourceUri },
+			relationshipTarget: { uri: targetUri }
+		};
+		try {
+			await createRelationship(rel);
+			// Add to local state so the canvas updates immediately
+			linksState.addRelationship({
+				...rel,
+				relationshipSource: { uri: sourceUri },
+				relationshipTarget: { uri: targetUri }
+			});
+			selectedNodes.set([]);
+			toastState.add(
+				'Relationship Created',
+				`${selectedRelOption.label} relationship created.`,
+				'info'
+			);
+			modalStore.close();
+		} catch (err) {
+			toastState.add(
+				'Error',
+				`Failed to create relationship: ${err instanceof Error ? err.message : err}`,
+				'error'
+			);
+		}
+	}
+
+	function handleCancel() {
+		modalStore.close();
+	}
 </script>
 
-<!-- @component This example creates a simple form modal. -->
-
 {#if $modalStore[0]}
-	<div class="modal-example-form {cBase}">
-		<header class={cHeader}>{title}</header>
-		<article>{body}</article>
-		<!-- Enable for debugging: -->
-		<form class="modal-form {cForm}">
-			<label class="label">
-				<input
-					class="input"
-					type="text"
-					bind:value={formData.linkDescription}
-					placeholder="Enter {metadata.name} name..."
-				/>
-			</label>
-			<label class="label">
-				<select class="select" bind:value={formData.linkDirection}>
-					<option value="none" selected>None</option>
-					<option value="left">Left</option>
-					<option value="right">Right</option>
-				</select>
-			</label>
-			<RangeSlider
-				name="range-slider"
-				bind:value={formData.linkWeight}
-				max={25}
-				min={1}
-				step={1}
-				ticked>Weight {formData.linkWeight}</RangeSlider
+	<div
+		class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 w-full max-w-lg mx-auto"
+	>
+		<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">New Relationship</h2>
+
+		{#if allNodes.length === 0}
+			<p class="text-slate-500 dark:text-slate-400 text-sm mb-6">
+				No nodes loaded. Load the knowledge graph first.
+			</p>
+		{:else}
+			<div class="space-y-4">
+				<!-- Source Node -->
+				<div>
+					<label
+						for="rel-source"
+						class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+					>
+						Source Node <span class="text-red-500">*</span>
+					</label>
+					<select
+						id="rel-source"
+						bind:value={sourceNodeId}
+						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					>
+						<option value="">— Select source node —</option>
+						{#each allNodes as node}
+							<option value={node.id}>{getNodeDisplayName(node)} ({node.nodeType})</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Relationship Type -->
+				<div>
+					<label
+						for="rel-type"
+						class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+					>
+						Relationship Type <span class="text-red-500">*</span>
+					</label>
+					<select
+						id="rel-type"
+						bind:value={relationshipType}
+						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					>
+						{#each RELATIONSHIP_OPTIONS as opt}
+							<option value={opt.nodeType}>{opt.label}</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Target Node -->
+				<div>
+					<label
+						for="rel-target"
+						class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+					>
+						Target Node <span class="text-red-500">*</span>
+					</label>
+					<select
+						id="rel-target"
+						bind:value={targetNodeId}
+						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					>
+						<option value="">— Select target node —</option>
+						{#each allNodes as node}
+							<option value={node.id}>{getNodeDisplayName(node)} ({node.nodeType})</option>
+						{/each}
+					</select>
+					{#if sourceNodeId && targetNodeId && sourceNodeId === targetNodeId}
+						<p class="text-red-500 text-xs mt-1">Source and target must be different nodes.</p>
+					{/if}
+				</div>
+
+				<!-- Description -->
+				<div>
+					<label
+						for="rel-description"
+						class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+					>
+						Description
+					</label>
+					<input
+						id="rel-description"
+						name="rel-description"
+						type="text"
+						bind:value={description}
+						placeholder="Optional description..."
+						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					/>
+				</div>
+			</div>
+		{/if}
+
+		<div class="flex justify-end gap-3 mt-8">
+			<button
+				type="button"
+				on:click={handleCancel}
+				class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
 			>
-		</form>
-		<!-- prettier-ignore -->
-		<footer class="modal-footer {parent.regionFooter}">
-			<button class="btn {parent.buttonNeutral}" on:click={onClose}>{parent.buttonTextCancel}</button>
-			<button class="btn {parent.buttonPositive}" on:click={onFormSubmit}>{parent.buttonTextSubmit}</button>
-		</footer>
+				Cancel
+			</button>
+			<button
+				type="button"
+				on:click={handleCreate}
+				disabled={!isFormValid || allNodes.length === 0}
+				class="px-4 py-2 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+			>
+				Create Relationship
+			</button>
+		</div>
 	</div>
 {/if}
+

@@ -9,12 +9,13 @@ import { getPropertiesState } from '$lib/components/states/properties.svelte';
 import { getConnectionsState } from '$lib/components/states/connections.svelte';
 import { getDrawerStore } from '@skeletonlabs/skeleton';
 	import Link from '$lib/components/nodes-link.svelte';
-	import { createNodeMode, createLinkMode, createConnectionMode, selectedNodes, modalMetadata } from '$lib/stores';
-	import type { ModalSettings } from '@skeletonlabs/skeleton';
-	import { getModalStore } from '@skeletonlabs/skeleton';
+	import { createNodeMode, createLinkMode, selectedNodes, modalMetadata } from '$lib/stores';
+	import RightPanel from './RightPanel.svelte';
+	import { rightPanelState } from '$lib/stores';
+	import { get } from 'svelte/store';
 	import { JSONEditor } from 'svelte-jsoneditor'
 	import { modeCurrent } from '@skeletonlabs/skeleton';
-import { backendNodesData, selectedWorkspace, canvasDataLoadedForWorkspace } from '$lib/stores'
+import { backendNodesData, selectedWorkspace, canvasDataLoadedForWorkspace, kgRefreshTrigger } from '$lib/stores'
 import { getNodeIdFromBackendUri, addNodesToStates } from '$lib/utils';
 import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/sindit-backend/kg';
 	import ToolboxSidebar from './ToolboxSidebar.svelte';
@@ -40,10 +41,11 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 		target: string | D3Node;
 		weight: number;
 		label?: string;
+		curvature: number; // perpendicular offset for parallel links
+		relType: string;   // relationship type for per-type color
 	}
 
 	const drawerStore = getDrawerStore();
-	const modalStore = getModalStore();
 
 	const zoomSpeed = 0.001;
 	const maxZoom = 6;
@@ -74,7 +76,6 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 
 	let isCreateNodeMode: boolean;
 	let isCreateLinkMode: boolean;
-	let isCreateConnectionMode: boolean;
 	let createNodeModeMetadata: {toolName: string, operationMode: string};
 	let selectedCanvasPosition = { x: 0, y: 0 };
 	let selectedNodesIds: string[] = [];
@@ -99,9 +100,14 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
     let showJSONEditor = true;
 
 	// Subscriptions
-	createNodeMode.subscribe((value) => isCreateNodeMode = value);
-	createLinkMode.subscribe((value) => isCreateLinkMode = value);
-	createConnectionMode.subscribe((value) => isCreateConnectionMode = value);
+	// When createLinkMode is set, open the right panel immediately
+	createLinkMode.subscribe((value) => {
+		isCreateLinkMode = value;
+		if (value) {
+			createLinkMode.set(false);
+			rightPanelState.set({ type: 'relationship', mode: 'create' });
+		}
+	});
 	modalMetadata.subscribe((value) => createNodeModeMetadata = value);
 	selectedNodes.subscribe((value) => {
 		selectedNodesIds = value;
@@ -110,6 +116,10 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 		// Navigate to selected node in JSON editor
 		navigateToNodeInEditor(value);
 	});
+	// Reload full KG when RightPanel signals a mutation (create/update/delete)
+	kgRefreshTrigger.subscribe((val) => {
+		if (val > 0) refreshData();
+	});
     $: content = {
         text: undefined, // can be used to pass a stringified JSON document instead
         json: $backendNodesData,
@@ -117,93 +127,33 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
     let darkMode = "";
     $: darkMode = $modeCurrent === false ? "dark" : "";
 
-    const modalCreateNewAssetNode: ModalSettings = {
-        type: 'component',
-        component: 'createNewNode',
-    };
 
-	const modalCreateNewLink: ModalSettings = {
-        type: 'component',
-        component: 'createNewLink',
-    };
-
-	const modalCreateNewConnection: ModalSettings = {
-		type: 'component',
-		component: 'createNewConnection',
-	};
-
-    export function openModalCreateNewAssetNode(): void {
-        modalCreateNewAssetNode.meta = {
-			name: createNodeModeMetadata.toolName,
-			mode: createNodeModeMetadata.operationMode,
-			position: selectedCanvasPosition
-		};
-        modalStore.trigger(modalCreateNewAssetNode);
-    }
-
-	function openModalCreateNewLink(): void {
-		modalCreateNewLink.meta = {
-			name: 'link',
-			mode: 'create'
-		};
-		modalStore.trigger(modalCreateNewLink);
-	}
-
-	function openModalCreateNewConnection(): void {
-		modalStore.trigger(modalCreateNewConnection);
-	}
 
 	function openToolbox(): void {
 		drawerStore.open({ id: 'toolbox' });
 	}
 
-	function waitForTwoSelectedNodes(): Promise<string[]> {
-		return new Promise((resolve) => {
-		const checkCondition = () => {
-			if (selectedNodesIds.length === 2) {
-				resolve(selectedNodesIds);
-			} else {
-				requestAnimationFrame(checkCondition);
-			}
-		};
-		checkCondition();
-		});
-	}
-
-    async function handleCanvasClick(event: MouseEvent): Promise<void> {
-		// Handle canvas click event
-
-		const canvas = canvasContent;
-		const rect = canvas.getBoundingClientRect();
-		// Account for pan offset and zoom level in click position calculation
-		const x = ((event.clientX - rect.left - panOffset.x) / zoomLevel);
-		const y = ((event.clientY - rect.top - panOffset.y) / zoomLevel);
-
-        if (isCreateNodeMode) {
-			// Create a new node
-
-			// Set the clicked canvas position in the store
-			selectedCanvasPosition = ({ x, y });
-
-			// Exit node creation mode
-			createNodeMode.set(false);
-
-			// Open the modal to create a new node
-			openModalCreateNewAssetNode();
-		} else if (isCreateLinkMode) {
-			const nodes = await waitForTwoSelectedNodes();
-			createLinkMode.set(false);
-			openModalCreateNewLink();
-		} else if (isCreateConnectionMode) {
-			createConnectionMode.set(false);
-			openModalCreateNewConnection();
+    async function handleCanvasClick(_event: MouseEvent): Promise<void> {
+		// Canvas click — close panel if open
+		const panelState = get(rightPanelState);
+		if (panelState.type !== null) {
+			rightPanelState.set({ type: null, mode: 'create' });
 		}
-		else {return;}
     }
 
+	function handleKeyDown(event: KeyboardEvent): void {
+		if (event.key === 'Escape') {
+			const panelState = get(rightPanelState);
+			if (panelState.type !== null) {
+				rightPanelState.set({ type: null, mode: 'create' });
+			}
+		}
+	}
+
 	function handleCanvasDoubleClick(event: MouseEvent): void {
-		// Clear the selected nodes
+		// Clear the selected nodes and close panel
 		selectedNodes.set([]);
+		rightPanelState.set({ type: null, mode: 'create' });
 	}
 
 	function handleMouseWheel(event: WheelEvent): void {
@@ -409,7 +359,11 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 	}
 
 	// Function to refresh data from backend
+	let isRefreshing = false;
 	async function refreshData() {
+		// Prevent concurrent refreshes — if one is already running, skip
+		if (isRefreshing) return;
+		isRefreshing = true;
 		try {
 			// Remember current layout
 			const currentLayout = layoutType;
@@ -440,6 +394,10 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 				};
 			}
 
+			// Keep canvasDataLoadedForWorkspace in sync so the reactive loader
+			// does not trigger loadCanvasData() in parallel with this refresh
+			canvasDataLoadedForWorkspace.set($selectedWorkspace);
+
 			// Reapply the layout after data refresh if not force layout
 			if (currentLayout !== 'force') {
 				// Wait for the graph to update, then reapply the layout
@@ -450,6 +408,8 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 			}
 		} catch (error) {
 			console.error('Error refreshing workspace data:', error);
+		} finally {
+			isRefreshing = false;
 		}
 	}
 
@@ -671,6 +631,46 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 		}
 	}
 
+	// Wrap a node label into multiple <tspan> lines so long names are fully visible
+	function wrapNodeLabel(textEl: SVGTextElement, name: string) {
+		const maxCharsPerLine = 12;
+		const lineHeight = 14;
+		const el = d3.select(textEl);
+		el.selectAll('tspan').remove();
+
+		const words = name.split(/\s+/);
+		const lines: string[] = [];
+		let current = '';
+
+		for (const word of words) {
+			const testLine = current.length === 0 ? word : current + ' ' + word;
+			if (testLine.length <= maxCharsPerLine) {
+				current = testLine;
+			} else {
+				if (current.length > 0) lines.push(current);
+				if (word.length > maxCharsPerLine) {
+					// Hard-break words that exceed the limit on their own
+					for (let i = 0; i < word.length; i += maxCharsPerLine) {
+						lines.push(word.substring(i, i + maxCharsPerLine));
+					}
+					current = '';
+				} else {
+					current = word;
+				}
+			}
+		}
+		if (current.length > 0) lines.push(current);
+
+		const n = lines.length;
+		const firstDy = 5 - ((n - 1) * lineHeight) / 2;
+		lines.forEach((line, i) => {
+			el.append('tspan')
+				.attr('x', 0)
+				.attr('dy', i === 0 ? firstDy : lineHeight)
+				.text(line);
+		});
+	}
+
 	// Initialize D3 force simulation
 	function initializeD3ForceGraph() {
 		// Define stability tracking variables
@@ -696,6 +696,38 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 
 		// Store SVG reference for updating node selection visuals
 		svgElement = svg;
+
+		// Add arrowhead marker defs — one per relationship type, all bright for dark mode
+		const defs = svg.append('defs');
+		const REL_COLORS: Record<string, string> = {
+			consistsOf:       '#60a5fa', // blue-400
+			partOf:           '#a78bfa', // violet-400
+			connectedTo:      '#34d399', // emerald-400
+			dependsOn:        '#f87171', // red-400
+			monitors:         '#fbbf24', // amber-400
+			controls:         '#fb923c', // orange-400
+			derivedFrom:      '#38bdf8', // sky-400
+			simulates:        '#c084fc', // purple-400
+			uses:             '#4ade80', // green-400
+			communicatesWith: '#f472b6', // pink-400
+			isTypeOf:         '#e2e8f0', // slate-200
+			_structural:      '#64748b', // slate-500 — dashed structural links
+			_default:         '#94a3b8', // slate-400 (fallback)
+		};
+		Object.entries(REL_COLORS).forEach(([relType, color]) => {
+			defs.append('marker')
+				.attr('id', `arrow-${relType}`)
+				.attr('viewBox', '0 0 10 10')
+				.attr('refX', 10)
+				.attr('refY', 5)
+				.attr('markerUnits', 'userSpaceOnUse')
+				.attr('markerWidth', 10)
+				.attr('markerHeight', 10)
+				.attr('orient', 'auto')
+				.append('path')
+				.attr('d', 'M 0 0 L 10 5 L 0 10 z')
+				.attr('fill', color);
+		});
 
 		// Add tooltip container for node and link interactions
 		const tooltip = d3.select(svgContainer)
@@ -846,13 +878,42 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 				};
 			});
 
-			links = allLinks.map(link => ({
-				source: link.sourceNodeId,
-				target: link.targetNodeId,
-				weight: link.linkWeight,
-				id: link.id,
-				label: link.linkDescription || ''
-			}));
+			// Compute curvature so parallel links between the same two nodes don't overlap
+			const pairCount = new Map<string, number>();
+			allLinks.forEach(link => {
+				const key = [link.sourceNodeId, link.targetNodeId].sort().join('--');
+				pairCount.set(key, (pairCount.get(key) || 0) + 1);
+			});
+			const pairAssigned = new Map<string, number>();
+			const BASE_CURVE = 50;
+			links = allLinks.map(link => {
+				const key = [link.sourceNodeId, link.targetNodeId].sort().join('--');
+				const n = pairCount.get(key) || 1;
+				const idx = pairAssigned.get(key) || 0;
+				pairAssigned.set(key, idx + 1);
+				const curvature = n === 1 ? 0 : (idx - (n - 1) / 2) * BASE_CURVE;
+				// Resolve relationship type — structural links get their own type
+				const isStructural = link.id.startsWith('asset-property-') ||
+					link.id.startsWith('kg-asset-') ||
+					link.id.startsWith('collection-property-');
+				let relType: string;
+				if (isStructural) {
+					relType = '_structural';
+				} else {
+					const rawId = link.id.startsWith('relationship-') ? link.id.slice('relationship-'.length) : link.id;
+					const relData = get(linksState.relationships).find((r) => r.id === rawId);
+					relType = relData?.relationshipType ?? '_default';
+				}
+				return {
+					source: link.sourceNodeId,
+					target: link.targetNodeId,
+					weight: link.linkWeight,
+					id: link.id,
+					label: link.linkDescription || '',
+					curvature,
+					relType
+				};
+			});
 
 			// Create link elements
 			const linkElements = g.selectAll<SVGGElement, D3Link>('.link')
@@ -861,30 +922,22 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 				.append('g')
 				.attr('class', 'link');
 
-			// Add wider transparent line first (for easier hovering)
-			linkElements.append('line')
+			// Add wider transparent path first (for easier hovering)
+			linkElements.append('path')
 				.attr('class', 'link-hover-area')
 				.attr('stroke', 'transparent')
-				.attr('stroke-width', 10);
+				.attr('stroke-width', 10)
+				.attr('fill', 'none');
 
-			// Add line for each link
-			linkElements.append('line')
+			// Add path for each link
+			linkElements.append('path')
 				.attr('class', 'link-line')
-				.attr('stroke', (d: D3Link) => {
-					// Enhanced color scheme for links based on weight
-					if (d.weight >= 4) return '#3498db'; // Strong links - blue
-					if (d.weight >= 3) return '#2ecc71'; // Medium links - green
-					if (d.weight >= 2) return '#e67e22'; // Low-medium links - orange
-					return '#95a5a680'; // Weak links - semi-transparent gray
-				})
-				.attr('stroke-opacity', (d: D3Link) => d.weight >= 3 ? 0.85 : 0.7)
+				.attr('fill', 'none')
+				.attr('stroke', (d: D3Link) => REL_COLORS[d.relType] ?? REL_COLORS['_default'])
+				.attr('stroke-opacity', (d: D3Link) => d.relType === '_structural' ? 0.55 : 0.85)
 				.attr('stroke-width', (d: D3Link) => Math.max(Math.sqrt(d.weight) * 1.2, 1.8))
-				.attr('stroke-dasharray', (d: D3Link) => {
-					// Different dash patterns based on weight
-					if (d.weight < 2) return '3,3';
-					if (d.weight < 3) return '5,2';
-					return 'none';
-				})
+				.attr('stroke-dasharray', (d: D3Link) => d.relType === '_structural' ? '6 4' : null)
+				.attr('marker-end', (d: D3Link) => `url(#arrow-${d.relType in REL_COLORS ? d.relType : '_default'})`)
 				.on('mouseenter', (event: MouseEvent, d: D3Link) => {
 					// Show tooltip with link information
 					if (isStable) {
@@ -895,6 +948,22 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 						const target = typeof d.target === 'string' ?
 							nodes.find(n => n.id === d.target) :
 							d.target as D3Node;
+
+						// Look up full relationship data for description
+						const rawId = d.id.startsWith('relationship-') ? d.id.slice('relationship-'.length) : d.id;
+						const relData = get(linksState.relationships).find((r) => r.id === rawId);
+
+						const fmtUri = (v: unknown): string => {
+							if (!v) return '';
+							if (typeof v === 'string') return v;
+							if (typeof v === 'object' && v !== null && 'uri' in v) return String((v as any).uri);
+							return String(v);
+						};
+
+						const relDesc    = relData?.relationshipDescription;
+						const relValue   = relData?.relationshipValue != null ? String(relData.relationshipValue) : '';
+						const relUnit    = fmtUri(relData?.relationshipUnit);
+						const relSemID   = fmtUri(relData?.relationshipSemanticID);
 
 						// Calculate position - midpoint of the link
 						const x = event.offsetX;
@@ -910,7 +979,10 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 									<div class="tooltip-body">
 										<div><strong>From:</strong> ${source?.name || 'Unknown'}</div>
 										<div><strong>To:</strong> ${target?.name || 'Unknown'}</div>
-										<div><strong>Strength:</strong> ${d.weight}</div>
+										${relDesc    ? `<div><strong>Description:</strong> ${relDesc}</div>` : ''}
+										${relValue   ? `<div><strong>Value:</strong> ${relValue}</div>` : ''}
+										${relUnit    ? `<div><strong>Unit:</strong> ${relUnit}</div>` : ''}
+										${relSemID   ? `<div><strong>Semantic ID:</strong> ${relSemID}</div>` : ''}
 									</div>
 								</div>
 							`)
@@ -938,7 +1010,26 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 						.transition()
 						.duration(200)
 						.attr('stroke-width', Math.max(Math.sqrt(d.weight) * 1.2, 1.8))
-						.attr('stroke-opacity', d.weight >= 3 ? 0.85 : 0.7);
+						.attr('stroke-opacity', d.relType === '_structural' ? 0.55 : 0.85);
+				})
+				.on('click', (event: MouseEvent, d: D3Link) => {
+					event.stopPropagation();
+					// Structural links open the source node's edit form
+					if (d.relType === '_structural') {
+						const sourceId = typeof d.source === 'string' ? d.source : (d.source as D3Node).id;
+						const sourceNode = get(nodesState.visualizableNodes).find((n) => n.id === sourceId);
+						if (sourceNode) {
+							rightPanelState.set({ type: 'node', mode: 'update', data: sourceNode });
+						}
+						return;
+					}
+					// Relationship links open the relationship edit form
+					const rawId = d.id.startsWith('relationship-') ? d.id.slice('relationship-'.length) : d.id;
+					const allRels = get(linksState.relationships);
+					const rel = allRels.find((r) => r.id === rawId);
+					if (rel) {
+						rightPanelState.set({ type: 'relationship', mode: 'update', data: rel });
+					}
 				});
 
 			// Add link label background (for better readability)
@@ -970,12 +1061,33 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 				const originalNode = node.originalNode;
 				let detailsHTML = '';
 
+				// Coerce RDF literal objects or any non-string to a display string
+				const fmtVal = (v: unknown): string => {
+					if (v == null) return '';
+					if (typeof v === 'string') return v;
+					if (typeof v === 'object') {
+						const lit = v as Record<string, unknown>;
+						if ('@value' in lit) return String(lit['@value']);
+						if ('value' in lit) return String(lit['value']);
+					}
+					return String(v);
+				};
+				// Resolve a URI field that may be a string or an object with .uri
+				const fmtUri = (v: unknown): string => {
+					if (v == null) return '';
+					if (typeof v === 'object') {
+						const o = v as Record<string, unknown>;
+						return String(o.uri ?? JSON.stringify(v));
+					}
+					return String(v);
+				};
+
 				switch (node.nodeType) {
 				case 'AbstractAsset':
 					detailsHTML = `
 						<div><strong>ID:</strong> ${node.id}</div>
-						${originalNode.assetType ? `<div><strong>Type:</strong> ${originalNode.assetType}</div>` : ''}
-						${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+						${originalNode.assetType ? `<div><strong>Type:</strong> ${fmtVal(originalNode.assetType)}</div>` : ''}
+						${originalNode.description ? `<div><strong>Description:</strong> ${fmtVal(originalNode.description)}</div>` : ''}
 						${originalNode.assetProperties ? `<div><strong>Properties:</strong> ${originalNode.assetProperties.length}</div>` : ''}
 					`;
 						break;
@@ -983,64 +1095,70 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 						detailsHTML = `
 							<div><strong>ID:</strong> ${node.id}</div>
 							${originalNode.collectionProperties ? `<div><strong>Items:</strong> ${originalNode.collectionProperties.length}</div>` : ''}
-							${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
-							${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${originalNode.propertyValueTimestamp}</div>` : ''}
-							${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri : originalNode.propertyDataType}</div>` : ''}
-							${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${typeof originalNode.propertyUnit === 'object' ? originalNode.propertyUnit.uri : originalNode.propertyUnit}</div>` : ''}
-							${originalNode.propertySemanticID ? `<div><strong>Semantic ID:</strong> ${typeof originalNode.propertySemanticID === 'object' ? originalNode.propertySemanticID.uri : originalNode.propertySemanticID}</div>` : ''}
-							${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+							${originalNode.propertyValue !== undefined && fmtVal(originalNode.propertyValue) !== '' ? `<div><strong>Value:</strong> ${fmtVal(originalNode.propertyValue)}</div>` : ''}
+							${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${fmtVal(originalNode.propertyValueTimestamp)}</div>` : ''}
+							${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${fmtUri(originalNode.propertyDataType)}</div>` : ''}
+							${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${fmtUri(originalNode.propertyUnit)}</div>` : ''}
+							${originalNode.propertySemanticID ? `<div><strong>Semantic ID:</strong> ${fmtUri(originalNode.propertySemanticID)}</div>` : ''}
+							${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${fmtUri(originalNode.propertyConnection)}</div>` : ''}
+							${originalNode.description ? `<div><strong>Description:</strong> ${fmtVal(originalNode.description)}</div>` : ''}
 						`;
 						break;
 			case 'AbstractAssetProperty':
 					detailsHTML = `
 						<div><strong>ID:</strong> ${node.id}</div>
-						${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
-						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${originalNode.propertyValueTimestamp}</div>` : ''}
-						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri || JSON.stringify(originalNode.propertyDataType) : originalNode.propertyDataType}</div>` : ''}
-						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${typeof originalNode.propertyUnit === 'object' ? originalNode.propertyUnit.uri : originalNode.propertyUnit}</div>` : ''}
-						${originalNode.propertySemanticID ? `<div><strong>Semantic ID:</strong> ${typeof originalNode.propertySemanticID === 'object' ? originalNode.propertySemanticID.uri : originalNode.propertySemanticID}</div>` : ''}
-						${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+						${originalNode.propertyValue !== undefined && fmtVal(originalNode.propertyValue) !== '' ? `<div><strong>Value:</strong> ${fmtVal(originalNode.propertyValue)}</div>` : ''}
+						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${fmtVal(originalNode.propertyValueTimestamp)}</div>` : ''}
+						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${fmtUri(originalNode.propertyDataType)}</div>` : ''}
+						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${fmtUri(originalNode.propertyUnit)}</div>` : ''}
+						${originalNode.propertySemanticID ? `<div><strong>Semantic ID:</strong> ${fmtUri(originalNode.propertySemanticID)}</div>` : ''}
+						${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${fmtUri(originalNode.propertyConnection)}</div>` : ''}
+						${originalNode.description ? `<div><strong>Description:</strong> ${fmtVal(originalNode.description)}</div>` : ''}
 					`;
 						break;
 			case 'StreamingProperty':
 					detailsHTML = `
 						<div><strong>ID:</strong> ${node.id}</div>
-						${originalNode.streamingTopic ? `<div><strong>Topic:</strong> ${originalNode.streamingTopic}</div>` : ''}
-						${originalNode.streamingPath ? `<div><strong>Path:</strong> ${originalNode.streamingPath}</div>` : ''}
-						${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
-						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${originalNode.propertyValueTimestamp}</div>` : ''}
-						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri : originalNode.propertyDataType}</div>` : ''}
-						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${typeof originalNode.propertyUnit === 'object' ? originalNode.propertyUnit.uri : originalNode.propertyUnit}</div>` : ''}
-						${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${typeof originalNode.propertyConnection === 'object' ? originalNode.propertyConnection.uri : originalNode.propertyConnection}</div>` : ''}
-						${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+						${originalNode.streamingTopic ? `<div><strong>Topic:</strong> ${fmtVal(originalNode.streamingTopic)}</div>` : ''}
+						${originalNode.streamingPath ? `<div><strong>Path:</strong> ${fmtVal(originalNode.streamingPath)}</div>` : ''}
+						${originalNode.propertyValue !== undefined && fmtVal(originalNode.propertyValue) !== '' ? `<div><strong>Value:</strong> ${fmtVal(originalNode.propertyValue)}</div>` : ''}
+						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${fmtVal(originalNode.propertyValueTimestamp)}</div>` : ''}
+						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${fmtUri(originalNode.propertyDataType)}</div>` : ''}
+						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${fmtUri(originalNode.propertyUnit)}</div>` : ''}
+						${originalNode.propertySemanticID ? `<div><strong>Semantic ID:</strong> ${fmtUri(originalNode.propertySemanticID)}</div>` : ''}
+						${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${fmtUri(originalNode.propertyConnection)}</div>` : ''}
+						${originalNode.description ? `<div><strong>Description:</strong> ${fmtVal(originalNode.description)}</div>` : ''}
 					`;
 						break;
 			case 'TimeseriesProperty':
 					detailsHTML = `
 						<div><strong>ID:</strong> ${node.id}</div>
-						${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
-						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${originalNode.propertyValueTimestamp}</div>` : ''}
-						${originalNode.query ? `<div><strong>Query:</strong> ${originalNode.query}</div>` : ''}
-						${originalNode.timeseriesRetrievalMethod ? `<div><strong>Retrieval Method:</strong> ${originalNode.timeseriesRetrievalMethod}</div>` : ''}
-						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri : originalNode.propertyDataType}</div>` : ''}
-						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${typeof originalNode.propertyUnit === 'object' ? originalNode.propertyUnit.uri : originalNode.propertyUnit}</div>` : ''}
-						${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${typeof originalNode.propertyConnection === 'object' ? originalNode.propertyConnection.uri : originalNode.propertyConnection}</div>` : ''}
-						${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+						${originalNode.propertyValue !== undefined && fmtVal(originalNode.propertyValue) !== '' ? `<div><strong>Value:</strong> ${fmtVal(originalNode.propertyValue)}</div>` : ''}
+						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${fmtVal(originalNode.propertyValueTimestamp)}</div>` : ''}
+						${originalNode.query ? `<div><strong>Query:</strong> ${fmtVal(originalNode.query)}</div>` : ''}
+						${originalNode.timeseriesRetrievalMethod ? `<div><strong>Retrieval Method:</strong> ${fmtVal(originalNode.timeseriesRetrievalMethod)}</div>` : ''}
+						${originalNode.timeseriesIdentifiers ? `<div><strong>Identifiers:</strong> ${fmtVal(originalNode.timeseriesIdentifiers)}</div>` : ''}
+						${originalNode.timeseriesTags ? `<div><strong>Tags:</strong> ${fmtVal(originalNode.timeseriesTags)}</div>` : ''}
+						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${fmtUri(originalNode.propertyDataType)}</div>` : ''}
+						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${fmtUri(originalNode.propertyUnit)}</div>` : ''}
+						${originalNode.propertySemanticID ? `<div><strong>Semantic ID:</strong> ${fmtUri(originalNode.propertySemanticID)}</div>` : ''}
+						${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${fmtUri(originalNode.propertyConnection)}</div>` : ''}
+						${originalNode.description ? `<div><strong>Description:</strong> ${fmtVal(originalNode.description)}</div>` : ''}
 					`;
 						break;
 				case 'S3ObjectProperty':
 					detailsHTML = `
 						<div><strong>ID:</strong> ${node.id}</div>
-						${originalNode.bucket ? `<div><strong>Bucket:</strong> ${originalNode.bucket}</div>` : ''}
-						${originalNode.key ? `<div><strong>Key:</strong> ${originalNode.key}</div>` : ''}
-						${originalNode.urlMode ? `<div><strong>URL Mode:</strong> ${originalNode.urlMode}</div>` : ''}
-						${originalNode.propertyValue !== undefined ? `<div><strong>Value:</strong> ${originalNode.propertyValue}</div>` : ''}
-						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${originalNode.propertyValueTimestamp}</div>` : ''}
-						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${typeof originalNode.propertyDataType === 'object' ? originalNode.propertyDataType.uri || JSON.stringify(originalNode.propertyDataType) : originalNode.propertyDataType}</div>` : ''}
-						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${typeof originalNode.propertyUnit === 'object' ? originalNode.propertyUnit.uri : originalNode.propertyUnit}</div>` : ''}
-						${originalNode.propertySemanticID ? `<div><strong>Semantic ID:</strong> ${typeof originalNode.propertySemanticID === 'object' ? originalNode.propertySemanticID.uri : originalNode.propertySemanticID}</div>` : ''}
-						${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${typeof originalNode.propertyConnection === 'object' ? originalNode.propertyConnection.uri : originalNode.propertyConnection}</div>` : ''}
-						${originalNode.description ? `<div><strong>Description:</strong> ${originalNode.description}</div>` : ''}
+						${originalNode.bucket ? `<div><strong>Bucket:</strong> ${fmtVal(originalNode.bucket)}</div>` : ''}
+						${originalNode.key ? `<div><strong>Key:</strong> ${fmtVal(originalNode.key)}</div>` : ''}
+						${originalNode.urlMode ? `<div><strong>URL Mode:</strong> ${fmtVal(originalNode.urlMode)}</div>` : ''}
+						${originalNode.propertyValue !== undefined && fmtVal(originalNode.propertyValue) !== '' ? `<div><strong>Value:</strong> ${fmtVal(originalNode.propertyValue)}</div>` : ''}
+						${originalNode.propertyValueTimestamp ? `<div><strong>Timestamp:</strong> ${fmtVal(originalNode.propertyValueTimestamp)}</div>` : ''}
+						${originalNode.propertyDataType ? `<div><strong>Data Type:</strong> ${fmtUri(originalNode.propertyDataType)}</div>` : ''}
+						${originalNode.propertyUnit ? `<div><strong>Unit:</strong> ${fmtUri(originalNode.propertyUnit)}</div>` : ''}
+						${originalNode.propertySemanticID ? `<div><strong>Semantic ID:</strong> ${fmtUri(originalNode.propertySemanticID)}</div>` : ''}
+						${originalNode.propertyConnection ? `<div><strong>Connection:</strong> ${fmtUri(originalNode.propertyConnection)}</div>` : ''}
+						${originalNode.description ? `<div><strong>Description:</strong> ${fmtVal(originalNode.description)}</div>` : ''}
 					`;
 					break;
 				case 'SINDITKG':
@@ -1084,8 +1202,9 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 							selectedNodes.set(newSelectedNodes);
 						}
 					} else {
-						// Single select mode
+						// Single select — open right panel for editing
 						selectedNodes.set([d.id]);
+						rightPanelState.set({ type: 'node', mode: 'update', data: d.originalNode });
 					}
 				})
 				// Add hover effects without restarting simulation
@@ -1184,40 +1303,55 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 					}
 				});
 
-			// Add the main node circle
-			nodeElements.append('circle')
-				.attr('class', 'node-circle')
-				.attr('r', (d: D3Node) => {
-					// Size based on node type
-					if (d.type === 'SINDITKG') return 36;
-					if (d.type === 'AbstractAsset') return 30;
-					if (d.type === 'PropertyCollection') return 28; // Slightly larger for collections
-					return 26; // Standard size for property nodes
-				})
-				.attr('fill', (d: D3Node) => {
-					// Color based on node type
+			// Add the main node shape — rounded rect for AbstractAsset, circle for others
+			nodeElements.each(function(d: D3Node) {
+				const fill = (() => {
 					switch (d.type) {
-						case 'SINDITKG':
-							return '#e74c3c'; // Red for Knowledge Graph nodes
-						case 'AbstractAsset':
-							return '#2ecc71'; // Green for Asset nodes
-						case 'AbstractAssetProperty':
-							return '#3498db'; // Blue for basic properties
-						case 'StreamingProperty':
-							return '#9b59b6'; // Purple for streaming properties
-						case 'TimeseriesProperty':
-							return '#e67e22'; // Orange for timeseries properties
-						case 'S3ObjectProperty':
-							return '#f39c12'; // Yellow-orange for S3 properties
-					case 'PropertyCollection':
-							return '#e91e63'; // Pink/Magenta for property collections
-						default:
-							return '#95a5a6'; // Gray for unknown
+						case 'SINDITKG':         return '#e74c3c';
+						case 'AbstractAsset':    return '#2ecc71';
+						case 'AbstractAssetProperty': return '#3498db';
+						case 'StreamingProperty':  return '#9b59b6';
+						case 'TimeseriesProperty': return '#e67e22';
+						case 'S3ObjectProperty':   return '#f39c12';
+						case 'PropertyCollection': return '#e91e63';
+						default:                   return '#95a5a6';
 					}
-			})
-			.attr('stroke', '#ffffff') // Simple white border
-			.attr('stroke-width', (d: D3Node) => selectedNodesIds.includes(d.id) ? 5 : 1.5)
-			.attr('stroke-opacity', 0.6);
+				})();
+				const strokeWidth = selectedNodesIds.includes(d.id) ? 5 : 1.5;
+				if (d.type === 'AbstractAsset') {
+					const s = 54; // side length
+					d3.select(this).append('rect')
+						.attr('class', 'node-circle')
+						.attr('x', -s / 2)
+						.attr('y', -s / 2)
+						.attr('width', s)
+						.attr('height', s)
+						.attr('rx', 8)
+						.attr('ry', 8)
+						.attr('fill', fill)
+						.attr('stroke', '#ffffff')
+						.attr('stroke-width', strokeWidth)
+						.attr('stroke-opacity', 0.6);
+				} else if (d.type === 'PropertyCollection') {
+					d3.select(this).append('ellipse')
+						.attr('class', 'node-circle')
+						.attr('rx', 38)
+						.attr('ry', 24)
+						.attr('fill', fill)
+						.attr('stroke', '#ffffff')
+						.attr('stroke-width', strokeWidth)
+						.attr('stroke-opacity', 0.6);
+				} else {
+					const r = d.type === 'SINDITKG' ? 36 : 26;
+					d3.select(this).append('circle')
+						.attr('class', 'node-circle')
+						.attr('r', r)
+						.attr('fill', fill)
+						.attr('stroke', '#ffffff')
+						.attr('stroke-width', strokeWidth)
+						.attr('stroke-opacity', 0.6);
+				}
+			});
 
 			// Add pin indicator for pinned nodes
 			nodeElements.filter((d: D3Node) => d.isPinned)
@@ -1231,16 +1365,13 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 			// Add text labels for nodes
 			nodeElements.append('text')
 				.attr('text-anchor', 'middle')
-				.attr('dy', 5)
-				.text((d: D3Node) => {
-					// Truncate long names
-					const name = d.name || 'Unnamed';
-					return name.length > 15 ? name.substring(0, 13) + '...' : name;
-				})
 				.attr('fill', '#000000')
 				.attr('font-size', '12px')
 				.attr('font-weight', 'bold')
 				.attr('class', 'node-label')
+				.each(function(d: D3Node) {
+					wrapNodeLabel(this as SVGTextElement, d.name || 'Unnamed');
+				})
 				// .attr('filter', 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))');
 
 			// Update simulation with new nodes and links
@@ -1374,10 +1505,51 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 				// Calculate node radius based on type for more accurate boundary checking
 				const getNodeRadius = (d: D3Node) => {
 					if (d.type === 'SINDITKG') return 45; // KG nodes
-					if (d.type === 'AbstractAsset') return 38; // Asset nodes
-					if (d.type === 'PropertyCollection') return 36; // Collection nodes
+					if (d.type === 'AbstractAsset') return 34; // Asset nodes (rect half-diagonal ≈ 27*√2)
+					if (d.type === 'PropertyCollection') return 42; // Ellipse semi-major axis + padding
 					return 32; // Property nodes (blue)
 				};
+
+				// Build a curved SVG path between two nodes.
+				// shortened=true trims the endpoint to the target node's boundary (for arrowhead).
+				function getLinkPath(d: D3Link, shortened: boolean): string {
+					const s = d.source as D3Node, t = d.target as D3Node;
+					const sx = s.x || 0, sy = s.y || 0;
+					const txFull = t.x || 0, tyFull = t.y || 0;
+					const dx = txFull - sx, dy = tyFull - sy;
+					const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+					const r = shortened ? getNodeRadius(t) : 0;
+					const ex = txFull - (dx / dist) * r;
+					const ey = tyFull - (dy / dist) * r;
+					const c = d.curvature || 0;
+					if (Math.abs(c) < 1) return `M ${sx} ${sy} L ${ex} ${ey}`;
+					// Normalize the perpendicular direction using canonical (sorted) node order so
+					// that A→B and B→A both use the same reference axis, placing their curves on
+					// opposite sides rather than both landing on the same side.
+					const isCanonical = s.id <= t.id;
+					const ndx = isCanonical ? dx : -dx;
+					const ndy = isCanonical ? dy : -dy;
+					const cpx = (sx + txFull) / 2 + (-ndy / dist) * c;
+					const cpy = (sy + tyFull) / 2 + (ndx / dist) * c;
+					return `M ${sx} ${sy} Q ${cpx} ${cpy} ${ex} ${ey}`;
+				}
+
+				// Midpoint on the curve (used for label placement).
+				function getLinkMid(d: D3Link): { x: number; y: number } {
+					const s = d.source as D3Node, t = d.target as D3Node;
+					const sx = s.x || 0, sy = s.y || 0;
+					const tx = t.x || 0, ty = t.y || 0;
+					const dx = tx - sx, dy = ty - sy;
+					const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+					const c = d.curvature || 0;
+					const isCanonical = s.id <= t.id;
+					const ndx = isCanonical ? dx : -dx;
+					const ndy = isCanonical ? dy : -dy;
+					return {
+						x: (sx + tx) / 2 + (-ndy / dist) * c,
+						y: (sy + ty) / 2 + (ndx / dist) * c
+					};
+				}
 
 				// Apply bounds to prevent nodes from going too far off-screen or overlapping with UI elements
 				nodes.forEach(d => {
@@ -1399,26 +1571,27 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 					}
 				});
 
-				// Update all lines (both visible and hover area)
-				linkElements.selectAll('.link-line, .link-hover-area')
-					.attr('x1', (d: D3Link) => (d.source as D3Node).x || 0)
-					.attr('y1', (d: D3Link) => (d.source as D3Node).y || 0)
-					.attr('x2', (d: D3Link) => (d.target as D3Node).x || 0)
-					.attr('y2', (d: D3Link) => (d.target as D3Node).y || 0);
+				// Update hover area - full-length curved path for easier interaction
+				linkElements.selectAll('.link-hover-area')
+					.attr('d', (d: D3Link) => getLinkPath(d, false));
 
-				// Update text position
+				// Update visible link paths - endpoint shortened so arrowhead touches node boundary
+				linkElements.selectAll('.link-line')
+					.attr('d', (d: D3Link) => getLinkPath(d, true));
+
+				// Update text position to curve midpoint
 				linkElements.selectAll('.link-label')
-					.attr('x', (d: D3Link) => ((d.source as D3Node).x + (d.target as D3Node).x) / 2 || 0)
-					.attr('y', (d: D3Link) => ((d.source as D3Node).y + (d.target as D3Node).y) / 2 || 0);
+					.attr('x', (d: D3Link) => getLinkMid(d).x)
+					.attr('y', (d: D3Link) => getLinkMid(d).y);
 
 				// Update background rectangles for labels
 				linkElements.selectAll('.link-label-bg')
 					.attr('x', (d: D3Link) => {
-						const midX = ((d.source as D3Node).x + (d.target as D3Node).x) / 2;
-						const width = (d.label.length * 6) + 10;
-						return midX - (width / 2);
+						const mid = getLinkMid(d);
+						const w = (d.label.length * 6) + 10;
+						return mid.x - w / 2;
 					})
-					.attr('y', (d: D3Link) => ((d.source as D3Node).y + (d.target as D3Node).y) / 2 - 15);
+					.attr('y', (d: D3Link) => getLinkMid(d).y - 15);
 
 				// Update node positions
 				nodeElements.attr('transform', (d: D3Node) => `translate(${d.x || 0}, ${d.y || 0})`);
@@ -1556,7 +1729,7 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 				g.selectAll('.link-line')
 					.transition()
 					.duration(200)
-					.attr('opacity', (d: D3Link) => d.weight >= 3 ? 0.85 : 0.7)
+					.attr('opacity', 0.85)
 					.attr('stroke-width', (d: D3Link) => Math.max(Math.sqrt(d.weight) * 1.2, 1.8));
 
 				// Reset link labels
@@ -1977,6 +2150,8 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
 	});
 </script>
 
+<svelte:window on:keydown={handleKeyDown} />
+
 <div class="canvas-page">
     <div class="canvas-layout h-full w-full flex flex-row min-h-0 max-h-full">
         <!-- Toolbox Sidebar -->
@@ -2078,7 +2253,7 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
                 <!-- Canvas Container -->
                 <div class="canvas-container h-full min-h-0 relative flex-1">
                     <!-- D3 Force Graph Visualization -->
-                    <div bind:this={svgContainer} class="d3-container" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10; pointer-events: all;"></div>
+                    <div bind:this={svgContainer} class="d3-container" on:click={handleCanvasClick} role="presentation" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10; pointer-events: all;"></div>
 
                     <canvas
                         class="canvas"
@@ -2129,6 +2304,9 @@ import { getAllNodes as getNodesBackendQuery, getAllRelationships } from '$apis/
                     </div>
                 </div>
             </div>
+
+            <!-- Right Panel (Create / Update Node or Relationship) -->
+            <RightPanel />
 
             <!-- JSON Editor Panel -->
             {#if showJSONEditor}

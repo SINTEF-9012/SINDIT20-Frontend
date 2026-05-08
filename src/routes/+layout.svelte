@@ -283,7 +283,7 @@
 
 	<!-- Page Content -->
 	<!-- Main Content Area -->
-  	<main class="flex-1 min-h-0 flex flex-col overflow-hidden">
+  	<main class="flex-1 min-h-0 flex flex-col overflow-y-auto pb-[72px]">
   		<slot />
 
 		<!-- Footer with workspace and backend status -->

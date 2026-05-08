@@ -8,6 +8,7 @@
 	import type { Connection, ConnectionType } from '$lib/types';
 	import { updateNode } from '$apis/sindit-backend/kg';
 	import { refreshConnectionByUri } from '$apis/sindit-backend/connection';
+	import { listSecretPaths } from '$apis/sindit-backend/vault';
 
 	export let parent: SvelteComponent;
 
@@ -22,10 +23,17 @@
 		description: '',
 		host: '',
 		port: '',
-		connectionType: '' as ConnectionType | ''
+		connectionType: '' as ConnectionType | '',
+		username: '',
+		passwordPath: '',
+		tokenPath: '',
+		configuration: ''
 	};
 
-	onMount(() => {
+	let configJsonError = '';
+	let vaultPaths: string[] = [];
+
+	onMount(async () => {
 		const conn = ($modalStore[0]?.meta?.connection ?? null) as Connection | null;
 		if (conn) {
 			connection = conn;
@@ -34,6 +42,17 @@
 			form.host = conn.host ?? '';
 			form.port = conn.port != null ? String(conn.port) : '';
 			form.connectionType = (conn.connectionType as ConnectionType) ?? '';
+			form.username = conn.username ?? '';
+			form.passwordPath = conn.passwordPath ?? '';
+			form.tokenPath = conn.tokenPath ?? '';
+			form.configuration = conn.configuration ? JSON.stringify(conn.configuration, null, 2) : '';
+		}
+
+		try {
+			const result = await listSecretPaths();
+			vaultPaths = result.secret_paths ?? [];
+		} catch (_) {
+			// non-critical
 		}
 	});
 
@@ -42,14 +61,47 @@
 		return !isNaN(port) && port >= 1 && port <= 65535;
 	}
 
+	function validateConfigJson(value: string): boolean {
+		if (!value.trim()) return true;
+		try { JSON.parse(value); configJsonError = ''; return true; }
+		catch { configJsonError = 'Invalid JSON'; return false; }
+	}
+
+	$: if (form.configuration !== undefined) validateConfigJson(form.configuration);
+
+	const configExamples: Record<string, { placeholder: string; hint: string; required: boolean }> = {
+		MQTT: { placeholder: '', hint: 'No extra configuration needed for MQTT.', required: false },
+		InfluxDB: { placeholder: '', hint: 'No extra configuration needed. Org and bucket are set per property.', required: false },
+		S3: {
+			placeholder: '{\n  "region_name": "eu-west-1",\n  "secure": "True",\n  "expiration": 3600\n}',
+			hint: 'Optional. Keys: region_name (string), secure ("True"/"False"), expiration (seconds, default 3600).',
+			required: false
+		},
+		PostgreSQL: {
+			placeholder: '{\n  "dbname": "my_database"\n}',
+			hint: 'Required. dbname is the PostgreSQL database name to connect to.',
+			required: true
+		}
+	};
+
+	$: configMeta = configExamples[form.connectionType as string] ?? { placeholder: '{"key": "value"}', hint: '', required: false };
+
+	$: isConfigRequiredAndMissing = configMeta.required && !form.configuration.trim();
+
 	$: isFormValid =
 		form.label.trim().length > 0 &&
 		form.host.trim().length > 0 &&
 		isValidPort(form.port) &&
-		form.connectionType !== '';
+		form.connectionType !== '' &&
+		!configJsonError &&
+		!isConfigRequiredAndMissing;
 
 	async function handleUpdate() {
 		if (!isFormValid || !connection) return;
+		let parsedConfig: Record<string, unknown> | undefined;
+		if (form.configuration.trim()) {
+			try { parsedConfig = JSON.parse(form.configuration); } catch { return; }
+		}
 		const updatedNode = {
 			uri: connection.id,
 			label: form.label.trim(),
@@ -57,15 +109,19 @@
 			host: form.host.trim(),
 			port: parseInt(form.port, 10),
 			type: form.connectionType,
-			isConnected: connection.isConnected
+			isConnected: connection.isConnected,
+			username: form.username.trim() || undefined,
+			passwordPath: form.passwordPath.trim() || undefined,
+			tokenPath: form.tokenPath.trim() || undefined,
+			configuration: parsedConfig
 		};
 		try {
 			await updateNode(updatedNode, true);
 			toastState.add('Connection Updated', `"${form.label}" has been updated.`, 'info');
 			modalStore.close();
-			// Re-test so isConnected reflects any host/port changes
+			// Re-test so isConnected reflects any host/port/credential changes
 			try {
-				await refreshConnectionByUri(connection.id);
+				await refreshConnectionByUri(connection.id, true);
 				await new Promise(resolve => setTimeout(resolve, 1500));
 				await connectionsState.updateConnectionsFromBackend();
 			} catch (_) { /* non-critical */ }
@@ -164,6 +220,107 @@
 					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
 				/>
 			</div>
+
+			<!-- Username -->
+			<div>
+				<label for="upd-conn-username" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+					Username
+				</label>
+				<input
+					id="upd-conn-username"
+					name="upd-conn-username"
+					type="text"
+					bind:value={form.username}
+					placeholder="Optional"
+					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+				/>
+			</div>
+
+			<!-- Password Path -->
+			<div>
+				<label for="upd-conn-password-path" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+					Password Path
+					<span class="ml-1 text-xs font-normal text-slate-400">(vault secret key)</span>
+				</label>
+				{#if vaultPaths.length > 0}
+					<select
+						id="upd-conn-password-path"
+						name="upd-conn-password-path"
+						bind:value={form.passwordPath}
+						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					>
+						<option value="">— none —</option>
+						{#each vaultPaths as path}
+							<option value={path}>{path}</option>
+						{/each}
+					</select>
+				{:else}
+					<input
+						id="upd-conn-password-path"
+						name="upd-conn-password-path"
+						type="text"
+						bind:value={form.passwordPath}
+						placeholder="e.g. my_mqtt_password"
+						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					/>
+				{/if}
+			</div>
+
+			<!-- Token Path (InfluxDB only) -->
+			{#if form.connectionType === 'InfluxDB'}
+			<div>
+				<label for="upd-conn-token-path" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+					Token Path
+					<span class="ml-1 text-xs font-normal text-slate-400">(vault secret key)</span>
+				</label>
+				{#if vaultPaths.length > 0}
+					<select
+						id="upd-conn-token-path"
+						name="upd-conn-token-path"
+						bind:value={form.tokenPath}
+						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					>
+						<option value="">— none —</option>
+						{#each vaultPaths as path}
+							<option value={path}>{path}</option>
+						{/each}
+					</select>
+				{:else}
+					<input
+						id="upd-conn-token-path"
+						name="upd-conn-token-path"
+						type="text"
+						bind:value={form.tokenPath}
+						placeholder="e.g. my_influx_token"
+						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					/>
+				{/if}
+			</div>
+			{/if}
+
+			<!-- Configuration -->
+			{#if !form.connectionType || (form.connectionType !== 'MQTT' && form.connectionType !== 'InfluxDB')}
+			<div>
+				<label for="upd-conn-configuration" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+					Configuration
+					{#if configMeta.required}<span class="text-red-500">*</span>{:else}<span class="ml-1 text-xs font-normal text-slate-400">(optional JSON)</span>{/if}
+				</label>
+				<textarea
+					id="upd-conn-configuration"
+					name="upd-conn-configuration"
+					bind:value={form.configuration}
+					placeholder={configMeta.placeholder || '{"key": "value"}'}
+					rows="4"
+					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm resize-none {configJsonError ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}"
+				></textarea>
+				{#if configMeta.hint}
+					<p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{configMeta.hint}</p>
+				{/if}
+				{#if configJsonError}
+					<p class="mt-1 text-xs text-red-500">{configJsonError}</p>
+				{/if}
+			</div>
+			{/if}
 		</div>
 
 		<!-- Actions -->

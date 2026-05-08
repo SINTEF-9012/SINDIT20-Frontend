@@ -3,7 +3,6 @@ import type { VisualizableNode } from '$lib/types';
 import {
     PlusCircleIcon,
     LinkIcon,
-    GitBranchIcon,
     ChevronRightIcon,
     SearchIcon,
     DatabaseIcon,
@@ -15,9 +14,9 @@ import { getLinksState } from "$lib/components/states/links-state.svelte";
 import {
     createNodeMode,
     createLinkMode,
-    createConnectionMode,
     modalMetadata,
-    selectedNodes
+    selectedNodes,
+    rightPanelState
 } from "$lib/stores";
 
 export let collapsed = false;
@@ -141,20 +140,15 @@ function selectNode(nodeId: string) {
 
 function enterNodeCreationMode() {
     modalMetadata.set({toolName: tools[0], operationMode: 'create'});
-    createNodeMode.set(true);
-    toastState.add('Create new node', 'Click on the canvas to create a new node.', 'info');
+    rightPanelState.set({ type: 'node', mode: 'create' });
 }
 
 function enterLinkCreationMode() {
     modalMetadata.set({toolName: tools[1], operationMode: 'create'});
-    createLinkMode.set(true);
-    toastState.add('Create new link', 'Select two nodes to create a new link', 'info');
+    rightPanelState.set({ type: 'relationship', mode: 'create' });
 }
 
-function enterConnectionCreationMode() {
-    modalMetadata.set({toolName: tools[2], operationMode: 'create'});
-    createConnectionMode.set(true);
-}
+
 </script>
 
 <div class="toolbox-sidebar h-full flex flex-col max-h-full" class:collapsed={collapsed}>
@@ -193,15 +187,7 @@ function enterConnectionCreationMode() {
                             </div>
                         </button>
 
-                        <button class="tool-item" on:click={enterConnectionCreationMode}>
-                            <div class="tool-icon">
-                                <GitBranchIcon size="18" />
-                            </div>
-                            <div class="tool-details">
-                                <span class="tool-name">Create Connection</span>
-                                <span class="tool-count">New connection</span>
-                            </div>
-                        </button>
+
                     </div>
                 {/if}
             </div>
@@ -391,14 +377,6 @@ function enterConnectionCreationMode() {
                 title="Create Link"
             >
                 <LinkIcon size="18" />
-            </button>
-
-            <button
-                class="tool-item-collapsed"
-                on:click={enterConnectionCreationMode}
-                title="Create Connection"
-            >
-                <GitBranchIcon size="18" />
             </button>
         </div>
     {/if}
