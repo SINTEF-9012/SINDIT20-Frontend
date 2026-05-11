@@ -77,7 +77,6 @@ export async function getDataspaceCatalog(nodeUri: string): Promise<any[]> {
 	}
 	return response.json();
 }
-
 export async function unpublishFromDataspace(dataspaceUri: string, nodeUris: string[]): Promise<void> {
 	const url = `${API_BASE_ENDPOINT}/publish?uri=${encodeURIComponent(dataspaceUri)}`;
 	const response = await authenticatedFetch(url, {
