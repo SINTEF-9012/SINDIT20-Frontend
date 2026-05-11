@@ -26,7 +26,11 @@
 	}
 
 	function formatPropertyValue(propertyValue: any): string {
+		if (propertyValue == null) return '';
 		if (typeof propertyValue === 'object') {
+			// Extract value from RDF literal objects
+			if ('@value' in propertyValue) return String(propertyValue['@value']);
+			if ('value' in propertyValue) return String(propertyValue['value']);
 			return JSON.stringify(propertyValue);
 		}
 		if (typeof propertyValue === 'string') {
@@ -34,16 +38,14 @@
 		}
 		if (typeof propertyValue === 'number') {
 			if (Number.isInteger(propertyValue)) {
-				return propertyValue.toString(); // Handle integers
+				return propertyValue.toString();
 			} else if (propertyValue > 1e6 || propertyValue < 1e-6) {
-				console.log(propertyValue);
-				return propertyValue.toExponential(4); // Handle very large or very small numbers
+				return propertyValue.toExponential(4);
 			} else {
-				console.log(propertyValue);
-				return propertyValue.toFixed(4); // Handle floats
+				return propertyValue.toFixed(4);
 			}
 		}
-		return propertyValue;
+		return String(propertyValue);
 	}
 </script>
 

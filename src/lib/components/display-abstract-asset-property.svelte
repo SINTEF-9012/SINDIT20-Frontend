@@ -3,10 +3,21 @@
 
 	export let property: AbstractAssetProperty;
 
+	function toStringValue(v: unknown): string {
+		if (v == null) return '';
+		if (typeof v === 'string') return v;
+		if (typeof v === 'object') {
+			const lit = v as Record<string, unknown>;
+			if ('@value' in lit) return String(lit['@value']);
+			if ('value' in lit) return String(lit['value']);
+		}
+		return String(v);
+	}
+
 	const inputForm = {
 		propertyName: property.propertyName,
 		description: property.description,
-		propertyValue: property.propertyValue
+		propertyValue: toStringValue(property.propertyValue)
 	};
 
 	// Use a unique suffix for IDs

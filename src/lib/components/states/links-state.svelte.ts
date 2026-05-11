@@ -90,6 +90,11 @@ export class Links {
 		this.relationships.set(relationships);
 	}
 
+	// Add a single relationship to the store
+	addRelationship(relationship: Relationship) {
+		this.relationships.update((rels) => [...rels, relationship]);
+	}
+
 	// Get all relationships
 	getAllRelationships() {
 		return this.relationships;

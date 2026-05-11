@@ -10,6 +10,7 @@
 	import { setConnectionsState, getConnectionsState } from '$lib/components/states/connections.svelte';
 	import { setPropertiesState, getPropertiesState } from '$lib/components/states/properties.svelte';
 	import { setLinksState, getLinksState } from '$lib/components/states/links-state.svelte';
+	import { setDataspacesState, getDataspacesState } from '$lib/components/states/dataspace-state.svelte';
 	import Navigation from '$lib/components/navigation.svelte';
 	import Toolbox from '$lib/components/toolbox.svelte';
 	import InfoDrawerNode from '$lib/components/info-drawer-node.svelte';
@@ -21,7 +22,7 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { setAuthState, getAuthState } from '$lib/components/states/auth.svelte.ts';
-	import { BriefcaseIcon, LinkIcon, Share2Icon, InfoIcon } from 'svelte-feather-icons';
+	import { BriefcaseIcon, LinkIcon, Share2Icon, InfoIcon, GlobeIcon, KeyIcon } from 'svelte-feather-icons';
 	import { page } from '$app/stores';
 
 	// Version from package.json (injected at build time)
@@ -53,6 +54,9 @@
 	setLinksState();
 	const linksState = getLinksState();
 
+	// Initialize Dataspaces State
+	setDataspacesState();
+
 	// Initialize Auth State
 	setAuthState();
 	const authState = getAuthState();
@@ -76,15 +80,23 @@
 	import CreateNewNode from '$lib/modals/create-new-node.svelte';
 	import CreateNewNodeProperty from '$lib/modals/create-new-node-property.svelte';
 	import CreateNewConnection from '$lib/modals/create-new-connection.svelte';
+	import UpdateConnection from '$lib/modals/update-connection.svelte';
+	import CreateNewDataspace from '$lib/modals/create-new-dataspace.svelte';
+	import UpdateDataspace from '$lib/modals/update-dataspace.svelte';
 	import CreateNewLink from '$lib/modals/create-new-link.svelte';
 	import CreateNew from '$lib/modals/create-new.svelte';
+	import PublishToDataspace from '$lib/modals/publish-to-dataspace.svelte';
 
 	const modalRegistry: Record<string, ModalComponent> = {
 		createNewNode: { ref: CreateNewNode },
 		createNewNodeProperty: { ref: CreateNewNodeProperty },
 		createNewConnection: { ref: CreateNewConnection },
+		updateConnection: { ref: UpdateConnection },
+		createNewDataspace: { ref: CreateNewDataspace },
+		updateDataspace: { ref: UpdateDataspace },
 		createNewLink: { ref: CreateNewLink },
 		createNew: { ref: CreateNew },
+		publishToDataspace: { ref: PublishToDataspace },
 	};
 
 	let hasLoadedWorkspace = false;
@@ -104,6 +116,11 @@
 		healthCheckInterval = setInterval(() => {
 			checkBackendRunningStatus();
 		}, 10000); // Check every 10 seconds
+
+		// Force sign-out when any API call gets a 401 (e.g. after backend restart)
+		window.addEventListener('sindit:unauthorized', () => {
+			authState.signOut();
+		});
 	});
 
 	onDestroy(() => {
@@ -188,6 +205,7 @@
 		</a>
 		<!-- Center: Navigation Tabs -->
 		<nav class="flex gap-1 text-sm text-gray-600 dark:text-gray-400 overflow-x-auto hide-scrollbar">
+			{#if $isAuthenticated}
 			<a href="/workspaces"
 				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
 					{ $page?.url?.pathname?.startsWith('/workspaces') ? 'text-black dark:text-white' : '' }"
@@ -209,6 +227,21 @@
 				<Share2Icon class="w-4 h-4" />
 				Knowledge Graph
 			</a>
+			<a href="/dataspaces"
+				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
+					{ $page?.url?.pathname?.startsWith('/dataspaces') ? 'text-black dark:text-white' : '' }"
+			>
+				<GlobeIcon class="w-4 h-4" />
+				Dataspaces
+			</a>
+			<a href="/vault"
+				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
+					{ $page?.url?.pathname?.startsWith('/vault') ? 'text-black dark:text-white' : '' }"
+			>
+				<KeyIcon class="w-4 h-4" />
+				Vault
+			</a>
+			{/if}
 			<a href="/about"
 				class="flex items-center gap-2 py-4 px-3 rounded-md transition-all duration-200 focus:outline-none whitespace-nowrap hover:text-black hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800
 					{ $page?.url?.pathname?.startsWith('/about') ? 'text-black dark:text-white' : '' }"
@@ -250,7 +283,7 @@
 
 	<!-- Page Content -->
 	<!-- Main Content Area -->
-  	<main class="flex-1 min-h-0 flex flex-col overflow-hidden">
+  	<main class="flex-1 min-h-0 flex flex-col overflow-y-auto pb-[72px]">
   		<slot />
 
 		<!-- Footer with workspace and backend status -->

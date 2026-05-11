@@ -6,14 +6,13 @@
 	import {
 		createNodeMode,
 		createLinkMode,
-		createConnectionMode,
 		modalMetadata
 	} from '$lib/stores';
 
 	const drawerStore = getDrawerStore();
 	const toastState = getToastState();
 
-	const tools = ['node', 'link', 'connection'];
+	const tools = ['node', 'link'];
 
 	const settingsToolbox: DrawerSettings = {
 		id: 'toolbox',
@@ -41,12 +40,6 @@
 		toastState.add('Create new link', 'Select two nodes to create a new link', 'info');
 		drawerStore.close();
 	}
-
-	function enterConnectionCreationMode() {
-		modalMetadata.set({ toolName: tools[2], operationMode: 'create' });
-		createConnectionMode.set(true);
-		drawerStore.close();
-	}
 </script>
 
 <div class="toolbox-content flex flex-col text-primary-900 dark:text-primary-100">
@@ -71,17 +64,6 @@
 		>
 			<div class="card-content columns-1 gap-1">
 				<div>Create new link</div>
-				<div>
-					<PlusCircleIcon />
-				</div>
-			</div>
-		</button>
-		<button
-			class="btn btn-create border border-tertiary-400 bg-tertiary-200/70 hover:bg-tertiary-300/80 text-tertiary-800 hover:border-tertiary-500 transition-colors"
-			on:click={enterConnectionCreationMode}
-		>
-			<div class="card-content columns-1 gap-1">
-				<div>Create new connection</div>
 				<div>
 					<PlusCircleIcon />
 				</div>

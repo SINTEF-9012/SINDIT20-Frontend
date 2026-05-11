@@ -134,11 +134,18 @@ export class Nodes {
 			node.position = this.generateRandomPosition();
 		}
 
-		this.visualizableNodes.update((nodes) => [...nodes, node]);
+		this.visualizableNodes.update((nodes) => {
+			// Skip if a node with the same id already exists (prevents duplicates on concurrent reloads)
+			if (nodes.some((n) => n.id === node.id)) return nodes;
+			return [...nodes, node];
+		});
 
 		// Keep assets in sync for backward compatibility
 		if (node.nodeType === 'AbstractAsset') {
-			this.assets.update((assets) => [...assets, node as AbstractAsset]);
+			this.assets.update((assets) => {
+				if (assets.some((a) => a.id === node.id)) return assets;
+				return [...assets, node as AbstractAsset];
+			});
 		}
 	}
 
@@ -316,11 +323,13 @@ export class Nodes {
 	async createAbstractAssetNode(
 		nodeName: string,
 		description: string,
-		position: { x: number; y: number }
+		position: { x: number; y: number },
+		uri?: string
 	) {
+		// If a full URI is supplied, extract the local id portion; otherwise use a random UUID
+		const localId = uri ? utilsGetNodeIdFromBackendUri(uri) : crypto.randomUUID();
 		// assume assetProperties is empty
-		// do not send in id, as this will then be generated
-		const newNode = this.abstractAssetNodeObject(nodeName, description, [], position);
+		const newNode = this.abstractAssetNodeObject(nodeName, description, [], position, localId);
 		this.addVisualizableNode(newNode);
 		try {
 			// API call to create a new AbstractNode in the backend
@@ -395,11 +404,26 @@ export class Nodes {
 
 				const weight = weightMap[relationship.relationshipType] || 2;
 
+				// Human-readable labels for relationship types
+				const labelMap: Record<string, string> = {
+					consistsOf: 'Consists Of',
+					partOf: 'Part Of',
+					connectedTo: 'Connected To',
+					dependsOn: 'Depends On',
+					monitors: 'Monitors',
+					controls: 'Controls',
+					derivedFrom: 'Derived From',
+					simulates: 'Simulates',
+					uses: 'Uses',
+					communicatesWith: 'Communicates With',
+					isTypeOf: 'Is Type Of'
+				};
+
 				links.push({
 					id: `relationship-${relationship.id}`,
 					sourceNodeId: sourceId,
 					targetNodeId: targetId,
-					linkDescription: relationship.relationshipType,
+					linkDescription: labelMap[relationship.relationshipType] || relationship.relationshipType,
 					linkWeight: weight,
 					linkDirection: 'right'
 				});

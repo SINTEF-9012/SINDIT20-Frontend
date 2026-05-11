@@ -94,7 +94,7 @@ async function handleProxy({ request, cookies, url, method }: { request: Request
     if (!username || !password) return json({ error: 'Not authenticated' }, { status: 401 });
 
     let body = undefined;
-    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
         try {
             body = await request.json();
         } catch {

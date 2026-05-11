@@ -156,6 +156,7 @@ function createPropertyNodeObject(
 		             getNodeProperty(node, 'description', ''),
 		propertyDataType: getNodeProperty(node, 'propertyDataType'),
 		propertyUnit: getNodeProperty(node, 'propertyUnit'),
+		propertySemanticID: getNodeProperty(node, 'propertySemanticID'),
 		propertyValue: getNodeProperty(node, 'propertyValue'),
 		propertyValueTimestamp: getNodeProperty(node, 'propertyValueTimestamp'),
 		propertyConnection: getNodeProperty(node, 'propertyConnection')
@@ -173,6 +174,7 @@ function createPropertyNodeObject(
 	} else if (classType === 'S3ObjectProperty') {
 		propertyNode.bucket = getNodeProperty(node, 'bucket');
 		propertyNode.key = getNodeProperty(node, 'key');
+		propertyNode.urlMode = getNodeProperty(node, 'urlMode');
 	} else if (classType === 'PropertyCollection') {
 		propertyNode.collectionProperties = getNodeProperty(node, 'collectionProperties');
 	} else if (classType === 'AbstractAssetProperty') {

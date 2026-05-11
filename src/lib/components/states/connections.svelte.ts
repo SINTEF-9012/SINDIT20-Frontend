@@ -28,7 +28,11 @@ export class Connections {
 		port: number,
 		connectionType: ConnectionType,
 		isConnected: boolean,
-		id?: string | null
+		id?: string | null,
+		username?: string,
+		passwordPath?: string,
+		tokenPath?: string,
+		configuration?: Record<string, unknown>
 	): Connection {
 		if (!id) {
 			id = crypto.randomUUID();
@@ -41,7 +45,11 @@ export class Connections {
 			host,
 			port,
 			connectionType,
-			isConnected
+			isConnected,
+			username,
+			passwordPath,
+			tokenPath,
+			configuration
 		};
 	}
 
@@ -78,7 +86,7 @@ export class Connections {
 		// This ensures proper transformation of backend data to Connection interface
 		backendNodes.forEach((node: any) => {
 			if (node.uri) {
-				const nodeId = node.uri.split('#').pop() || node.uri;
+				const nodeId = node.uri;
 				const description = node.connectionDescription || '';
 				const host = node.host || '';
 				const port = node.port || 0;
@@ -92,7 +100,11 @@ export class Connections {
 					host,
 					port,
 					type,
-					isConnected
+					isConnected,
+					node.username || undefined,
+					node.passwordPath || undefined,
+					node.tokenPath || undefined,
+					node.configuration || undefined
 				);
 			}
 		});
@@ -117,7 +129,11 @@ export class Connections {
 		host: string,
 		port: number,
 		connectionType: ConnectionType,
-		isConnected: boolean
+		isConnected: boolean,
+		username?: string,
+		passwordPath?: string,
+		tokenPath?: string,
+		configuration?: Record<string, unknown>
 	) {
 		if (id) {
 			const existingConnection = this.getConnection(id);
@@ -132,7 +148,11 @@ export class Connections {
 			port,
 			connectionType,
 			isConnected,
-			id
+			id,
+			username,
+			passwordPath,
+			tokenPath,
+			configuration
 		);
 		this.addConnection(newConnection);
 		return newConnection;
@@ -144,7 +164,12 @@ export class Connections {
 		description: string,
 		host: string,
 		port: number,
-		connectionType: ConnectionType
+		connectionType: ConnectionType,
+		id?: string,
+		username?: string,
+		passwordPath?: string,
+		tokenPath?: string,
+		configuration?: Record<string, unknown>
 	) {
 		const newNode = this.connectionNodeObject(
 			nodeName,
@@ -152,7 +177,8 @@ export class Connections {
 			host,
 			port,
 			connectionType,
-			false
+			false,
+			id ?? null
 		);
 		try {
 			await createConnectionNodeQuery(
@@ -161,7 +187,11 @@ export class Connections {
 				newNode.description,
 				host,
 				port,
-				connectionType
+				connectionType,
+				username,
+				passwordPath,
+				tokenPath,
+				configuration
 			);
 			this.addConnection(newNode);
 		} catch (error: any) {

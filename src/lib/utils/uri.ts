@@ -22,6 +22,9 @@ export function getApiBaseUri(): string {
  * @returns Full backend URI
  */
 export function getBackendUri(nodeId: string): string {
+	if (nodeId.startsWith('http://') || nodeId.startsWith('https://') || nodeId.startsWith('urn:')) {
+		return nodeId;
+	}
 	const apiBaseUri = getApiBaseUri();
 	return `${apiBaseUri}${nodeId}`;
 }

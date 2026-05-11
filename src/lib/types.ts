@@ -33,7 +33,7 @@ export type RelationshipNodeType = 'AbstractRelationship' | 'ConsistOfRelationsh
 export type AllBackendNodeTypes = AssetNodeType | ConnectionNodeType | PropertyNodeType | KGNodeType | RelationshipNodeType;
 
 // Connection types
-export type ConnectionType = 'MQTT' | 'InfluxDB' | 'S3';
+export type ConnectionType = 'MQTT' | 'InfluxDB' | 'S3' | 'PostgreSQL';
 
 // Backend node uris
 export type NodeUri = { uri: string }
@@ -138,6 +138,24 @@ export interface Connection {
 	port: number;
 	connectionType: ConnectionType;
 	isConnected: boolean;
+	username?: string;
+	passwordPath?: string;
+	tokenPath?: string;
+	configuration?: Record<string, unknown>;
+}
+
+export interface DataspaceManagement {
+	id: string;
+	nodeType: 'DataspaceManagement';
+	endpoint: string;
+	dataspaceDescription?: string;
+	authenticationType?: string;
+	authenticationKeyPath?: string;
+	isActive?: boolean;
+	sinditApiBaseUrl?: string;
+	sinditWorkspaceUri?: string;
+	sinditCallbackKeyPath?: string;
+	dataspaceAssets?: NodeUri[];
 }
 
 // Links

@@ -5,9 +5,8 @@
 	import { getToastState } from '$lib/components/states/toast-state.svelte';
 	import { getConnectionsState } from '$lib/components/states/connections.svelte';
 	import { connectionTypes } from '$lib/stores';
-	import type { ConnectionType } from '$lib/types';
-	import { getApiBaseUri } from '$lib/utils/uri';
-	import { getWorkspace } from '$apis/sindit-backend/workspace';
+	import type { Connection, ConnectionType } from '$lib/types';
+	import { updateNode } from '$apis/sindit-backend/kg';
 	import { refreshConnectionByUri } from '$apis/sindit-backend/connection';
 	import { listSecretPaths } from '$apis/sindit-backend/vault';
 
@@ -17,9 +16,10 @@
 	const toastState = getToastState();
 	const connectionsState = getConnectionsState();
 
+	let connection: Connection | null = null;
+
 	let form = {
 		label: '',
-		uri: '',
 		description: '',
 		host: '',
 		port: '',
@@ -33,53 +33,26 @@
 	let configJsonError = '';
 	let vaultPaths: string[] = [];
 
-	let uriPrefix = '';
-	let uriManuallyEdited = false;
-
-	function slugify(text: string): string {
-		return text
-			.trim()
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, '-')
-			.replace(/^-+|-+$/g, '');
-	}
-
-	function onLabelInput() {
-		if (!uriManuallyEdited && uriPrefix) {
-			const slug = slugify(form.label) || 'connection';
-			form.uri = `${uriPrefix}${slug}`;
-		}
-	}
-
-	function onUriInput() {
-		uriManuallyEdited = true;
-	}
-
 	onMount(async () => {
-		try {
-			const workspaceResponse = await getWorkspace();
-			const wsUri: string =
-				(workspaceResponse as any)?.uri ??
-				(workspaceResponse as any)?.workspace_uri ??
-				'';
-			if (wsUri) {
-				const sepIdx = Math.max(wsUri.lastIndexOf('#'), wsUri.lastIndexOf('/'));
-				uriPrefix = sepIdx >= 0 ? wsUri.substring(0, sepIdx + 1) : wsUri + '#';
-				form.uri = `${uriPrefix}connection`;
-			}
-		} catch (_) {
-			// non-critical — fall back to api base uri
-			try {
-				uriPrefix = getApiBaseUri();
-				form.uri = `${uriPrefix}connection`;
-			} catch (_) {}
+		const conn = ($modalStore[0]?.meta?.connection ?? null) as Connection | null;
+		if (conn) {
+			connection = conn;
+			form.label = conn.connectionName ?? '';
+			form.description = conn.description ?? '';
+			form.host = conn.host ?? '';
+			form.port = conn.port != null ? String(conn.port) : '';
+			form.connectionType = (conn.connectionType as ConnectionType) ?? '';
+			form.username = conn.username ?? '';
+			form.passwordPath = conn.passwordPath ?? '';
+			form.tokenPath = conn.tokenPath ?? '';
+			form.configuration = conn.configuration ? JSON.stringify(conn.configuration, null, 2) : '';
 		}
 
 		try {
 			const result = await listSecretPaths();
 			vaultPaths = result.secret_paths ?? [];
 		} catch (_) {
-			// non-critical — user can type manually
+			// non-critical
 		}
 	});
 
@@ -117,43 +90,43 @@
 
 	$: isFormValid =
 		form.label.trim().length > 0 &&
-		form.uri.trim().length > 0 &&
 		form.host.trim().length > 0 &&
 		isValidPort(form.port) &&
 		form.connectionType !== '' &&
 		!configJsonError &&
 		!isConfigRequiredAndMissing;
 
-	async function handleCreate() {
-		if (!isFormValid) return;
-		const fullUri = form.uri.trim();
+	async function handleUpdate() {
+		if (!isFormValid || !connection) return;
 		let parsedConfig: Record<string, unknown> | undefined;
 		if (form.configuration.trim()) {
 			try { parsedConfig = JSON.parse(form.configuration); } catch { return; }
 		}
+		const updatedNode = {
+			uri: connection.id,
+			label: form.label.trim(),
+			connectionDescription: form.description.trim(),
+			host: form.host.trim(),
+			port: parseInt(form.port, 10),
+			type: form.connectionType,
+			isConnected: connection.isConnected,
+			username: form.username.trim() || undefined,
+			passwordPath: form.passwordPath.trim() || undefined,
+			tokenPath: form.tokenPath.trim() || undefined,
+			configuration: parsedConfig
+		};
 		try {
-			await connectionsState.createConnectionNode(
-				form.label.trim(),
-				form.description.trim(),
-				form.host.trim(),
-				parseInt(form.port, 10),
-				form.connectionType as ConnectionType,
-				fullUri,
-				form.username.trim() || undefined,
-				form.passwordPath.trim() || undefined,
-				form.tokenPath.trim() || undefined,
-				parsedConfig
-			);
-			toastState.add('Connection Created', `Connection "${form.label}" has been created.`, 'info');
+			await updateNode(updatedNode, true);
+			toastState.add('Connection Updated', `"${form.label}" has been updated.`, 'info');
 			modalStore.close();
-			// Trigger backend refresh for this specific connection so isConnected is populated
+			// Re-test so isConnected reflects any host/port/credential changes
 			try {
-				await refreshConnectionByUri(form.uri.trim());
+				await refreshConnectionByUri(connection.id, true);
 				await new Promise(resolve => setTimeout(resolve, 1500));
 				await connectionsState.updateConnectionsFromBackend();
 			} catch (_) { /* non-critical */ }
 		} catch (err) {
-			toastState.add('Error', `Failed to create connection: ${err instanceof Error ? err.message : err}`, 'error');
+			toastState.add('Error', `Failed to update connection: ${err instanceof Error ? err.message : err}`, 'error');
 		}
 	}
 
@@ -162,69 +135,50 @@
 	}
 </script>
 
-{#if $modalStore[0]}
+{#if $modalStore[0] && connection}
 	<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 w-full max-w-lg mx-auto">
-		<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">New Connection</h2>
+		<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">Update Connection</h2>
+		<p class="text-sm text-slate-500 dark:text-slate-400 font-mono mb-6 break-all">{connection.id}</p>
 
 		<div class="space-y-4">
 			<!-- Label -->
 			<div>
-				<label for="conn-label" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-conn-label" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Label <span class="text-red-500">*</span>
 				</label>
 				<input
-					id="conn-label"
-					name="conn-label"
+					id="upd-conn-label"
+					name="upd-conn-label"
 					type="text"
 					bind:value={form.label}
-					on:input={onLabelInput}
 					placeholder="My Connection"
-					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-				/>
-			</div>
-
-			<!-- Node URI -->
-			<div>
-				<label for="conn-uri" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-					Node URI <span class="text-red-500">*</span>
-				</label>
-				<input
-					id="conn-uri"
-					name="conn-uri"
-					type="text"
-					bind:value={form.uri}
-					on:input={onUriInput}
-					placeholder="http://sindit.sintef.no/2.0#my-connection"
 					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
 				/>
 			</div>
 
 			<!-- Connection Type -->
 			<div>
-				<label for="conn-type" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-					Connection Type <span class="text-red-500">*</span>
+				<label for="upd-conn-type" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+					Connection Type
 				</label>
-				<select
-					id="conn-type"
-					name="conn-type"
-					bind:value={form.connectionType}
-					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-				>
-					<option value="">— select a type —</option>
-					{#each connectionTypes as ct}
-						<option value={ct}>{ct}</option>
-					{/each}
-				</select>
+				<input
+					id="upd-conn-type"
+					name="upd-conn-type"
+					type="text"
+					value={form.connectionType}
+					disabled
+					class="w-full px-4 py-2 bg-slate-100 dark:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-500 dark:text-slate-400 cursor-not-allowed"
+				/>
 			</div>
 
 			<!-- Host -->
 			<div>
-				<label for="conn-host" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-conn-host" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Host <span class="text-red-500">*</span>
 				</label>
 				<input
-					id="conn-host"
-					name="conn-host"
+					id="upd-conn-host"
+					name="upd-conn-host"
 					type="text"
 					bind:value={form.host}
 					placeholder="localhost"
@@ -234,12 +188,12 @@
 
 			<!-- Port -->
 			<div>
-				<label for="conn-port" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-conn-port" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Port <span class="text-red-500">*</span>
 				</label>
 				<input
-					id="conn-port"
-					name="conn-port"
+					id="upd-conn-port"
+					name="upd-conn-port"
 					type="number"
 					bind:value={form.port}
 					placeholder="1883"
@@ -254,12 +208,12 @@
 
 			<!-- Description -->
 			<div>
-				<label for="conn-description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-conn-description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Description
 				</label>
 				<input
-					id="conn-description"
-					name="conn-description"
+					id="upd-conn-description"
+					name="upd-conn-description"
 					type="text"
 					bind:value={form.description}
 					placeholder="Optional description"
@@ -269,12 +223,12 @@
 
 			<!-- Username -->
 			<div>
-				<label for="conn-username" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-conn-username" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Username
 				</label>
 				<input
-					id="conn-username"
-					name="conn-username"
+					id="upd-conn-username"
+					name="upd-conn-username"
 					type="text"
 					bind:value={form.username}
 					placeholder="Optional"
@@ -284,14 +238,14 @@
 
 			<!-- Password Path -->
 			<div>
-				<label for="conn-password-path" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-conn-password-path" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Password Path
 					<span class="ml-1 text-xs font-normal text-slate-400">(vault secret key)</span>
 				</label>
 				{#if vaultPaths.length > 0}
 					<select
-						id="conn-password-path"
-						name="conn-password-path"
+						id="upd-conn-password-path"
+						name="upd-conn-password-path"
 						bind:value={form.passwordPath}
 						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
 					>
@@ -302,8 +256,8 @@
 					</select>
 				{:else}
 					<input
-						id="conn-password-path"
-						name="conn-password-path"
+						id="upd-conn-password-path"
+						name="upd-conn-password-path"
 						type="text"
 						bind:value={form.passwordPath}
 						placeholder="e.g. my_mqtt_password"
@@ -312,17 +266,17 @@
 				{/if}
 			</div>
 
-			<!-- Token Path -->
+			<!-- Token Path (InfluxDB only) -->
 			{#if form.connectionType === 'InfluxDB'}
 			<div>
-				<label for="conn-token-path" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-conn-token-path" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Token Path
 					<span class="ml-1 text-xs font-normal text-slate-400">(vault secret key)</span>
 				</label>
 				{#if vaultPaths.length > 0}
 					<select
-						id="conn-token-path"
-						name="conn-token-path"
+						id="upd-conn-token-path"
+						name="upd-conn-token-path"
 						bind:value={form.tokenPath}
 						class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
 					>
@@ -333,8 +287,8 @@
 					</select>
 				{:else}
 					<input
-						id="conn-token-path"
-						name="conn-token-path"
+						id="upd-conn-token-path"
+						name="upd-conn-token-path"
 						type="text"
 						bind:value={form.tokenPath}
 						placeholder="e.g. my_influx_token"
@@ -347,13 +301,13 @@
 			<!-- Configuration -->
 			{#if !form.connectionType || (form.connectionType !== 'MQTT' && form.connectionType !== 'InfluxDB')}
 			<div>
-				<label for="conn-configuration" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+				<label for="upd-conn-configuration" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Configuration
 					{#if configMeta.required}<span class="text-red-500">*</span>{:else}<span class="ml-1 text-xs font-normal text-slate-400">(optional JSON)</span>{/if}
 				</label>
 				<textarea
-					id="conn-configuration"
-					name="conn-configuration"
+					id="upd-conn-configuration"
+					name="upd-conn-configuration"
 					bind:value={form.configuration}
 					placeholder={configMeta.placeholder || '{"key": "value"}'}
 					rows="4"
@@ -380,9 +334,9 @@
 			<button
 				class="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
 				disabled={!isFormValid}
-				on:click={handleCreate}
+				on:click={handleUpdate}
 			>
-				Create
+				Save Changes
 			</button>
 		</div>
 	</div>
