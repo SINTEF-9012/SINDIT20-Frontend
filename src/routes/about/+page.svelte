@@ -109,7 +109,23 @@
 			</div>
 		</div>
 
-		<!-- Tech Stack -->
+		<!-- Contact Form -->
+		<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm mb-6">
+			<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">Report an Issue or Ask a Question</h2>
+			<p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Your message will be sent directly to the SINDIT team.</p>
+			<iframe
+				src="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=OQ_w4UFgsEWzCeAhDYsyr-UaDyNbq8ZOh-Nu8BbNq_NUQjAzWUo3UUJEWDBRMFFBOU9TVVRXTUo4Ui4u&embed=true"
+				title="Contact form"
+				width="100%"
+				height="600"
+				frameborder="0"
+				marginwidth="0"
+				marginheight="0"
+				style="border: none; min-width: 100%;"
+				allowfullscreen
+			></iframe>
+		</div>
+
 		<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm mb-6">
 			<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Technology Stack</h2>
 			<div class="flex flex-wrap gap-2">
@@ -120,6 +136,7 @@
 				{/each}
 			</div>
 		</div>
+
 
 		<!-- Links -->
 		<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">

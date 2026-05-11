@@ -173,7 +173,6 @@ function enterLinkCreationMode() {
                             </div>
                             <div class="tool-details">
                                 <span class="tool-name">Create Node</span>
-                                <span class="tool-count">Click to add</span>
                             </div>
                         </button>
 
@@ -183,7 +182,6 @@ function enterLinkCreationMode() {
                             </div>
                             <div class="tool-details">
                                 <span class="tool-name">Create Link</span>
-                                <span class="tool-count">Select 2 nodes</span>
                             </div>
                         </button>
 
