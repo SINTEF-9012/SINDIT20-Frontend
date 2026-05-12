@@ -9,7 +9,7 @@ const API_BASE_ENDPOINT = `${API_BASE_URL}?endpoint=connection`;
 
 export async function getBackendVersion(): Promise<string | null> {
 	try {
-		const response = await fetch(`${SINDIT_API_BASE_URL}/openapi.json`);
+		const response = await fetch('/api/proxy?endpoint=openapi.json');
 		if (!response.ok) return null;
 		const data = await response.json();
 		return data?.info?.version ?? null;

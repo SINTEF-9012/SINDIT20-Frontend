@@ -87,6 +87,16 @@ async function handleProxy({ request, cookies, url, method }: { request: Request
         }
     }
 
+    if (endpoint === 'openapi.json') {
+        try {
+            const backendRes = await proxyToBackend({ endpoint, method, token: '', body: undefined });
+            const data = await backendRes.json();
+            return json(data, { status: backendRes.status });
+        } catch (error) {
+            return json({ error: 'Failed to fetch openapi.json' }, { status: 503 });
+        }
+    }
+
     let token = cookies.get('api_token');
     // Use provided env for username/password if not in cookies
     const username = cookies.get('session_username');
