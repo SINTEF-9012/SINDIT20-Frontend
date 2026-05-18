@@ -1,6 +1,6 @@
 {
 	"name": "sindit-frontend",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"private": true,
 	"scripts": {
 		"dev": "vite dev",
@@ -57,11 +57,14 @@
 		"@threlte/core": "^7.3.1",
 		"@threlte/extras": "^8.11.5",
 		"@types/d3": "^7.4.3",
+		"@types/nodemailer": "^8.0.0",
 		"@types/three": "^0.168.0",
 		"d3": "^7.9.0",
 		"dotenv": "^16.4.5",
 		"list": "^2.0.19",
+		"nodemailer": "^8.0.7",
 		"npm": "^10.8.3",
+		"resend": "^6.12.3",
 		"svelte-feather-icons": "^4.1.0",
 		"svelte-jsoneditor": "^1.0.6",
 		"three": "^0.168.0"

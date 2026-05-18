@@ -11,6 +11,49 @@
 	onMount(async () => {
 		version = await getBackendVersion();
 	});
+
+	// Contact form state
+	let contactName = '';
+	let contactEmail = '';
+	let contactType = 'General Inquiry';
+	let contactMessage = '';
+	let formStatus: 'idle' | 'sending' | 'success' | 'error' = 'idle';
+	let formError = '';
+
+	const messageTypes = [
+		{ value: 'General Inquiry', label: 'General Inquiry' },
+		{ value: 'Bug Report', label: 'Bug Report' },
+		{ value: 'Feature Request', label: 'Feature Request' },
+		{ value: 'Question', label: 'Question' },
+		{ value: 'Other', label: 'Other' }
+	];
+
+	async function submitContact() {
+		if (!contactName.trim() || !contactMessage.trim()) return;
+		formStatus = 'sending';
+		formError = '';
+		try {
+			const res = await fetch('/api/contact', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ name: contactName, email: contactEmail, type: contactType, message: contactMessage })
+			});
+			if (res.ok) {
+				formStatus = 'success';
+				contactName = '';
+				contactEmail = '';
+				contactType = 'General Inquiry';
+				contactMessage = '';
+			} else {
+				const data = await res.json().catch(() => ({}));
+				formError = data.error || 'Failed to send message. Please try again.';
+				formStatus = 'error';
+			}
+		} catch {
+			formError = 'Network error. Please try again.';
+			formStatus = 'error';
+		}
+	}
 	const sinditUrl = 'https://www.sintef.no/en/software/sindit-sintef-digital-twin-framework/';
 	const repoUrl = 'https://github.com/SINTEF-9012/SINDIT20';
 	const license = 'MIT';
@@ -113,17 +156,95 @@
 		<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm mb-6">
 			<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">Report an Issue or Ask a Question</h2>
 			<p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Your message will be sent directly to the SINDIT team.</p>
-			<iframe
-				src="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=OQ_w4UFgsEWzCeAhDYsyr-UaDyNbq8ZOh-Nu8BbNq_NUQjAzWUo3UUJEWDBRMFFBOU9TVVRXTUo4Ui4u&embed=true"
-				title="Contact form"
-				width="100%"
-				height="600"
-				frameborder="0"
-				marginwidth="0"
-				marginheight="0"
-				style="border: none; min-width: 100%;"
-				allowfullscreen
-			></iframe>
+
+			{#if formStatus === 'success'}
+				<div class="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+					<svg class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+					</svg>
+					<p class="text-sm text-green-700 dark:text-green-300 font-medium">Message sent! We'll get back to you soon.</p>
+				</div>
+			{:else}
+				<form on:submit|preventDefault={submitContact} class="flex flex-col gap-4">
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						<div>
+							<label for="contact-name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+								Name <span class="text-red-500">*</span>
+							</label>
+							<input
+								id="contact-name"
+								type="text"
+								bind:value={contactName}
+								required
+								placeholder="Your name"
+								class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
+							/>
+						</div>
+						<div>
+							<label for="contact-email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
+							<input
+								id="contact-email"
+								type="email"
+								bind:value={contactEmail}
+								placeholder="your@email.com"
+								class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
+							/>
+						</div>
+					</div>
+					<div>
+						<label for="contact-type" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							Type <span class="text-red-500">*</span>
+						</label>
+						<select
+							id="contact-type"
+							bind:value={contactType}
+							class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
+						>
+							{#each messageTypes as mt}
+								<option value={mt.value}>{mt.label}</option>
+							{/each}
+						</select>
+					</div>
+					<div>
+						<label for="contact-message" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							Message <span class="text-red-500">*</span>
+						</label>
+						<textarea
+							id="contact-message"
+							bind:value={contactMessage}
+							required
+							rows="5"
+							placeholder="Describe your issue or question..."
+							class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors resize-none"
+						></textarea>
+					</div>
+
+					{#if formStatus === 'error'}
+						<p class="text-sm text-red-600 dark:text-red-400">{formError}</p>
+					{/if}
+
+					<div class="flex justify-end">
+						<button
+							type="submit"
+							disabled={formStatus === 'sending'}
+							class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-colors"
+						>
+							{#if formStatus === 'sending'}
+								<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+									<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+								</svg>
+								Sending…
+							{:else}
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+								</svg>
+								Send Message
+							{/if}
+						</button>
+					</div>
+				</form>
+			{/if}
 		</div>
 
 		<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm mb-6">
