@@ -24,9 +24,14 @@
 	import { setAuthState, getAuthState } from '$lib/components/states/auth.svelte.ts';
 	import { BriefcaseIcon, LinkIcon, Share2Icon, InfoIcon, GlobeIcon, KeyIcon } from 'svelte-feather-icons';
 	import { page } from '$app/stores';
+	import { env } from '$env/dynamic/public';
 
 	// Version from package.json (injected at build time)
 	const APP_VERSION = __APP_VERSION__;
+
+	// Keycloak configuration
+	const useKeycloak = env.PUBLIC_USE_KEYCLOAK === 'true';
+	const keycloakAccountUrl = env.PUBLIC_KEYCLOAK_ACCOUNT_URL;
 
 	// Poll backend health every 10 seconds
 	let healthCheckInterval: ReturnType<typeof setInterval> | null = null;
@@ -153,10 +158,17 @@
 			if ($isAuthenticated) {
 				showSignInModal = false;
 				goto('/workspaces');
+			} else {
+				// Auth failed - check the error from the store
+				let errorMessage = $authError || 'Sign-in failed';
+				
+				// Add helpful guidance when using Keycloak for any authentication error
+				if (useKeycloak) {
+					errorMessage = 'Invalid username or password. If you forgot your password, use the "Manage account" link below.';
+				}
+				
+				signInError = errorMessage;
 			}
-		}).catch((err) => {
-			signInLoading = false;
-			signInError = err?.message || 'Sign-in failed';
 		});
 	}
 
@@ -334,8 +346,8 @@
         <input id="sign-in-username" name="username" class="input" type="text" placeholder="Username or email" bind:value={signInEmail} required autocomplete="username" />
         <label for="sign-in-password" class="text-sm font-medium text-blue-900 dark:text-blue-100">Password</label>
         <input id="sign-in-password" name="password" class="input" type="password" placeholder="Password" bind:value={signInPassword} required autocomplete="current-password" />
-        {#if signInError || $authError}
-          <div class="text-red-600 dark:text-red-400 text-sm font-medium">{signInError || $authError}</div>
+        {#if signInError}
+          <div class="text-red-600 dark:text-red-400 text-sm font-medium">{signInError}</div>
         {/if}
         <button class="btn variant-filled-primary w-full mt-2" type="submit" disabled={signInLoading}>
           {#if signInLoading}
@@ -347,6 +359,13 @@
           Sign In
         </button>
       </form>
+      {#if useKeycloak && keycloakAccountUrl}
+        <div class="text-center text-sm text-gray-600 dark:text-gray-400">
+          <a href={keycloakAccountUrl} target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
+            Forgot password? Manage account
+          </a>
+        </div>
+      {/if}
     </div>
     <style>
       .animate-fade-in { animation: fadeIn 0.2s; }
@@ -382,6 +401,11 @@
       </button>
       <h2 class="text-xl font-bold text-blue-700 dark:text-blue-200 mb-2">Account</h2>
       <div class="text-blue-900 dark:text-blue-100 text-base mb-4">Signed in as <span class="font-semibold">{$authUser?.email}</span></div>
+      {#if useKeycloak && keycloakAccountUrl}
+        <a href={keycloakAccountUrl} target="_blank" rel="noopener noreferrer" class="w-full mb-2 inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium transition-all duration-200 bg-transparent text-blue-700 dark:text-blue-300 border-2 border-blue-700 dark:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30">
+          Manage Account
+        </a>
+      {/if}
       <button class="btn variant-filled-primary w-full" on:click={handleLogout}>Log Out</button>
     </div>
     <style>
