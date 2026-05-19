@@ -270,7 +270,7 @@
 			{#if $isAuthenticated}
 				<button class="focus:outline-none" aria-label="Account" on:click={() => showLogoutModal = true}>
 					<Avatar
-						initials={($authUser && $authUser.email ? $authUser.email[0].toUpperCase() : 'U')}
+						initials={($authUser ? ($authUser.full_name || $authUser.username || 'U')[0].toUpperCase() : 'U')}
 						background="bg-gradient-to-r from-gray-600 to-gray-800 text-white"
 						border="border border-gray-200 dark:border-slate-700"
 						rounded="rounded-full"
@@ -342,8 +342,8 @@
       </button>
       <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-200 mb-2">Sign In</h2>
       <form on:submit|preventDefault={handleSignInSubmit} class="flex flex-col gap-4">
-        <label for="sign-in-username" class="text-sm font-medium text-blue-900 dark:text-blue-100">Username or Email</label>
-        <input id="sign-in-username" name="username" class="input" type="text" placeholder="Username or email" bind:value={signInEmail} required autocomplete="username" />
+        <label for="sign-in-username" class="text-sm font-medium text-blue-900 dark:text-blue-100">Username</label>
+        <input id="sign-in-username" name="username" class="input" type="text" placeholder="Username" bind:value={signInEmail} required autocomplete="username" />
         <label for="sign-in-password" class="text-sm font-medium text-blue-900 dark:text-blue-100">Password</label>
         <input id="sign-in-password" name="password" class="input" type="password" placeholder="Password" bind:value={signInPassword} required autocomplete="current-password" />
         {#if signInError}
@@ -400,7 +400,15 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
       <h2 class="text-xl font-bold text-blue-700 dark:text-blue-200 mb-2">Account</h2>
-      <div class="text-blue-900 dark:text-blue-100 text-base mb-4">Signed in as <span class="font-semibold">{$authUser?.email}</span></div>
+      <div class="text-blue-900 dark:text-blue-100 mb-4 flex flex-col gap-1">
+        {#if $authUser?.full_name}
+          <span class="font-semibold text-base">{$authUser.full_name}</span>
+        {/if}
+        <span class="text-sm text-slate-500 dark:text-slate-400">Username: {$authUser?.username}</span>
+        {#if $authUser?.email}
+          <span class="text-sm text-slate-500 dark:text-slate-400">Email: {$authUser.email}</span>
+        {/if}
+      </div>
       {#if useKeycloak && keycloakAccountUrl}
         <a href={keycloakAccountUrl} target="_blank" rel="noopener noreferrer" class="w-full mb-2 inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium transition-all duration-200 bg-transparent text-blue-700 dark:text-blue-300 border-2 border-blue-700 dark:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30">
           Manage Account

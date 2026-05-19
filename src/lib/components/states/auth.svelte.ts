@@ -4,8 +4,10 @@ import { getToastState } from '$lib/components/states/toast-state.svelte';
 import { browser } from '$app/environment';
 
 export interface AuthUser {
-	email: string;
+	username: string;
 	token: string;
+	email?: string;
+	full_name?: string;
 }
 
 export class AuthState {
@@ -48,13 +50,22 @@ export class AuthState {
 			const data = await res.json();
 			const token = data.access_token || data.token;
 			if (!token) throw new Error('No token received');
-			const user = { email: username, token };
+			const user: AuthUser = { username, token };
+			// Fetch full user profile; ignore failures (fields are optional)
+			try {
+				const meRes = await fetch('/api/proxy?endpoint=users/me');
+				if (meRes.ok) {
+					const me = await meRes.json();
+					if (me.email) user.email = me.email;
+					if (me.full_name) user.full_name = me.full_name;
+				}
+			} catch {}
 			this.user.set(user);
 			this.isAuthenticated.set(true);
 			if (browser) {
 				localStorage.setItem('sindit_auth_user', JSON.stringify(user));
 			}
-			this.toastState.add('Signed in', `Welcome back, ${username}!`, 'info');
+			this.toastState.add('Signed in', `Welcome back, ${user.full_name || username}!`, 'info');
 		} catch (err: any) {
 			this.error.set(err.message || 'Sign-in failed');
 			this.isAuthenticated.set(false);
