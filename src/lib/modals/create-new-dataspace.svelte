@@ -102,6 +102,9 @@
 			});
 			toastState.add('Dataspace Created', `Dataspace "${form.endpoint}" has been created.`, 'info');
 			modalStore.close();
+			try {
+				await dataspaceState.updateDataspacesFromBackend();
+			} catch (_) { /* non-critical */ }
 		} catch (err) {
 			toastState.add('Error', `Failed to create dataspace: ${err instanceof Error ? err.message : err}`, 'error');
 		}
