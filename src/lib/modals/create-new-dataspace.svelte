@@ -7,6 +7,7 @@
 	import { getWorkspace } from '$apis/sindit-backend/workspace';
 	import { listSecretPaths } from '$apis/sindit-backend/vault';
 	import { env } from '$env/dynamic/public';
+	import { DATASPACE_AUTH_TYPES } from '$lib/dataspace-auth';
 
 	export let parent: SvelteComponent;
 
@@ -187,14 +188,22 @@
 				<label for="ds-auth-type" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Authentication Type
 				</label>
-				<input
+				<select
 					id="ds-auth-type"
 					name="ds-auth-type"
-					type="text"
 					bind:value={form.authenticationType}
-					placeholder="e.g. api_key, oauth2"
-					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-				/>
+					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+				>
+					{#each DATASPACE_AUTH_TYPES as authType}
+						<option value={authType.value}>{authType.label}</option>
+					{/each}
+				</select>
+				{#if form.authenticationType === 'tokenbased'}
+					<p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+						The secret at Authentication Key Path is sent as <code>X-Api-Key</code>; it must match
+						<code>web.http.management.auth.key</code> on the EDC connector.
+					</p>
+				{/if}
 			</div>
 
 			<!-- Auth Key Path -->

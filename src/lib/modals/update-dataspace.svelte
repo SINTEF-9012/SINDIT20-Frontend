@@ -7,6 +7,7 @@
 	import { listSecretPaths } from '$apis/sindit-backend/vault';
 	import type { DataspaceManagement } from '$lib/types';
 	import { createDataspaceManagement } from '$apis/sindit-backend/dataspace';
+	import { DATASPACE_AUTH_TYPES, isSupportedDataspaceAuthType } from '$lib/dataspace-auth';
 
 	export let parent: SvelteComponent;
 
@@ -16,6 +17,9 @@
 
 	let dataspace: DataspaceManagement | null = null;
 	let vaultPaths: string[] = [];
+	// A previously saved value the backend doesn't understand (e.g. "api_key"), kept
+	// selectable so opening and saving the modal doesn't silently change it.
+	let legacyAuthType = '';
 
 	let form = {
 		label: '',
@@ -35,7 +39,13 @@
 			form.label = ds.label ?? '';
 			form.endpoint = ds.endpoint ?? '';
 			form.dataspaceDescription = ds.dataspaceDescription ?? '';
-			form.authenticationType = ds.authenticationType ?? '';
+			const savedAuthType = (ds.authenticationType ?? '').trim();
+			if (isSupportedDataspaceAuthType(savedAuthType)) {
+				form.authenticationType = savedAuthType.toLowerCase();
+			} else {
+				legacyAuthType = savedAuthType;
+				form.authenticationType = savedAuthType;
+			}
 			form.authenticationKeyPath = ds.authenticationKeyPath ?? '';
 			form.sinditApiBaseUrl = ds.sinditApiBaseUrl ?? '';
 			form.sinditWorkspaceUri = ds.sinditWorkspaceUri ?? '';
@@ -141,14 +151,30 @@
 				<label for="upd-ds-auth-type" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 					Authentication Type
 				</label>
-				<input
+				<select
 					id="upd-ds-auth-type"
 					name="upd-ds-auth-type"
-					type="text"
 					bind:value={form.authenticationType}
-					placeholder="e.g. api_key, oauth2"
-					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-				/>
+					class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+				>
+					{#each DATASPACE_AUTH_TYPES as authType}
+						<option value={authType.value}>{authType.label}</option>
+					{/each}
+					{#if legacyAuthType}
+						<option value={legacyAuthType}>{legacyAuthType} (unsupported – no key is sent)</option>
+					{/if}
+				</select>
+				{#if form.authenticationType === 'tokenbased'}
+					<p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+						The secret at Authentication Key Path is sent as <code>X-Api-Key</code>; it must match
+						<code>web.http.management.auth.key</code> on the EDC connector.
+					</p>
+				{:else if legacyAuthType && form.authenticationType === legacyAuthType}
+					<p class="mt-1 text-xs text-amber-600 dark:text-amber-400">
+						"{legacyAuthType}" isn't recognised by the backend, so no API key is sent. Choose
+						"API key (X-Api-Key header)" if the EDC requires one.
+					</p>
+				{/if}
 			</div>
 
 			<!-- Auth Key Path -->
