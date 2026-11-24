@@ -13,10 +13,12 @@ export async function listSecretPaths(): Promise<{ secret_paths: string[] }> {
 }
 
 export async function storeSecret(secretPath: string, secretValue: string): Promise<{ result: boolean }> {
-	const url = `${API_BASE_ENDPOINT}/secret?secret_path=${encodeURIComponent(secretPath)}&secret_value=${encodeURIComponent(secretValue)}`;
+	// Secret goes in the body, never the URL: URLs are written to access logs.
+	const url = `${API_BASE_ENDPOINT}/secret`;
 	const response = await authenticatedFetch(url, {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' }
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ secret_path: secretPath, secret_value: secretValue })
 	});
 	if (!response.ok) {
 		throw new Error(`Error performing POST request ${url}: ${response.statusText}`);

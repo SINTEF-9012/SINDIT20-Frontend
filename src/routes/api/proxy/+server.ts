@@ -20,7 +20,7 @@ async function getToken(username: string, password: string) {
     return access_token;
 }
 
-async function proxyToBackend({ endpoint, method, token, body }: { endpoint: string, method: string, token: string, body?: any }) {
+async function proxyToBackend({ endpoint, extraQuery = '', method, token, body }: { endpoint: string, extraQuery?: string, method: string, token: string, body?: any }) {
     // Encode only parameter values in the query string, support multiple params, leave # as part of the value if present
     let url = API_BASE_URL;
     if (endpoint) {
@@ -46,6 +46,12 @@ async function proxyToBackend({ endpoint, method, token, body }: { endpoint: str
             url += `?${encodedQuery}`;
         }
     }
+    // Extra query parameters arrive already encoded (URLSearchParams.toString()), so they
+    // are appended as-is. Re-encoding them turned e.g. '+' into '%252B' and corrupted
+    // values such as vault secrets.
+    if (extraQuery) {
+        url += (url.includes('?') ? '&' : '?') + extraQuery;
+    }
     const options: RequestInit = {
         method,
         headers: {
@@ -54,13 +60,13 @@ async function proxyToBackend({ endpoint, method, token, body }: { endpoint: str
         }
     };
     if (body) options.body = JSON.stringify(body);
-    console.log("endpoint:", endpoint);
-    console.log(`Proxying ${method} request to: ${url}`, body ? `with body: ${JSON.stringify(body)}` : '');
+    // Log the path only: query strings and bodies can carry secrets (e.g. /vault/secret).
+    console.log(`Proxying ${method} request to: ${url.split('?')[0]}`);
     return fetch(url, options);
 }
 
 async function handleProxy({ request, cookies, url, method }: { request: Request, cookies: any, url: URL, method: string }) {
-    let endpoint = url.searchParams.get('endpoint');
+    const endpoint = url.searchParams.get('endpoint');
     if (!endpoint) return json({ error: 'No endpoint specified' }, { status: 400 });
 
     // Forward all other query parameters (except 'endpoint') to the backend
@@ -70,16 +76,13 @@ async function handleProxy({ request, cookies, url, method }: { request: Request
             otherParams.append(key, value);
         }
     }
-    // Append other params to endpoint if any exist
-    if (otherParams.toString()) {
-        const separator = endpoint.includes('?') ? '&' : '?';
-        endpoint = `${endpoint}${separator}${otherParams.toString()}`;
-    }
+    // Passed separately so they are encoded exactly once (see proxyToBackend)
+    const extraQuery = otherParams.toString();
 
     // Health check endpoint doesn't require authentication
     if (endpoint.startsWith('health/')) {
         try {
-            const backendRes = await proxyToBackend({ endpoint, method, token: '', body: undefined });
+            const backendRes = await proxyToBackend({ endpoint, extraQuery, method, token: '', body: undefined });
             // Health endpoint returns 204 No Content when healthy
             return new Response(null, { status: backendRes.status });
         } catch (error) {
@@ -89,7 +92,7 @@ async function handleProxy({ request, cookies, url, method }: { request: Request
 
     if (endpoint === 'openapi.json') {
         try {
-            const backendRes = await proxyToBackend({ endpoint, method, token: '', body: undefined });
+            const backendRes = await proxyToBackend({ endpoint, extraQuery, method, token: '', body: undefined });
             const data = await backendRes.json();
             return json(data, { status: backendRes.status });
         } catch (error) {
@@ -112,14 +115,14 @@ async function handleProxy({ request, cookies, url, method }: { request: Request
         }
     }
 
-    let backendRes = await proxyToBackend({ endpoint, method, token, body });
+    let backendRes = await proxyToBackend({ endpoint, extraQuery, method, token, body });
 
     if (backendRes.status === 401) {
         // Token expired, renew
         try {
             token = await getToken(username, password);
             cookies.set('api_token', token, { httpOnly: true, secure: true, sameSite: 'strict', path: '/' });
-            backendRes = await proxyToBackend({ endpoint, method, token, body });
+            backendRes = await proxyToBackend({ endpoint, extraQuery, method, token, body });
         } catch {
             return json({ error: 'Session expired, please log in again.' }, { status: 401 });
         }

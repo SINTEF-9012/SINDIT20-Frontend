@@ -16,11 +16,12 @@
 		propertyValue: property.propertyValue
 	};
 
-	let jsonPropertyValue: { url: string; fields: string } | null = null;
-	let fields: { key: string; policy: string; signature: string } | null = null;
+	// Legacy presigned POST: { url, fields }. Current backends send a presigned PUT URL string.
+	let jsonPropertyValue: { url: string; fields: string | Record<string, string> } | null = null;
+	let uploadUrl = ''; // presigned PUT URL (current backend)
 	let uploadFile: File | null = null;
-	const uploadFileFormData = new FormData();
 	let isUploadValue = false;
+	let isUploaded = false;
 
 	let content = null; // This will be the content of the S3 object
 	let textContent = ''; // If content is text, use this to display the text content of the S3 object
@@ -83,50 +84,39 @@
 		reader.readAsText(content);
 	}
 
+	function parseFields(raw: string | Record<string, string>): Record<string, string> {
+		return typeof raw === 'string' ? JSON.parse(raw.replace(/'/g, '"')) : raw;
+	}
+
 	async function uploadFileToS3(file: File): Promise<void> {
-		if (!jsonPropertyValue) {
-			console.error('JSON object is not defined');
-			return;
-		}
-		if (!uploadFile) {
-			console.error('File is not defined');
-			return;
-		}
 		try {
-			const jsonString = jsonPropertyValue.fields.replace(/'/g, '"');
-			fields = JSON.parse(jsonString);
-		} catch (error) {
-			console.error('Error parsing JSON object:', error);
-			throw error;
-		}
-		if (!fields) {
-			console.error('Fields are not defined');
-			return;
-		}
-		uploadFileFormData.append('key', fields.key);
-		uploadFileFormData.append('policy', fields.policy);
-		uploadFileFormData.append('signature', fields.signature);
-		uploadFileFormData.append('file', file);
-
-		/*
-        for(var pair of uploadFileFormData.entries()) {
-            console.log(pair[0]+', '+pair[1]);
-        }
-        */
-		const url = getPresignedUrl(jsonPropertyValue.url);
-
-		try {
-			const response = await fetch(url, {
-				method: 'POST',
-				body: uploadFileFormData
-			});
-			console.log(response);
+			let response: Response;
+			if (uploadUrl) {
+				// Presigned PUT. Send raw bytes without a Content-Type header: older backends
+				// sign with SigV2, where an unsigned Content-Type breaks the signature.
+				response = await fetch(getPresignedUrl(uploadUrl), {
+					method: 'PUT',
+					body: await file.arrayBuffer()
+				});
+			} else if (jsonPropertyValue) {
+				// Legacy presigned POST: every policy field must be sent, then the file last.
+				const formData = new FormData();
+				for (const [name, value] of Object.entries(parseFields(jsonPropertyValue.fields))) {
+					formData.append(name, value);
+				}
+				formData.append('file', file);
+				response = await fetch(getPresignedUrl(jsonPropertyValue.url), {
+					method: 'POST',
+					body: formData
+				});
+			} else {
+				return;
+			}
 			if (!response.ok) {
 				throw new Error(`HTTP error ${response.status} ${response.statusText}`);
-			} else {
-				console.log('File uploaded successfully');
 			}
-			// TODO: upon successful upload, the propertyValue needs to be updated in the backend! (it does not know what has happened in S3)
+			// The backend polls S3 and switches the property to a download URL by itself.
+			isUploaded = true;
 		} catch (error) {
 			errorMessage = `Error uploading file: ${error}`;
 			alert(errorMessage);
@@ -140,18 +130,23 @@
 	}
 
 	function handleUploadFile() {
-		if (uploadFile && jsonPropertyValue) {
+		if (uploadFile && (uploadUrl || jsonPropertyValue)) {
 			uploadFileToS3(uploadFile);
 		}
 	}
 
 	onMount(async () => {
-		// check if propertyValue is upload or download object
-		if (typeof property.propertyValue === 'string') {
-			isUploadValue = false;
-		} else if (typeof property.propertyValue === 'object') {
-			jsonPropertyValue = property.propertyValue;
+		// The backend sets urlMode ("upload" | "download"); fall back to the value's shape
+		// for older nodes (an object means a legacy presigned POST).
+		const value = property.propertyValue;
+		if (value && typeof value === 'object') {
+			jsonPropertyValue = value as typeof jsonPropertyValue;
 			isUploadValue = true;
+		} else if (property.urlMode === 'upload' && typeof value === 'string') {
+			uploadUrl = value;
+			isUploadValue = true;
+		} else {
+			isUploadValue = false;
 		}
 
 		if (!isUploadValue) {
@@ -270,7 +265,12 @@
 		/>
 	</div>
 	<div class="s3-object">
-		{#if isUploadValue}
+		{#if isUploadValue && isUploaded}
+			<div class="justify-center variant-soft-success">
+				Uploaded. SINDIT switches this property to the file within about 10 seconds; reopen
+				the node to view it.
+			</div>
+		{:else if isUploadValue}
 			<FileDropzone
 				name="file"
 				class="text-white"
