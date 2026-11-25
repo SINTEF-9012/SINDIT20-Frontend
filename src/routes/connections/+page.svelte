@@ -183,15 +183,15 @@
           {#each filteredConnections as connection}
             <div class="group relative bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 transform">
               <!-- Connection Header -->
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-xl flex items-center justify-center">
+              <div class="flex items-start justify-between gap-3 mb-4">
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                  <div class="w-10 h-10 flex-shrink-0 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-xl flex items-center justify-center">
                     <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
                     </svg>
                   </div>
-                  <div>
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 truncate">
+                  <div class="min-w-0">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 truncate" title={connection.connectionName}>
                       {connection.connectionName}
                     </h3>
                     <p class="text-sm text-slate-500 dark:text-slate-400">
@@ -201,7 +201,7 @@
                 </div>
 
                 <!-- Status Indicator -->
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-shrink-0">
                   {#if connection.isConnected}
                     <div class="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium rounded-full">
                       <CheckCircleIcon size="12" />
